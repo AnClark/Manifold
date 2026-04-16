@@ -1,0 +1,12 @@
+[submodule "deps/imgui"]
+	path = deps/imgui
+	url = https://github.com/ocornut/imgui.git
+[submodule "deps/sox"]
+	path = deps/sox
+	url = git://git.code.sf.net/p/sox/code
+[submodule "deps/libebur128"]
+	path = deps/libebur128
+	url = https://github.com/jiixyj/libebur128
+[submodule "deps/libsndfile"]
+	path = deps/libsndfile
+	url = https://github.com/libsndfile/libsndfile
