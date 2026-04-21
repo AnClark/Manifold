@@ -13,14 +13,18 @@
 struct SndFileInfo
 {
     std::string fileName;
-    SNDFILE *handle = nullptr;
+    SNDFILE *handle = nullptr;  // Handle for parsing sound file, not kept open after parsing is done
 
     SF_INFO info = {};
-    float lufsI = 0.0f;
-    float truePeak = 0.0f;
+    double lufsI = 0.0f;
+    double maxTruePeak = 0.0f;
+    double maxTruePeak_dBTP = 0.0f;
 
     bool isParseOK = false;
     std::string errorMsg;
+
+    bool isR128ParsedOK = false;
+    std::string errorMsgR128;
 
     bool selected = false;    // Mark if selected in File List
     

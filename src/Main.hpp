@@ -2,6 +2,7 @@
 
 #include "Application.hpp"
 #include "Structures.hpp"
+#include "workers/EBUR128Worker.hpp"
 #include "workers/SndFileWorker.hpp"
 
 #include <unordered_set>
@@ -33,6 +34,7 @@ private:
     std::mutex sndFileListMutex;
 
     SndFileWorker sndFileWorker;
+    EBUR128Worker ebur128Worker;
 
     std::string NFDLastError;   // TODO: Display error message on UI
 };

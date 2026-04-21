@@ -69,6 +69,7 @@ void ManifoldApp::UI_Files()
                         sndFilePathSet.insert(std::move(pathKey));
 
                         sndFileWorker.addFile(&sndFileList.back());
+                        ebur128Worker.addFile(&sndFileList.back());
                     }
                 }
                 NFDLastError.clear();
@@ -185,11 +186,11 @@ void ManifoldApp::UI_Files()
                     
                     // 第五列：LUFS-I
                     ImGui::TableSetColumnIndex(4);
-                    ImGui::Text("%.1f dB", sndFileList[i].lufsI);
+                    ImGui::Text(sndFileList[i].isR128ParsedOK ? "%.1f dB" : "---", sndFileList[i].lufsI);
                     
                     // 第六列：True Peak
                     ImGui::TableSetColumnIndex(5);
-                    ImGui::Text("%.1f dB", sndFileList[i].truePeak);
+                    ImGui::Text(sndFileList[i].isR128ParsedOK ? "%.1f dB" : "---", sndFileList[i].maxTruePeak_dBTP);
                 }
                 
                 ImGui::EndTable();

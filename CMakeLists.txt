@@ -35,6 +35,7 @@ include_directories (
     src
     deps/imgui
     deps/imgui-application
+    deps/libebur128/ebur128
 )
 
 # Load pkg-config for finding dependencies, and let it prefer finding static libraries
@@ -50,6 +51,7 @@ add_executable (${PROJECT_NAME} WIN32
     deps/imgui-application/Application.cpp
     src/Main.cpp
     src/workers/SndFileWorker.cpp
+    src/workers/EBUR128Worker.cpp
     src/UI_Files.cpp
 )
 
