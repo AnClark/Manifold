@@ -1,30 +1,31 @@
 #include "SndFileWorker.hpp"
-#include <thread>
-using namespace std::chrono_literals;
 
 
 void SndFileWorker::sndFileWorkerMainFuction(SndFileWorker *workerInstance)
 {
-    while (!workerInstance->shouldExit)
+    while (true)
     {
-        auto& pendingFileList = workerInstance->pendingFileList;
-        while (!pendingFileList.empty())
+        SndFileInfo* currentFile = nullptr;
+
         {
-            SndFileInfo* currentFile = nullptr;
+            std::unique_lock<std::mutex> lock(workerInstance->pendingFileListMutex);
 
-            // 取出待处理文件名（缩小锁范围）
-            {
-                std::scoped_lock<std::mutex> scopedLock(workerInstance->pendingFileListMutex);
-                currentFile = std::move(pendingFileList.front());
-                pendingFileList.pop();
-            }
+            // 阻塞等待，直到有新任务或收到退出信号
+            // 使用谓词避免虚假唤醒 (spurious wakeup)
+            workerInstance->cv.wait(lock, [&] {
+                return workerInstance->shouldExit.load() || !workerInstance->pendingFileList.empty();
+            });
 
-            // 在锁外进行文件 I/O 操作
-            if (currentFile)
-                currentFile->parseSndFile();
+            // 收到退出信号：不再处理剩余队列，立即返回
+            if (workerInstance->shouldExit)
+                return;
+
+            currentFile = workerInstance->pendingFileList.front();
+            workerInstance->pendingFileList.pop();
         }
 
-        // 避免忙等待，释放 CPU 时间片
-        std::this_thread::sleep_for(100ms);  // 休眠 100ms，降低循环频率
+        // 在锁外进行文件 I/O 操作
+        if (currentFile)
+            currentFile->parseSndFile();
     }
 }

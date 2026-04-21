@@ -3,32 +3,29 @@
 #include "ebur128.h"
 
 #include <cmath>
-#include <thread>
-using namespace std::chrono_literals;
 
 void EBUR128Worker::ebur128WorkerMainFuction(EBUR128Worker *workerInstance)
 {
-    while (!workerInstance->shouldExit)
+    while (true)
     {
-        auto& pendingFileList = workerInstance->pendingFileList;
-        while (!pendingFileList.empty())
+        SndFileInfo* currentFile = nullptr;
+
         {
-            SndFileInfo* currentFile = nullptr;
+            std::unique_lock<std::mutex> lock(workerInstance->pendingFileListMutex);
 
-            // 取出待处理文件名（缩小锁范围）
-            {
-                std::scoped_lock<std::mutex> scopedLock(workerInstance->pendingFileListMutex);
-                currentFile = std::move(pendingFileList.front());
-                pendingFileList.pop();
-            }
+            workerInstance->cv.wait(lock, [&] {
+                return workerInstance->shouldExit.load() || !workerInstance->pendingFileList.empty();
+            });
 
-            // 在锁外进行文件 I/O 操作
-            if (currentFile)
-                workerInstance->processFile(currentFile);
+            if (workerInstance->shouldExit)
+                return;
+
+            currentFile = workerInstance->pendingFileList.front();
+            workerInstance->pendingFileList.pop();
         }
 
-        // 避免忙等待，释放 CPU 时间片
-        std::this_thread::sleep_for(100ms);  // 休眠 100ms，降低循环频率
+        if (currentFile)
+            workerInstance->processFile(currentFile);
     }
 }
 
