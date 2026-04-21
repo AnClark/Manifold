@@ -1,0 +1,6 @@
+[submodule "deps/nfd-extended"]
+	path = deps/nfd-extended
+	url = https://github.com/btzy/nativefiledialog-extended/
+[submodule "deps/libebur128"]
+	path = deps/libebur128
+	url = https://github.com/jiixyj/libebur128/
