@@ -22,12 +22,17 @@ struct SndFileInfo
     double lufsI = 0.0f;
     double maxTruePeak = 0.0f;
     double maxTruePeak_dBTP = 0.0f;
+    std::vector<double> dcOffsets;  // Per-channel DC offset values
+    double maxDcOffset = 0.0;  // Maximum absolute DC offset across all channels
 
     bool isParseOK = false;
     std::string errorMsg;
 
     bool isR128ParsedOK = false;
     std::string errorMsgR128;
+
+    bool isDcOffsetCalculatedOK = false;
+    std::string errorMsgDcOffset;
 
     bool selected = false;           // Mark if selected in File List
     std::atomic<bool> aboutToBeRemoved{false}; // Set to true when removed by user; workers skip processing
