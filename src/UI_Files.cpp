@@ -32,7 +32,27 @@ void ManifoldApp::UI_Files()
 
     if (ImGui::Begin("Files", nullptr, filesWindowFlag))
     {
-        ImGui::Button("Load single file"); ImGui::SameLine();
+        ImGui::BeginDisabled(lastClickedIndex <= -1);
+        if (ImGui::Button("Play selected file"))
+        {
+            if (lastClickedIndex >= 0 && lastClickedIndex < sndFileList.size())
+            {
+                currentPlayingFile = sndFileList[lastClickedIndex];
+
+                audioPlayer.loadAudioFile(currentPlayingFile->fileName.c_str());
+                audioPlayer.play();                
+            }
+
+        }
+        ImGui::EndDisabled();
+        if (audioPlayer.hasError())
+        {
+            ImGui::SameLine();
+            ImGui::Text("%s", audioPlayer.getErrorMsg());
+        }
+
+        ImGui::SameLine();
+
         if (ImGui::Button("Add Multiple Files..."))
         {
             detectedDuplicateCount = 0;
@@ -112,6 +132,13 @@ void ManifoldApp::UI_Files()
             if (ImGui::Button("Remove", ImVec2(120, 0)))
             {
                 std::scoped_lock<std::mutex> guard(sndFileListMutex);
+
+                // 若正在播放的音频是被删除的文件之一，则停止播放
+                if (currentPlayingFile && currentPlayingFile->selected)
+                {
+                    audioPlayer.cleanUp();
+                    currentPlayingFile.reset(); // reset currentPlayingFile to nullptr after stopping playback to avoid dangling pointer
+                }
 
                 // 标记删除，并从路径集合中删除对应 key
                 for (const auto& f : sndFileList)

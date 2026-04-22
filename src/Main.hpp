@@ -5,6 +5,7 @@
 #include "workers/DcOffsetWorker.hpp"
 #include "workers/EBUR128Worker.hpp"
 #include "workers/SndFileWorker.hpp"
+#include "utils/AudioPlayer.hpp"
 
 #include <unordered_set>
 
@@ -37,6 +38,9 @@ private:
     SndFileWorker sndFileWorker;
     EBUR128Worker ebur128Worker;
     DcOffsetWorker dcOffsetWorker;
+
+    AudioPlayer audioPlayer;
+    std::shared_ptr<SndFileInfo> currentPlayingFile;  // 当前正在播放的文件路径
 
     std::string NFDLastError;   // TODO: Display error message on UI
 };
