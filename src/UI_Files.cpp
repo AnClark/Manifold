@@ -82,7 +82,48 @@ void ManifoldApp::UI_Files()
         }
         ImGui::SameLine();
 
-        ImGui::Button("Remove selected file(s)");
+        // 统计已选中数量（selected 仅由主线程修改，无需加锁）
+        int selectedCount = 0;
+        for (const auto& f : sndFileList)
+            if (f.selected) selectedCount++;
+
+        ImGui::BeginDisabled(selectedCount == 0);
+        if (ImGui::Button("Remove selected file(s)"))
+            ImGui::OpenPopup("##remove_confirm");
+        ImGui::EndDisabled();
+
+        // 确认对话框
+        if (ImGui::BeginPopupModal("##remove_confirm", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
+        {
+            ImGui::Text("Remove %d selected file(s) from the list?", selectedCount);
+            ImGui::Separator();
+
+            if (ImGui::Button("Remove", ImVec2(120, 0)))
+            {
+                std::scoped_lock<std::mutex> guard(sndFileListMutex);
+
+                // 先从路径集合中删除对应 key
+                for (const auto& f : sndFileList)
+                    if (f.selected)
+                        sndFilePathSet.erase(makePathKey(f.fileName.c_str()));
+
+                // 从列表中移除已选中项
+                sndFileList.erase(
+                    std::remove_if(sndFileList.begin(), sndFileList.end(),
+                        [](const SndFileInfo& f) { return f.selected; }),
+                    sndFileList.end()
+                );
+
+                lastClickedIndex = -1;
+                ImGui::CloseCurrentPopup();
+            }
+            ImGui::SameLine();
+            if (ImGui::Button("Cancel", ImVec2(120, 0)))
+                ImGui::CloseCurrentPopup();
+
+            ImGui::EndPopup();
+        }
+
         ImGui::SameLine();
 
         if (detectedDuplicateCount > 0)
