@@ -36,6 +36,7 @@ include_directories (
     deps/imgui
     deps/imgui-application
     deps/libebur128/ebur128
+    deps/miniaudio
 )
 
 # Load pkg-config for finding dependencies, and let it prefer finding static libraries
@@ -77,6 +78,17 @@ set (BUILD_SHARED_LIBS OFF)
 add_subdirectory (deps/libebur128)
 target_link_libraries (${PROJECT_NAME} PRIVATE ebur128)
 set (CMAKE_POLICY_VERSION_MINIMUM ${CMAKE_VERSION}) # Rewind CMake version requirement
+
+# miniaudio
+# Set miniaudio flags
+add_compile_definitions (
+    MA_ENABLE_WASAPI=1  # Windows
+    MA_ENABLE_COREAUDIO=1   # macOS
+    MA_ENABLE_PULSEAUDIO=1  # Linux (compatibilty)
+    MA_ENABLE_JACK=1    # Linux (pro-audio)
+)
+# Append miniaudio impl file to source list
+target_sources (${PROJECT_NAME} PRIVATE deps/miniaudio/miniaudio_impl.cpp)
 
 #
 # Link Against Libraries
