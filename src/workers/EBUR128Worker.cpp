@@ -136,7 +136,6 @@ void EBUR128Worker::processFile(std::shared_ptr<SndFileInfo> fileInfoInstance)
     }
 
     /* 7. 获取 True Peak（每个声道） */
-    printf("\nTrue Peak:\n");
     for (unsigned int ch = 0; ch < st->channels; ch++) {
         double true_peak;
         ret = ebur128_true_peak(st, ch, &true_peak);
