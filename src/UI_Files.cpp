@@ -183,6 +183,15 @@ void ManifoldApp::UI_Files()
                     // Add mutex lock
                     std::scoped_lock<std::mutex> sndFileListGuard(sndFileListMutex);
 
+                    // Check isParseOK and errorMsg state at the same time to prevent sudden red background when loading a file
+                    if (!sndFileList[i]->isParseOK && !sndFileList[i]->errorMsg.empty())
+                    {
+                        // If parse failure (metadata), set row color to #f8748a
+                        ImGui::TableSetBgColor(ImGuiTableBgTarget_RowBg0, IM_COL32(0xcc, 0x5f, 0x71, 127));
+                        ImGui::PushStyleColor(ImGuiCol_HeaderHovered, IM_COL32(0xcc + 48, 0x5f + 48, 0x71 + 48, 127));  // ImGui::Selectable uses "Header" for its color definition
+                        ImGui::PushStyleColor(ImGuiCol_HeaderActive, IM_COL32(0xcc + 64, 0x5f + 64, 0x71 + 64, 127));
+                    }
+
                     if (ImGui::Selectable(sndFileList[i]->fileName.c_str(), sndFileList[i]->selected, selectableFlags))
                     {
                         // 单选/多选/范围选择逻辑
@@ -218,6 +227,13 @@ void ManifoldApp::UI_Files()
                             lastClickedIndex = i;
                         }
                     }
+
+                    if (!sndFileList[i]->isParseOK && !sndFileList[i]->errorMsg.empty())
+                    {
+                        // Remember to pop style color first!
+                        ImGui::PopStyleColor(2); // ImGuiCol_HeaderHovered
+                    }
+
                     ImGui::PopID();
                     
                     // 第二列：Sample Count
