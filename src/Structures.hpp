@@ -32,6 +32,8 @@ struct SndFileInfo
     bool selected = false;           // Mark if selected in File List
     std::atomic<bool> aboutToBeRemoved{false}; // Set to true when removed by user; workers skip processing
     
+    char durationString[16] = "---"; // Cache for duration string to avoid repeated formatting
+
     void parseSndFile()
     {
         info = {};
@@ -57,16 +59,25 @@ struct SndFileInfo
 
             return;
         }
-        
+
         sf_close(handle);
         handle = nullptr;
         isParseOK = true;
+
+        _calculateDurationTimeString();        
     }
 
     void parseSndFile(const char* newFileName)
     {
         this->fileName = newFileName;
         parseSndFile();
+    }
+
+    double getDurationSeconds() const
+    {
+        if (!isParseOK || info.samplerate <= 0)
+            return 0.0;
+        return static_cast<double>(info.frames) / info.samplerate;
     }
 
     const char* getBitDepth() const
@@ -103,6 +114,24 @@ struct SndFileInfo
             default:
                 return "Unknown";
         }
+    }
+
+private:
+    void _calculateDurationTimeString()
+    {
+        double duration = getDurationSeconds();
+        if (duration <= 0.0)
+        {
+            snprintf(durationString, sizeof(durationString), "---");
+            return;
+        }
+
+        int totalMs = static_cast<int>(duration * 1000.0 + 0.5);
+        int minutes = totalMs / 60000;
+        int seconds = (totalMs % 60000) / 1000;
+        int ms      = totalMs % 1000;
+
+        snprintf(durationString, sizeof(durationString), "%d:%02d.%03d", minutes, seconds, ms);
     }
 };
 
