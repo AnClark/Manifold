@@ -11,7 +11,7 @@
 class EBUR128Worker
 {
 public:
-    EBUR128Worker() : shouldExit(false)
+    EBUR128Worker() : shouldExit(false), shouldCancelProcessing(false)
     {
         ebur128WorkerThread = std::thread(EBUR128Worker::ebur128WorkerMainFuction, this);
     }
@@ -35,6 +35,11 @@ public:
         cv.notify_one();
     }
 
+    void requestCancelProcessing(bool request = true)
+    {
+        shouldCancelProcessing = true;
+    }
+
     static void ebur128WorkerMainFuction(EBUR128Worker *workerInstance);
 
 protected:
@@ -43,7 +48,8 @@ protected:
 private:
     PendingSndFileQueue pendingFileList;
 
-    std::atomic<bool> shouldExit;
+    std::atomic<bool> shouldExit;   // Request exiting thread
+    std::atomic<bool> shouldCancelProcessing;   // Request cancel current processFile() action (invoked by ManifoldApp::onTerminate())
     std::thread ebur128WorkerThread;
     std::mutex pendingFileListMutex;
     std::condition_variable cv;

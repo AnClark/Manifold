@@ -24,14 +24,17 @@ void EBUR128Worker::ebur128WorkerMainFuction(EBUR128Worker *workerInstance)
             workerInstance->pendingFileList.pop();
         }
 
-        if (currentFile && !currentFile->cancelled)
+        if (currentFile     // File handle is valid
+            && !currentFile->cancelled  // Current file info is removed from sndFileList
+            && !workerInstance->shouldCancelProcessing  // Program is terminating, should not continue processing
+        )
             workerInstance->processFile(currentFile);
     }
 }
 
 void EBUR128Worker::processFile(std::shared_ptr<SndFileInfo> fileInfoInstance)
 {
-    if (!fileInfoInstance || fileInfoInstance->cancelled)
+    if (!fileInfoInstance || fileInfoInstance->cancelled || shouldCancelProcessing)
         return;
 
     SF_INFO fileInfo = {};
@@ -124,7 +127,7 @@ void EBUR128Worker::processFile(std::shared_ptr<SndFileInfo> fileInfoInstance)
             fileInfoInstance->errorMsgR128 = "Error processing audio data";
             goto cleanup;
         }
-        if (fileInfoInstance->cancelled)
+        if (fileInfoInstance->cancelled || shouldCancelProcessing)
             goto cleanup;
     }
 
