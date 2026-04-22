@@ -43,7 +43,7 @@ struct SndFileInfo
         
         handle = sf_wchar_open(wpath.c_str(), SFM_READ, &info);
 #else
-        handle = sf_open(fileName, SFM_READ, &info);
+        handle = sf_open(fileName.c_str(), SFM_READ, &info);
 #endif
 
         if (handle == nullptr)
