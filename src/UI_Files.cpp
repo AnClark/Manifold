@@ -232,6 +232,14 @@ void ManifoldApp::UI_Files()
                     {
                         // Remember to pop style color first!
                         ImGui::PopStyleColor(2); // ImGuiCol_HeaderHovered
+
+                        // Show a tooltip telling where error happens
+                        if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayShort | ImGuiHoveredFlags_NoSharedDelay) && ImGui::BeginItemTooltip())
+                        {
+                            ImGui::Text("Error while parsing audio file:");
+                            ImGui::BulletText("%s", sndFileList[i]->errorMsg.c_str());
+                            ImGui::EndTooltip();
+                        }
                     }
 
                     ImGui::PopID();
