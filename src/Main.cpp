@@ -29,6 +29,7 @@ void ManifoldApp::onTerminate()
     //         When everything is done, workers will stop during deconstruction, and we can be sure that no more processing is running
     //         after onTerminate() returns.
     ebur128Worker.requestCancelProcessing();
+    dcOffsetWorker.requestCancelProcessing();
 
     // Cleanup NFD
     NFD_Quit();

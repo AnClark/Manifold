@@ -2,6 +2,7 @@
 
 #include "Application.hpp"
 #include "Structures.hpp"
+#include "workers/DcOffsetWorker.hpp"
 #include "workers/EBUR128Worker.hpp"
 #include "workers/SndFileWorker.hpp"
 
@@ -35,6 +36,7 @@ private:
 
     SndFileWorker sndFileWorker;
     EBUR128Worker ebur128Worker;
+    DcOffsetWorker dcOffsetWorker;
 
     std::string NFDLastError;   // TODO: Display error message on UI
 };
