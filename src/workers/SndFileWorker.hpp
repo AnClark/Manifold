@@ -3,7 +3,6 @@
 #include <condition_variable>
 #include <memory>
 #include <mutex>
-#include <queue>
 #include <thread>
 #include <atomic>
 
@@ -41,7 +40,7 @@ public:
     static void sndFileWorkerMainFuction(SndFileWorker *workerInstance);
 
 private:
-    std::queue<std::shared_ptr<SndFileInfo>> pendingFileList;
+    PendingSndFileQueue pendingFileList;
 
     std::atomic<bool> shouldExit;
     std::thread sndFileWorkerThread;

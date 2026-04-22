@@ -3,7 +3,6 @@
 #include <condition_variable>
 #include <memory>
 #include <mutex>
-#include <queue>
 #include <thread>
 #include <atomic>
 
@@ -42,7 +41,7 @@ protected:
     void processFile(std::shared_ptr<SndFileInfo> fileInfoInstance);
 
 private:
-    std::queue<std::shared_ptr<SndFileInfo>> pendingFileList;
+    PendingSndFileQueue pendingFileList;
 
     std::atomic<bool> shouldExit;
     std::thread ebur128WorkerThread;

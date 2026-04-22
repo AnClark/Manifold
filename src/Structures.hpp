@@ -6,6 +6,7 @@
 #include <memory>
 #include <string>
 #include <vector>
+#include <queue>
 
 #if _WIN32
 #define WIN32_MEAN_AND_LEAN
@@ -70,3 +71,4 @@ struct SndFileInfo
 };
 
 typedef std::vector<std::shared_ptr<SndFileInfo>> SndFileList;
+typedef std::queue<std::shared_ptr<SndFileInfo>> PendingSndFileQueue;
