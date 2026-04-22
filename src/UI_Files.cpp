@@ -20,7 +20,17 @@ static std::string makePathKey(const char* rawPath)
 
 void ManifoldApp::UI_Files()
 {
-    if (ImGui::Begin("Files"))
+    // Make window fullscreen
+    static constexpr int filesWindowFlag =
+            ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse |
+            ImGuiWindowFlags_NoMove       |
+            ImGuiWindowFlags_NoSavedSettings |
+            ImGuiWindowFlags_AlwaysAutoResize;
+    const ImGuiViewport* viewport = ImGui::GetMainViewport();
+    ImGui::SetNextWindowPos(viewport->Pos);
+    ImGui::SetNextWindowSize(viewport->Size);
+
+    if (ImGui::Begin("Files", nullptr, filesWindowFlag))
     {
         ImGui::Button("Load single file"); ImGui::SameLine();
         if (ImGui::Button("Add Multiple Files..."))
