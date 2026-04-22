@@ -243,9 +243,7 @@ void ManifoldApp::UI_Files()
                 
                 ImGui::EndTable();
             }
-        }
-        
-
-        ImGui::End();
+        }        
     }
+    ImGui::End();
 }
