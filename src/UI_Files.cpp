@@ -70,6 +70,7 @@ void ManifoldApp::UI_Files()
 
                         sndFileWorker.addFile(newFilePtr);
                         ebur128Worker.addFile(newFilePtr);
+                        dcOffsetWorker.addFile(newFilePtr);
                     }
                 }
                 NFDLastError.clear();
@@ -145,7 +146,7 @@ void ManifoldApp::UI_Files()
                 ImGuiTableFlags_SizingStretchProp |  // 列宽充满窗口
                 ImGuiTableFlags_ScrollY;             // 垂直滚动
 
-            if (ImGui::BeginTable("FileDetailsTable", 8, flags))
+            if (ImGui::BeginTable("FileDetailsTable", 9, flags))
             {
                 // 设置列
                 ImGui::TableSetupColumn("File Name", ImGuiTableColumnFlags_DefaultSort | ImGuiTableColumnFlags_WidthStretch);
@@ -154,6 +155,7 @@ void ManifoldApp::UI_Files()
                 ImGui::TableSetupColumn("Sample Count", ImGuiTableColumnFlags_WidthFixed, 120.0f);
                 ImGui::TableSetupColumn("Channels", ImGuiTableColumnFlags_WidthFixed, 80.0f);
                 ImGui::TableSetupColumn("Sample Rate", ImGuiTableColumnFlags_WidthFixed, 100.0f);
+                ImGui::TableSetupColumn("DC Offset", ImGuiTableColumnFlags_WidthFixed, 80.0f);
                 ImGui::TableSetupColumn("LUFS-I", ImGuiTableColumnFlags_WidthFixed, 80.0f);
                 ImGui::TableSetupColumn("True Peak", ImGuiTableColumnFlags_WidthFixed, 90.0f);
                 ImGui::TableHeadersRow();
@@ -265,13 +267,17 @@ void ManifoldApp::UI_Files()
                     // 第六列：Sample Rate
                     ImGui::TableSetColumnIndex(5);
                     ImGui::Text("%d Hz", sndFileList[i]->info.samplerate);
-                    
-                    // 第七列：LUFS-I
+
+                    // 第七列：DC Offset
                     ImGui::TableSetColumnIndex(6);
+                    ImGui::Text(sndFileList[i]->isDcOffsetCalculatedOK ? "%.5f" : "---", sndFileList[i]->maxDcOffset);
+
+                    // 第八列：LUFS-I
+                    ImGui::TableSetColumnIndex(7);
                     ImGui::Text(sndFileList[i]->isR128ParsedOK ? "%.1f dB" : "---", sndFileList[i]->lufsI);
                     
-                    // 第八列：True Peak
-                    ImGui::TableSetColumnIndex(7);
+                    // 第九列：True Peak
+                    ImGui::TableSetColumnIndex(8);
                     ImGui::Text(sndFileList[i]->isR128ParsedOK ? "%.1f dB" : "---", sndFileList[i]->maxTruePeak_dBTP);
                 }
                 
