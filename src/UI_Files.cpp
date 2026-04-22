@@ -145,11 +145,12 @@ void ManifoldApp::UI_Files()
                 ImGuiTableFlags_SizingStretchProp |  // 列宽充满窗口
                 ImGuiTableFlags_ScrollY;             // 垂直滚动
 
-            if (ImGui::BeginTable("FileDetailsTable", 7, flags))
+            if (ImGui::BeginTable("FileDetailsTable", 8, flags))
             {
                 // 设置列
                 ImGui::TableSetupColumn("File Name", ImGuiTableColumnFlags_DefaultSort | ImGuiTableColumnFlags_WidthStretch);
                 ImGui::TableSetupColumn("Bit Depth", ImGuiTableColumnFlags_WidthFixed, 80.0f);
+                ImGui::TableSetupColumn("Duration", ImGuiTableColumnFlags_WidthFixed, 80.0f);
                 ImGui::TableSetupColumn("Sample Count", ImGuiTableColumnFlags_WidthFixed, 120.0f);
                 ImGui::TableSetupColumn("Channels", ImGuiTableColumnFlags_WidthFixed, 80.0f);
                 ImGui::TableSetupColumn("Sample Rate", ImGuiTableColumnFlags_WidthFixed, 100.0f);
@@ -249,24 +250,28 @@ void ManifoldApp::UI_Files()
                     ImGui::TableSetColumnIndex(1);
                     ImGui::Text(sndFileList[i]->isParseOK ? sndFileList[i]->getBitDepth() : "---");
 
-                    // 第三列：Sample Count
+                    // 第三列：Duration
                     ImGui::TableSetColumnIndex(2);
+                    ImGui::Text(sndFileList[i]->durationString);
+
+                    // 第四列：Sample Count
+                    ImGui::TableSetColumnIndex(3);
                     ImGui::Text("%lld", sndFileList[i]->info.frames);
                     
-                    // 第四列：Channels
-                    ImGui::TableSetColumnIndex(3);
+                    // 第五列：Channels
+                    ImGui::TableSetColumnIndex(4);
                     ImGui::Text("%d", sndFileList[i]->info.channels);
                     
-                    // 第五列：Sample Rate
-                    ImGui::TableSetColumnIndex(4);
+                    // 第六列：Sample Rate
+                    ImGui::TableSetColumnIndex(5);
                     ImGui::Text("%d Hz", sndFileList[i]->info.samplerate);
                     
-                    // 第六列：LUFS-I
-                    ImGui::TableSetColumnIndex(5);
+                    // 第七列：LUFS-I
+                    ImGui::TableSetColumnIndex(6);
                     ImGui::Text(sndFileList[i]->isR128ParsedOK ? "%.1f dB" : "---", sndFileList[i]->lufsI);
                     
-                    // 第七列：True Peak
-                    ImGui::TableSetColumnIndex(6);
+                    // 第八列：True Peak
+                    ImGui::TableSetColumnIndex(7);
                     ImGui::Text(sndFileList[i]->isR128ParsedOK ? "%.1f dB" : "---", sndFileList[i]->maxTruePeak_dBTP);
                 }
                 
