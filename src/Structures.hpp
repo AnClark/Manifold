@@ -68,6 +68,42 @@ struct SndFileInfo
         this->fileName = newFileName;
         parseSndFile();
     }
+
+    const char* getBitDepth() const
+    {
+        int formatSubType = info.format & SF_FORMAT_SUBMASK;
+        switch (formatSubType)
+        {
+            // Readable bit depths
+            case SF_FORMAT_PCM_S8:
+                return "8-bit";
+            case SF_FORMAT_PCM_16:
+            case SF_FORMAT_ALAC_16:
+                return "16-bit";
+            case SF_FORMAT_ALAC_20:
+                return "20-bit";
+            case SF_FORMAT_PCM_24:
+            case SF_FORMAT_ALAC_24:
+                return "24-bit";
+            case SF_FORMAT_PCM_32:
+            case SF_FORMAT_ALAC_32:
+                return "32-bit";
+            case SF_FORMAT_FLOAT:
+                return "32-bit float";
+            case SF_FORMAT_DOUBLE:
+                return "64-bit float";
+            
+            // Some special formats with non-standard bit depths
+            case SF_FORMAT_VORBIS:
+                return "Vorbis";
+            case SF_FORMAT_PCM_U8:
+                return "Unsigned 8-bit";
+            
+            // Fallback
+            default:
+                return "Unknown";
+        }
+    }
 };
 
 typedef std::vector<std::shared_ptr<SndFileInfo>> SndFileList;
