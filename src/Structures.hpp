@@ -30,7 +30,7 @@ struct SndFileInfo
     std::string errorMsgR128;
 
     bool selected = false;           // Mark if selected in File List
-    std::atomic<bool> cancelled{false}; // Set to true when removed by user; workers skip processing
+    std::atomic<bool> aboutToBeRemoved{false}; // Set to true when removed by user; workers skip processing
     
     void parseSndFile()
     {

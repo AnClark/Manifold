@@ -102,11 +102,11 @@ void ManifoldApp::UI_Files()
             {
                 std::scoped_lock<std::mutex> guard(sndFileListMutex);
 
-                // 标记取消并从路径集合中删除对应 key
+                // 标记删除，并从路径集合中删除对应 key
                 for (const auto& f : sndFileList)
                     if (f->selected)
                     {
-                        f->cancelled = true;
+                        f->aboutToBeRemoved = true;
                         sndFilePathSet.erase(makePathKey(f->fileName.c_str()));
                     }
 

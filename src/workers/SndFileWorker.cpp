@@ -24,8 +24,8 @@ void SndFileWorker::sndFileWorkerMainFuction(SndFileWorker *workerInstance)
             workerInstance->pendingFileList.pop();
         }
 
-        // 在锁外进行文件 I/O 操作，若已被标记取消则跳过
-        if (currentFile && !currentFile->cancelled)
+        // 在锁外进行文件 I/O 操作，若已被标记删除则跳过
+        if (currentFile && !currentFile->aboutToBeRemoved)
             currentFile->parseSndFile();
     }
 }
