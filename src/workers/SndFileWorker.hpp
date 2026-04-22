@@ -1,6 +1,7 @@
 #pragma once
 
 #include <condition_variable>
+#include <memory>
 #include <mutex>
 #include <queue>
 #include <thread>
@@ -28,11 +29,11 @@ public:
             sndFileWorkerThread.join();
     }
 
-    void addFile(SndFileInfo* fileInfoInstance)
+    void addFile(std::shared_ptr<SndFileInfo> fileInfoInstance)
     {
         {
             std::scoped_lock<std::mutex> scopedLock(pendingFileListMutex);
-            pendingFileList.push(fileInfoInstance);
+            pendingFileList.push(std::move(fileInfoInstance));
         }
         cv.notify_one();  // 有新任务时唤醒线程
     }
@@ -40,7 +41,7 @@ public:
     static void sndFileWorkerMainFuction(SndFileWorker *workerInstance);
 
 private:
-    std::queue<SndFileInfo*> pendingFileList;
+    std::queue<std::shared_ptr<SndFileInfo>> pendingFileList;
 
     std::atomic<bool> shouldExit;
     std::thread sndFileWorkerThread;

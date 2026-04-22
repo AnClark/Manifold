@@ -8,13 +8,13 @@ void EBUR128Worker::ebur128WorkerMainFuction(EBUR128Worker *workerInstance)
 {
     while (true)
     {
-        SndFileInfo* currentFile = nullptr;
+        std::shared_ptr<SndFileInfo> currentFile;
 
         {
             std::unique_lock<std::mutex> lock(workerInstance->pendingFileListMutex);
 
             workerInstance->cv.wait(lock, [&] {
-                return workerInstance->shouldExit.load() || !workerInstance->pendingFileList.empty();
+                return workerInstance->shouldExit || !workerInstance->pendingFileList.empty();
             });
 
             if (workerInstance->shouldExit)
@@ -24,14 +24,14 @@ void EBUR128Worker::ebur128WorkerMainFuction(EBUR128Worker *workerInstance)
             workerInstance->pendingFileList.pop();
         }
 
-        if (currentFile)
+        if (currentFile && !currentFile->cancelled)
             workerInstance->processFile(currentFile);
     }
 }
 
-void EBUR128Worker::processFile(SndFileInfo* fileInfoInstance)
+void EBUR128Worker::processFile(std::shared_ptr<SndFileInfo> fileInfoInstance)
 {
-    if (!fileInfoInstance)
+    if (!fileInfoInstance || fileInfoInstance->cancelled)
         return;
 
     SF_INFO fileInfo = {};
@@ -121,6 +121,8 @@ void EBUR128Worker::processFile(SndFileInfo* fileInfoInstance)
             fileInfoInstance->errorMsgR128 = "Error processing audio data";
             goto cleanup;
         }
+        if (fileInfoInstance->cancelled)
+            goto cleanup;
     }
 
     /* 6. 获取 LUFS-I (Integrated Loudness) */

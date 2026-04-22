@@ -63,13 +63,13 @@ void ManifoldApp::UI_Files()
                             continue;
                         }
 
-                        SndFileInfo newFile;
-                        newFile.fileName.assign(path.get());
-                        sndFileList.push_back(std::move(newFile));
+                        auto newFilePtr = std::make_shared<SndFileInfo>();
+                        newFilePtr->fileName.assign(path.get());
+                        sndFileList.push_back(newFilePtr);
                         sndFilePathSet.insert(std::move(pathKey));
 
-                        sndFileWorker.addFile(&sndFileList.back());
-                        ebur128Worker.addFile(&sndFileList.back());
+                        sndFileWorker.addFile(newFilePtr);
+                        ebur128Worker.addFile(newFilePtr);
                     }
                 }
                 NFDLastError.clear();
@@ -85,7 +85,7 @@ void ManifoldApp::UI_Files()
         // 统计已选中数量（selected 仅由主线程修改，无需加锁）
         int selectedCount = 0;
         for (const auto& f : sndFileList)
-            if (f.selected) selectedCount++;
+            if (f->selected) selectedCount++;
 
         ImGui::BeginDisabled(selectedCount == 0);
         if (ImGui::Button("Remove selected file(s)"))
@@ -102,15 +102,18 @@ void ManifoldApp::UI_Files()
             {
                 std::scoped_lock<std::mutex> guard(sndFileListMutex);
 
-                // 先从路径集合中删除对应 key
+                // 标记取消并从路径集合中删除对应 key
                 for (const auto& f : sndFileList)
-                    if (f.selected)
-                        sndFilePathSet.erase(makePathKey(f.fileName.c_str()));
+                    if (f->selected)
+                    {
+                        f->cancelled = true;
+                        sndFilePathSet.erase(makePathKey(f->fileName.c_str()));
+                    }
 
-                // 从列表中移除已选中项
+                // 从列表中移除已选中项（shared_ptr 析构后对象由 worker 决定何时真正释放）
                 sndFileList.erase(
                     std::remove_if(sndFileList.begin(), sndFileList.end(),
-                        [](const SndFileInfo& f) { return f.selected; }),
+                        [](const std::shared_ptr<SndFileInfo>& f) { return f->selected; }),
                     sndFileList.end()
                 );
 
@@ -175,12 +178,12 @@ void ManifoldApp::UI_Files()
                         ImGuiSelectableFlags_SpanAllColumns |    // 选择跨越所有列
                         ImGuiSelectableFlags_AllowOverlap;       // 允许其他项重叠
                     
-                    ImGui::PushID(reinterpret_cast<uintptr_t>(&sndFileList[i]));
+                    ImGui::PushID(reinterpret_cast<uintptr_t>(sndFileList[i].get()));
 
                     // Add mutex lock
                     std::scoped_lock<std::mutex> sndFileListGuard(sndFileListMutex);
 
-                    if (ImGui::Selectable(sndFileList[i].fileName.c_str(), sndFileList[i].selected, selectableFlags))
+                    if (ImGui::Selectable(sndFileList[i]->fileName.c_str(), sndFileList[i]->selected, selectableFlags))
                     {
                         // 单选/多选/范围选择逻辑
                         if (ImGui::GetIO().KeyShift && lastClickedIndex != -1)
@@ -193,25 +196,25 @@ void ManifoldApp::UI_Files()
                             {
                                 // 如果没有按 Ctrl，先清除所有选择
                                 for (int j = 0; j < sndFileList.size(); j++)
-                                    sndFileList[j].selected = false;
+                                    sndFileList[j]->selected = false;
                             }
                             
                             // 选择范围内的所有项目
                             for (int j = rangeStart; j <= rangeEnd; j++)
-                                sndFileList[j].selected = true;
+                                sndFileList[j]->selected = true;
                         }
                         else if (ImGui::GetIO().KeyCtrl)
                         {
                             // Ctrl+点击：切换当前项的选择状态（多选）
-                            sndFileList[i].selected = !sndFileList[i].selected;
+                            sndFileList[i]->selected = !sndFileList[i]->selected;
                             lastClickedIndex = i;
                         }
                         else
                         {
                             // 普通点击：清除其他选择，只选择当前项（单选）
                             for (int j = 0; j < sndFileList.size(); j++)
-                                sndFileList[j].selected = false;
-                            sndFileList[i].selected = true;
+                                sndFileList[j]->selected = false;
+                            sndFileList[i]->selected = true;
                             lastClickedIndex = i;
                         }
                     }
@@ -219,23 +222,23 @@ void ManifoldApp::UI_Files()
                     
                     // 第二列：Sample Count
                     ImGui::TableSetColumnIndex(1);
-                    ImGui::Text("%lld", sndFileList[i].info.frames);
+                    ImGui::Text("%lld", sndFileList[i]->info.frames);
                     
                     // 第三列：Channels
                     ImGui::TableSetColumnIndex(2);
-                    ImGui::Text("%d", sndFileList[i].info.channels);
+                    ImGui::Text("%d", sndFileList[i]->info.channels);
                     
                     // 第四列：Sample Rate
                     ImGui::TableSetColumnIndex(3);
-                    ImGui::Text("%d Hz", sndFileList[i].info.samplerate);
+                    ImGui::Text("%d Hz", sndFileList[i]->info.samplerate);
                     
                     // 第五列：LUFS-I
                     ImGui::TableSetColumnIndex(4);
-                    ImGui::Text(sndFileList[i].isR128ParsedOK ? "%.1f dB" : "---", sndFileList[i].lufsI);
+                    ImGui::Text(sndFileList[i]->isR128ParsedOK ? "%.1f dB" : "---", sndFileList[i]->lufsI);
                     
                     // 第六列：True Peak
                     ImGui::TableSetColumnIndex(5);
-                    ImGui::Text(sndFileList[i].isR128ParsedOK ? "%.1f dB" : "---", sndFileList[i].maxTruePeak_dBTP);
+                    ImGui::Text(sndFileList[i]->isR128ParsedOK ? "%.1f dB" : "---", sndFileList[i]->maxTruePeak_dBTP);
                 }
                 
                 ImGui::EndTable();

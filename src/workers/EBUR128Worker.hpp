@@ -1,6 +1,7 @@
 #pragma once
 
 #include <condition_variable>
+#include <memory>
 #include <mutex>
 #include <queue>
 #include <thread>
@@ -26,11 +27,11 @@ public:
             ebur128WorkerThread.join();
     }
 
-    void addFile(SndFileInfo* fileInfoInstance)
+    void addFile(std::shared_ptr<SndFileInfo> fileInfoInstance)
     {
         {
             std::scoped_lock<std::mutex> scopedLock(pendingFileListMutex);
-            pendingFileList.push(fileInfoInstance);
+            pendingFileList.push(std::move(fileInfoInstance));
         }
         cv.notify_one();
     }
@@ -38,10 +39,10 @@ public:
     static void ebur128WorkerMainFuction(EBUR128Worker *workerInstance);
 
 protected:
-    void processFile(SndFileInfo* fileInfoInstance);
+    void processFile(std::shared_ptr<SndFileInfo> fileInfoInstance);
 
 private:
-    std::queue<SndFileInfo*> pendingFileList;
+    std::queue<std::shared_ptr<SndFileInfo>> pendingFileList;
 
     std::atomic<bool> shouldExit;
     std::thread ebur128WorkerThread;

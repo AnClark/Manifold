@@ -2,6 +2,8 @@
 
 #include <sndfile.h>
 
+#include <atomic>
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -26,7 +28,8 @@ struct SndFileInfo
     bool isR128ParsedOK = false;
     std::string errorMsgR128;
 
-    bool selected = false;    // Mark if selected in File List
+    bool selected = false;           // Mark if selected in File List
+    std::atomic<bool> cancelled{false}; // Set to true when removed by user; workers skip processing
     
     void parseSndFile()
     {
@@ -66,4 +69,4 @@ struct SndFileInfo
     }
 };
 
-typedef std::vector<SndFileInfo> SndFileList;
+typedef std::vector<std::shared_ptr<SndFileInfo>> SndFileList;
