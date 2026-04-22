@@ -37,7 +37,7 @@ public:
 
     void requestCancelProcessing(bool request = true)
     {
-        shouldCancelProcessing = true;
+        shouldCancelProcessing = request;
     }
 
     static void ebur128WorkerMainFunction(EBUR128Worker *workerInstance);
