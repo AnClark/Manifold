@@ -54,6 +54,7 @@ add_executable (${PROJECT_NAME} WIN32
     src/workers/SndFileWorker.cpp
     src/workers/EBUR128Worker.cpp
     src/workers/DcOffsetWorker.cpp
+    src/utils/AudioPlayer.cpp
     src/UI_Files.cpp
 )
 
