@@ -135,6 +135,10 @@ void ManifoldApp::UI_Files()
                         ImGuiSelectableFlags_AllowOverlap;       // 允许其他项重叠
                     
                     ImGui::PushID(reinterpret_cast<uintptr_t>(&sndFileList[i]));
+
+                    // Add mutex lock
+                    std::scoped_lock<std::mutex> sndFileListGuard(sndFileListMutex);
+
                     if (ImGui::Selectable(sndFileList[i].fileName.c_str(), sndFileList[i].selected, selectableFlags))
                     {
                         // 单选/多选/范围选择逻辑
