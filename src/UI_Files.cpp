@@ -157,7 +157,7 @@ void ManifoldApp::UI_Files()
                 ImGui::TableSetupColumn("Sample Rate", ImGuiTableColumnFlags_WidthFixed, 100.0f);
                 ImGui::TableSetupColumn("DC Offset", ImGuiTableColumnFlags_WidthFixed, 80.0f);
                 ImGui::TableSetupColumn("LUFS-I", ImGuiTableColumnFlags_WidthFixed, 80.0f);
-                ImGui::TableSetupColumn("True Peak", ImGuiTableColumnFlags_WidthFixed, 90.0f);
+                ImGui::TableSetupColumn("Peak", ImGuiTableColumnFlags_WidthFixed, 90.0f);
                 ImGui::TableHeadersRow();
 
                 // 处理排序（如果需要）
@@ -276,9 +276,9 @@ void ManifoldApp::UI_Files()
                     ImGui::TableSetColumnIndex(7);
                     ImGui::Text(sndFileList[i]->isR128ParsedOK ? "%.1f dB" : "---", sndFileList[i]->lufsI);
                     
-                    // 第九列：True Peak
+                    // 第九列：Sample Peak
                     ImGui::TableSetColumnIndex(8);
-                    ImGui::Text(sndFileList[i]->isR128ParsedOK ? "%.1f dB" : "---", sndFileList[i]->maxTruePeak_dBTP);
+                    ImGui::Text(sndFileList[i]->isR128ParsedOK ? "%.1f dB" : "---", sndFileList[i]->maxSamplePeak_dBFS);
                 }
                 
                 ImGui::EndTable();

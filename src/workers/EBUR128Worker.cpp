@@ -67,12 +67,12 @@ void EBUR128Worker::processFile(std::shared_ptr<SndFileInfo> fileInfoInstance)
 
     /* 2. 初始化 ebur128
      *    EBUR128_MODE_I: 启用 LUFS-I (Integrated Loudness) 测量
-     *    EBUR128_MODE_TRUE_PEAK: 启用 True Peak 测量
+     *    EBUR128_MODE_SAMPLE_PEAK: 启用 Sample Peak 测量
      */
     st = ebur128_init(
         (unsigned)fileInfo.channels,
         (unsigned)fileInfo.samplerate,
-        EBUR128_MODE_I | EBUR128_MODE_TRUE_PEAK
+        EBUR128_MODE_I | EBUR128_MODE_SAMPLE_PEAK
     );
     if (!st) {
         fileInfoInstance->errorMsgR128 = "Cannot initialize ebur128_state";
@@ -138,25 +138,22 @@ void EBUR128Worker::processFile(std::shared_ptr<SndFileInfo> fileInfoInstance)
         goto cleanup;
     }
 
-    /* 7. 获取 True Peak（每个声道） */
+    /* 7. 获取 Sample Peak（每个声道） */
     for (unsigned int ch = 0; ch < st->channels; ch++) {
-        double true_peak;
-        ret = ebur128_true_peak(st, ch, &true_peak);
+        double sample_peak;
+        ret = ebur128_sample_peak(st, ch, &sample_peak);
         if (ret != EBUR128_SUCCESS) {
-            fileInfoInstance->errorMsgR128 = "Error retrieving True Peak";
+            fileInfoInstance->errorMsgR128 = "Error retrieving Sample Peak";
             continue;
         }
         
-        // 转换为 dBTP (decibels True Peak)
-        double true_peak_dbtp = 20.0 * log10(true_peak);
-        
         // 记录最大值
-        if (true_peak > fileInfoInstance->maxTruePeak) {
-            fileInfoInstance->maxTruePeak = true_peak;
+        if (sample_peak > fileInfoInstance->maxSamplePeak) {
+            fileInfoInstance->maxSamplePeak = sample_peak;
         }
     }
     
-    fileInfoInstance->maxTruePeak_dBTP = 20.0 * log10(fileInfoInstance->maxTruePeak);
+    fileInfoInstance->maxSamplePeak_dBFS = 20.0 * log10(fileInfoInstance->maxSamplePeak);
 
     fileInfoInstance->isR128ParsedOK = true;
 

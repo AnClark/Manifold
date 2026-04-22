@@ -20,8 +20,8 @@ struct SndFileInfo
 
     SF_INFO info = {};
     double lufsI = 0.0f;
-    double maxTruePeak = 0.0f;
-    double maxTruePeak_dBTP = 0.0f;
+    double maxSamplePeak = 0.0f;
+    double maxSamplePeak_dBFS = 0.0f;
     std::vector<double> dcOffsets;  // Per-channel DC offset values
     double maxDcOffset = 0.0;  // Maximum absolute DC offset across all channels
 
