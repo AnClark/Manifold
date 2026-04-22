@@ -59,6 +59,7 @@ void EBUR128Worker::processFile(std::shared_ptr<SndFileInfo> fileInfoInstance)
         fileInfoInstance->errorMsgR128 += fileInfoInstance->fileName;
         fileInfoInstance->errorMsgR128 += ": ";
         fileInfoInstance->errorMsgR128 += sf_strerror(NULL);
+        return;
     }
 
     /* 2. 初始化 ebur128
@@ -73,6 +74,7 @@ void EBUR128Worker::processFile(std::shared_ptr<SndFileInfo> fileInfoInstance)
     if (!st) {
         fileInfoInstance->errorMsgR128 = "Cannot initialize ebur128_state";
         sf_close(file);
+        return;
     }
 
     /* 3. 配置声道映射（可选）
@@ -107,6 +109,7 @@ void EBUR128Worker::processFile(std::shared_ptr<SndFileInfo> fileInfoInstance)
         fileInfoInstance->errorMsgR128 = "Cannot allocate memory";
         ebur128_destroy(&st);
         sf_close(file);
+        return;
     }
 
     /* 5. 读取音频数据并处理
