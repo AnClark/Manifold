@@ -13,7 +13,7 @@ class EBUR128Worker
 public:
     EBUR128Worker() : shouldExit(false), shouldCancelProcessing(false)
     {
-        ebur128WorkerThread = std::thread(EBUR128Worker::ebur128WorkerMainFuction, this);
+        ebur128WorkerThread = std::thread(EBUR128Worker::ebur128WorkerMainFunction, this);
     }
     ~EBUR128Worker()
     {
@@ -40,7 +40,7 @@ public:
         shouldCancelProcessing = true;
     }
 
-    static void ebur128WorkerMainFuction(EBUR128Worker *workerInstance);
+    static void ebur128WorkerMainFunction(EBUR128Worker *workerInstance);
 
 protected:
     void processFile(std::shared_ptr<SndFileInfo> fileInfoInstance);

@@ -14,7 +14,7 @@ public:
     SndFileWorker() : shouldExit(false)
     {
         // 注意：shouldExit 必须在启动线程前初始化，避免线程读到未定义值
-        sndFileWorkerThread = std::thread(SndFileWorker::sndFileWorkerMainFuction, this);
+        sndFileWorkerThread = std::thread(SndFileWorker::sndFileWorkerMainFunction, this);
     }
     ~SndFileWorker()
     {
@@ -37,7 +37,7 @@ public:
         cv.notify_one();  // 有新任务时唤醒线程
     }
 
-    static void sndFileWorkerMainFuction(SndFileWorker *workerInstance);
+    static void sndFileWorkerMainFunction(SndFileWorker *workerInstance);
 
 private:
     PendingSndFileQueue pendingFileList;

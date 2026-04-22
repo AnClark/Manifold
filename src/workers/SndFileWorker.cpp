@@ -1,7 +1,7 @@
 #include "SndFileWorker.hpp"
 
 
-void SndFileWorker::sndFileWorkerMainFuction(SndFileWorker *workerInstance)
+void SndFileWorker::sndFileWorkerMainFunction(SndFileWorker *workerInstance)
 {
     while (true)
     {

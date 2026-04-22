@@ -4,7 +4,7 @@
 
 #include <cmath>
 
-void EBUR128Worker::ebur128WorkerMainFuction(EBUR128Worker *workerInstance)
+void EBUR128Worker::ebur128WorkerMainFunction(EBUR128Worker *workerInstance)
 {
     while (true)
     {
