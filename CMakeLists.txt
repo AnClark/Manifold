@@ -37,6 +37,7 @@ include_directories (
     deps/imgui-application
     deps/libebur128/ebur128
     deps/miniaudio
+    deps/miniaudio-libsndfile
 )
 
 # Load pkg-config for finding dependencies, and let it prefer finding static libraries
@@ -90,6 +91,10 @@ add_compile_definitions (
 )
 # Append miniaudio impl file to source list
 target_sources (${PROJECT_NAME} PRIVATE deps/miniaudio/miniaudio_impl.cpp)
+
+# miniaudio custom decoder (libsndfile)
+add_library (miniaudio_libsndfile STATIC deps/miniaudio-libsndfile/miniaudio_libsndfile.c)
+target_link_libraries (${PROJECT_NAME} PRIVATE miniaudio_libsndfile)
 
 #
 # Link Against Libraries
