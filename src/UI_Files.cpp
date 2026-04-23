@@ -279,8 +279,12 @@ void ManifoldApp::UI_Files()
                     // Add mutex lock
                     std::scoped_lock<std::mutex> sndFileListGuard(sndFileListMutex);
 
-                    // Check isParseOK and errorMsg state at the same time to prevent sudden red background when loading a file
-                    if (!sndFileList[i]->isParseOK && !sndFileList[i]->errorMsg.empty())
+                    // Snapshot the error state once while holding the lock.
+                    // Worker writes isParseOK/errorMsg without this mutex, so the two condition
+                    // checks could see different values, causing Push/Pop count mismatch.
+                    const bool hasParseError = !sndFileList[i]->isParseOK && !sndFileList[i]->errorMsg.empty();
+
+                    if (hasParseError)
                     {
                         // If parse failure (metadata), set row color to #f8748a
                         ImGui::TableSetBgColor(ImGuiTableBgTarget_RowBg0, IM_COL32(0xcc, 0x5f, 0x71, 127));
@@ -324,7 +328,7 @@ void ManifoldApp::UI_Files()
                         }
                     }
 
-                    if (!sndFileList[i]->isParseOK && !sndFileList[i]->errorMsg.empty())
+                    if (hasParseError)
                     {
                         // Remember to pop style color first!
                         ImGui::PopStyleColor(2); // ImGuiCol_HeaderHovered
