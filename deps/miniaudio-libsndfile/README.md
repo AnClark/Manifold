@@ -29,9 +29,9 @@ For the full list see the [libsndfile documentation](https://libsndfile.github.i
 ## Files
 
 ```
-MY_DECODER/
+miniaudio-libsndfile/
 ├── miniaudio_libsndfile.h   # Public API and struct declaration
-└── miniaudio_libsndfile.c   # Full implementation (include once in your project)
+└── miniaudio_libsndfile.c   # Full implementation (include once in your project, or simply add it to your build system)
 ```
 
 ---
@@ -41,6 +41,9 @@ MY_DECODER/
 - **miniaudio** ≥ 0.11 (single-header or split build)
 - **libsndfile** ≥ 1.0 — install via your system package manager:
   ```sh
+  # Arch Linux
+  sudo pacman -Sy libsndfile
+
   # Debian / Ubuntu
   sudo apt install libsndfile1-dev
 
@@ -256,7 +259,7 @@ extern ma_decoding_backend_vtable* ma_decoding_backend_libsndfile;
 ```
 MIT License
 
-Copyright (c) 2026
+Copyright (c) 2026 AnClark Liu
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
