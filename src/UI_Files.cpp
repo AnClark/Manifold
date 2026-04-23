@@ -56,6 +56,14 @@ void ManifoldApp::UI_Files()
 
         // Transport control
         ImGui::BeginDisabled(!currentPlayingFile);
+        if (ImGui::Button((!currentPlayingFile || audioPlayer.checkPlaying()) ? "Pause" : "Resume", ImVec2(60, 0)))
+        {
+            if (audioPlayer.checkPlaying())
+                audioPlayer.pause();
+            else
+                audioPlayer.play();
+        }
+        ImGui::SameLine();
         if (ImGui::Button("Stop"))
         {
             audioPlayer.stop();
