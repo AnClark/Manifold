@@ -2,6 +2,21 @@
 
 #include <filesystem>
 
+#include "miniaudio_libsndfile.h"
+
+AudioPlayer::AudioPlayer() : isFileLoaded(false), isDeviceInitialized(false), isPlaying(false)
+{
+    // Register custom backend based on libsndfile.
+    // Configure backend list
+    pBackends = { ma_decoding_backend_libsndfile };
+    
+    // Configure decoder to use the custom backend list.
+    decoderConfig = ma_decoder_config_init_default();
+    decoderConfig.pCustomBackendUserData = nullptr; // Optional user data for custom backends, not used in this example.
+    decoderConfig.ppCustomBackendVTables = pBackends.data();
+    decoderConfig.customBackendCount    = static_cast<ma_uint32>(pBackends.size());
+}
+
 void AudioPlayer::loadAudioFile(const char* fileName)
 {
     // Stop previous playback and unload previous file if any
@@ -15,9 +30,9 @@ void AudioPlayer::loadAudioFile(const char* fileName)
     // open UTF-8 paths with CJK/non-ASCII characters. Convert to wchar_t* and use the
     // wide-char variant instead.
     std::wstring wPath = std::filesystem::u8path(fileName).wstring();
-    result = ma_decoder_init_file_w(wPath.c_str(), NULL, &decoder);
+    result = ma_decoder_init_file_w(wPath.c_str(), &decoderConfig, &decoder);
 #else
-    result = ma_decoder_init_file(fileName, NULL, &decoder);
+    result = ma_decoder_init_file(fileName, &decoderConfig, &decoder);
 #endif
     if (result != MA_SUCCESS) {
         errorMsg = std::string("Could not load file: ") + fileName + "\n";

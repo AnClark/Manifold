@@ -2,11 +2,12 @@
 
 #include "miniaudio.h"
 #include <string>
+#include <array>
 
 class AudioPlayer
 {
 public:
-    AudioPlayer() : isFileLoaded(false), isDeviceInitialized(false), isPlaying(false) {}
+    AudioPlayer();
     ~AudioPlayer()
     {
         cleanUp();
@@ -34,6 +35,9 @@ private:
     ma_decoder decoder;
     ma_device_config deviceConfig;
     ma_device device;
+
+    std::array<ma_decoding_backend_vtable*, 1> pBackends;
+    ma_decoder_config decoderConfig;
 
     std::string errorMsg;
 };
