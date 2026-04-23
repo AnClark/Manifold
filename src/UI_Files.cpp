@@ -41,7 +41,7 @@ void ManifoldApp::UI_Files()
 
                 audioPlayer.loadAudioFile(currentPlayingFile->fileName.c_str());
                 audioPlayer.initDevice();
-                audioPlayer.play();                
+                audioPlayer.play();
             }
 
         }
@@ -51,6 +51,17 @@ void ManifoldApp::UI_Files()
             ImGui::SameLine();
             ImGui::Text("%s", audioPlayer.getErrorMsg());
         }
+
+        ImGui::SameLine();
+
+        // Transport control
+        ImGui::BeginDisabled(!currentPlayingFile);
+        if (ImGui::Button("Stop"))
+        {
+            audioPlayer.stop();
+            currentPlayingFile.reset(); // reset currentPlayingFile to nullptr after stopping playback to avoid dangling pointer
+        }
+        ImGui::EndDisabled();
 
         ImGui::SameLine();
 
