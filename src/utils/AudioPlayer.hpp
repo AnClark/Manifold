@@ -24,6 +24,8 @@ public:
     void pause();
     void stop();
 
+    bool checkPlaying() const { return isPlaying; }
+
     static void audioDataCallback(ma_device* pDevice, void* pOutput, const void* pInput, ma_uint32 frameCount);
 
 private:
