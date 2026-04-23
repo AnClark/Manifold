@@ -36,7 +36,8 @@ void AudioPlayer::loadAudioFile(const char* fileName)
 
 void AudioPlayer::cleanUp()
 {
-    errorMsg.clear();
+    // Do not clear error message here, so users can know what happened when error occurs (if initDevice() or play() fails).
+    // errorMsg.clear();
 
     if (isPlaybackActive)
     {
