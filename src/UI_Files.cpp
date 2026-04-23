@@ -40,6 +40,7 @@ void ManifoldApp::UI_Files()
                 currentPlayingFile = sndFileList[lastClickedIndex];
 
                 audioPlayer.loadAudioFile(currentPlayingFile->fileName.c_str());
+                audioPlayer.initDevice();
                 audioPlayer.play();                
             }
 

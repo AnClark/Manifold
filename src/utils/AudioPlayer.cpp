@@ -5,7 +5,7 @@
 void AudioPlayer::loadAudioFile(const char* fileName)
 {
     // Stop previous playback and unload previous file if any
-    if (isFileLoaded || isPlaybackActive)
+    if (isFileLoaded || isDeviceInitialized || isPlaying)
         cleanUp();
 
     errorMsg.clear();
@@ -39,10 +39,11 @@ void AudioPlayer::cleanUp()
     // Do not clear error message here, so users can know what happened when error occurs (if initDevice() or play() fails).
     // errorMsg.clear();
 
-    if (isPlaybackActive)
+    if (isDeviceInitialized || isPlaying)
     {
         ma_device_uninit(&device);
-        isPlaybackActive = false;
+        isPlaying = false;
+        isDeviceInitialized = false;
     }
 
     if (isFileLoaded)
@@ -52,7 +53,7 @@ void AudioPlayer::cleanUp()
     }
 }
 
-void AudioPlayer::play()
+void AudioPlayer::initDevice()
 {
     if (!isFileLoaded)
         // Do not clear error message here, so users can know what happened on loadAudioFile().
@@ -62,18 +63,50 @@ void AudioPlayer::play()
 
     if (ma_device_init(NULL, &deviceConfig, &device) != MA_SUCCESS) {
         errorMsg = "Failed to open playback device.";
-        ma_decoder_uninit(&decoder);
+        cleanUp();
         return;
     }
+
+    isDeviceInitialized = true;
+}
+
+void AudioPlayer::play()
+{
+    if (!isFileLoaded || !isDeviceInitialized || isPlaying)
+        // Do not clear error message here, so users can know what happened on loadAudioFile().
+        return;
+
+    errorMsg.clear();
 
     if (ma_device_start(&device) != MA_SUCCESS) {
         errorMsg = "Failed to start playback device.";
-        ma_device_uninit(&device);
-        ma_decoder_uninit(&decoder);
+        cleanUp();
         return;
     }
 
-    isPlaybackActive = true;
+    isPlaying = true;
+}
+
+void AudioPlayer::pause()
+{
+    if (!isFileLoaded || !isDeviceInitialized || !isPlaying)
+        return;
+
+    errorMsg.clear();
+
+    if (ma_device_stop(&device) != MA_SUCCESS) {
+        errorMsg = "Failed to stop playback device.";
+        cleanUp();
+        return;
+    }
+
+    isPlaying = false;
+}
+
+void AudioPlayer::stop()
+{
+    errorMsg.clear();
+    cleanUp();
 }
 
 void AudioPlayer::audioDataCallback(ma_device* pDevice, void* pOutput, const void* pInput, ma_uint32 frameCount)

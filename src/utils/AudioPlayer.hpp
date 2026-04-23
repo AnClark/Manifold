@@ -6,7 +6,7 @@
 class AudioPlayer
 {
 public:
-    AudioPlayer() : isFileLoaded(false), isPlaybackActive(false) {}
+    AudioPlayer() : isFileLoaded(false), isDeviceInitialized(false), isPlaying(false) {}
     ~AudioPlayer()
     {
         cleanUp();
@@ -18,13 +18,17 @@ public:
     const char* getErrorMsg() { return errorMsg.c_str(); }
     bool hasError() { return !errorMsg.empty(); }
 
+    void initDevice();
     void play();
+    void pause();
+    void stop();
 
     static void audioDataCallback(ma_device* pDevice, void* pOutput, const void* pInput, ma_uint32 frameCount);
 
 private:
     bool isFileLoaded;
-    bool isPlaybackActive;
+    bool isDeviceInitialized;
+    bool isPlaying;
 
     ma_result result;
     ma_decoder decoder;
