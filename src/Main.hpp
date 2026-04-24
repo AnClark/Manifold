@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Application.hpp"
-#include "Structures.hpp"
+#include "base/SndFileInfo.hpp"
 #include "workers/DcOffsetWorker.hpp"
 #include "workers/EBUR128Worker.hpp"
 #include "workers/SndFileWorker.hpp"
