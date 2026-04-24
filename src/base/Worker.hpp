@@ -6,7 +6,7 @@
 #include <thread>
 #include <atomic>
 
-#include "Structures.hpp"
+#include "SndFileInfo.hpp"
 
 // 所有 Worker 的抽象基类
 // 封装了：任务队列、线程生命周期、取消机制
