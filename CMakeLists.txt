@@ -38,6 +38,7 @@ include_directories (
     deps/libebur128/ebur128
     deps/miniaudio
     deps/miniaudio-libsndfile
+    deps/r8brain
 )
 
 # Load pkg-config for finding dependencies, and let it prefer finding static libraries
@@ -95,6 +96,17 @@ target_sources (${PROJECT_NAME} PRIVATE deps/miniaudio/miniaudio_impl.cpp)
 # miniaudio custom decoder (libsndfile)
 add_library (miniaudio_libsndfile STATIC deps/miniaudio-libsndfile/miniaudio_libsndfile.c)
 target_link_libraries (${PROJECT_NAME} PRIVATE miniaudio_libsndfile)
+
+# r8brain-free-src (high-quality resampler)
+#
+# Core is **header-only**; only the PFFFT_DOUBLE backend needs a compiled .c file.
+# R8B_PFFFT_DOUBLE: double-precision PFFFT — same quality as default Ooura FFT,
+# but faster (uses SSE2/AVX/NEON intrinsics where available).
+add_library (r8brain_pffft_backend STATIC deps/r8brain/fft/pffft_double.c)
+target_include_directories (r8brain_pffft_backend PRIVATE deps/r8brain deps/r8brain/fft)
+target_compile_definitions (r8brain_pffft_backend PRIVATE R8B_PFFFT_DOUBLE=1)
+
+target_link_libraries (${PROJECT_NAME} PRIVATE r8brain_pffft_backend)
 
 #
 # Link Against Libraries
