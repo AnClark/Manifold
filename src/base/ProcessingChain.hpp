@@ -15,6 +15,9 @@ public:
         }
     }
 
+    size_t processorCount() { return _chain.size(); }
+    bool isChainEmpty() { return _chain.empty(); }
+
 private:
     std::vector<std::unique_ptr<IAudioProcessor>> _chain;
 };
