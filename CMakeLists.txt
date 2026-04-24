@@ -59,6 +59,8 @@ add_executable (${PROJECT_NAME} WIN32
     src/utils/AudioPlayer.cpp
     src/UI_Files.cpp
     src/base/ProcessorRegistry.cpp
+    src/processors/LoudnessNormalizeProcessor.cpp
+    src/processors/TruePeakLimiterProcessor.cpp
 )
 
 #
