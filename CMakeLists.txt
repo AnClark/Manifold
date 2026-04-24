@@ -52,6 +52,7 @@ add_executable (${PROJECT_NAME} WIN32
     ${SRC_IMGUI}
     deps/imgui-application/Application.cpp
     src/Main.cpp
+    src/base/Worker.cpp
     src/workers/SndFileWorker.cpp
     src/workers/EBUR128Worker.cpp
     src/workers/DcOffsetWorker.cpp

@@ -2,35 +2,7 @@
 
 #include <cmath>
 
-void DcOffsetWorker::dcOffsetWorkerMainFunction(DcOffsetWorker *workerInstance)
-{
-    while (true)
-    {
-        std::shared_ptr<SndFileInfo> currentFile;
-
-        {
-            std::unique_lock<std::mutex> lock(workerInstance->pendingFileListMutex);
-
-            workerInstance->cv.wait(lock, [&] {
-                return workerInstance->shouldExit || !workerInstance->pendingFileList.empty();
-            });
-
-            if (workerInstance->shouldExit)
-                return;
-
-            currentFile = workerInstance->pendingFileList.front();
-            workerInstance->pendingFileList.pop();
-        }
-
-        if (currentFile     // File handle is valid
-            && !currentFile->aboutToBeRemoved  // Current file info will be removed from sndFileList
-            && !workerInstance->shouldCancelProcessing  // Program is terminating, should not continue processing
-        )
-            workerInstance->calcDcOffset(currentFile);
-    }
-}
-
-void DcOffsetWorker::calcDcOffset(std::shared_ptr<SndFileInfo> fileInfoInstance)
+void DcOffsetWorker::processItem(std::shared_ptr<SndFileInfo> fileInfoInstance)
 {
     if (!fileInfoInstance || fileInfoInstance->aboutToBeRemoved || shouldCancelProcessing)
         return;
