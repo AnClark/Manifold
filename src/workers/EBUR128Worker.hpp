@@ -1,56 +1,9 @@
 #pragma once
 
-#include <condition_variable>
-#include <memory>
-#include <mutex>
-#include <thread>
-#include <atomic>
+#include "base/Worker.hpp"
 
-#include "Structures.hpp"
-
-class EBUR128Worker
+class EBUR128Worker : public IWorker
 {
-public:
-    EBUR128Worker() : shouldExit(false), shouldCancelProcessing(false)
-    {
-        ebur128WorkerThread = std::thread(EBUR128Worker::ebur128WorkerMainFunction, this);
-    }
-    ~EBUR128Worker()
-    {
-        {
-            std::scoped_lock<std::mutex> lock(pendingFileListMutex);
-            shouldExit = true;
-        }
-        cv.notify_one();
-        if (ebur128WorkerThread.joinable())
-            ebur128WorkerThread.join();
-    }
-
-    void addFile(std::shared_ptr<SndFileInfo> fileInfoInstance)
-    {
-        {
-            std::scoped_lock<std::mutex> scopedLock(pendingFileListMutex);
-            pendingFileList.push(std::move(fileInfoInstance));
-        }
-        cv.notify_one();
-    }
-
-    void requestCancelProcessing(bool request = true)
-    {
-        shouldCancelProcessing = request;
-    }
-
-    static void ebur128WorkerMainFunction(EBUR128Worker *workerInstance);
-
 protected:
-    void processFile(std::shared_ptr<SndFileInfo> fileInfoInstance);
-
-private:
-    PendingSndFileQueue pendingFileList;
-
-    std::atomic<bool> shouldExit;   // Request exiting thread
-    std::atomic<bool> shouldCancelProcessing;   // Request cancel current processFile() action (invoked by ManifoldApp::onTerminate())
-    std::thread ebur128WorkerThread;
-    std::mutex pendingFileListMutex;
-    std::condition_variable cv;
+    void processItem(std::shared_ptr<SndFileInfo> fileInfoInstance) override;
 };
