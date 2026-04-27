@@ -140,3 +140,40 @@ target_link_libraries (${PROJECT_NAME} PRIVATE ${GL_LIBRARY} PkgConfig::GLFW3 ${
 # Find libsndfile and its dependencies
 pkg_check_modules(SNDFILE REQUIRED IMPORTED_TARGET sndfile)
 target_link_libraries (${PROJECT_NAME} PUBLIC PkgConfig::SNDFILE)
+
+# ===========================================================================
+# manifold_pipeline_test — Node-based pipeline prototype
+# ===========================================================================
+
+set (PIPELINE_SOURCES
+    src/pipeline/ChainEngine.cpp
+    src/pipeline/nodes/FileSourceNode.cpp
+    src/pipeline/nodes/OutputSinkNode.cpp
+    src/pipeline/nodes/ResamplerNode.cpp
+    src/pipeline/nodes/LoudnessAnalyzerNode.cpp
+    src/pipeline/nodes/DSPNode.cpp
+    src/pipeline/nodes/PrintInfoNode.cpp
+    src/base/ProcessorRegistry.cpp
+    src/processors/LoudnessNormalizeProcessor.cpp
+    src/processors/TruePeakLimiterProcessor.cpp
+)
+
+add_executable (manifold_pipeline_test
+    test/pipeline_test.cpp
+    ${PIPELINE_SOURCES}
+)
+
+target_compile_definitions (manifold_pipeline_test PRIVATE R8B_PFFFT_DOUBLE=1)
+
+target_include_directories (manifold_pipeline_test PRIVATE
+    src
+    deps/r8brain
+    deps/r8brain/fft
+    deps/libebur128/ebur128
+)
+
+target_link_libraries (manifold_pipeline_test PRIVATE
+    r8brain_pffft_backend
+    ebur128
+    PkgConfig::SNDFILE
+)

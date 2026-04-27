@@ -1,0 +1,119 @@
+#include "ChainEngine.hpp"
+
+#include <iostream>
+#include <stdexcept>
+
+ChainEngine::ChainEngine(std::vector<std::unique_ptr<Node>> nodes)
+    : nodes_(std::move(nodes))
+{
+    validateChain();
+}
+
+void ChainEngine::validateChain() const
+{
+    size_t i = 0;
+    while (i < nodes_.size()) {
+        const Node* n = nodes_[i].get();
+
+        if (dynamic_cast<const SourceNode*>(n)) {
+            // Expect zero or more StreamProcessorNodes, then exactly one StreamSinkNode
+            i++;
+            while (i < nodes_.size() &&
+                   dynamic_cast<const StreamProcessorNode*>(nodes_[i].get()) &&
+                   !dynamic_cast<const StreamSinkNode*>(nodes_[i].get())) {
+                i++;
+            }
+            if (i >= nodes_.size() || !dynamic_cast<const StreamSinkNode*>(nodes_[i].get())) {
+                throw std::runtime_error(
+                    "ChainEngine: stream segment starting with SourceNode has no terminating StreamSinkNode");
+            }
+            i++;  // consume the sink
+        } else if (dynamic_cast<const AtomicNode*>(n)) {
+            i++;
+        } else {
+            throw std::runtime_error(
+                "ChainEngine: node '" + n->name() +
+                "' at chain root must be a SourceNode or AtomicNode");
+        }
+    }
+}
+
+void ChainEngine::executeFor(const std::filesystem::path& input,
+                             const std::filesystem::path& outputDir)
+{
+    NodeContext ctx;
+    ctx.sourcePath = input;
+    ctx.outputDir  = outputDir;
+
+    size_t i = 0;
+    while (i < nodes_.size()) {
+        Node* n = nodes_[i].get();
+
+        // NOTE: "dynamic_cast" is used here to determine the node type at runtime.
+        //       It returns nullptr if the cast fails, allowing us to safely check the node type.
+        if (auto* src = dynamic_cast<SourceNode*>(n)) {
+            // Build the stream pipeline for this file
+            auto stream = src->create(ctx);
+            i++;
+
+            // Wrap through each StreamProcessorNode
+            while (i < nodes_.size()) {
+                // NOTE: The first "if" statement conforms to C++17's "if with initializer" syntax,
+                //       allowing us to declare and initialize "proc" within the statement, just like "for" loops.
+                if (auto* proc = dynamic_cast<StreamProcessorNode*>(nodes_[i].get());
+                    proc && !dynamic_cast<StreamSinkNode*>(nodes_[i].get())) {
+                    stream = proc->wrap(std::move(stream), ctx);
+                    i++;
+                } else if (auto* sink = dynamic_cast<StreamSinkNode*>(nodes_[i].get())) {
+                    sink->consume(std::move(stream), ctx);
+                    i++;
+                    break;
+                } else {
+                    // Non-stream node encountered — close the segment
+                    break;
+                }
+            }
+        } else if (auto* atomic = dynamic_cast<AtomicNode*>(n)) {
+            atomic->execute(ctx);
+            i++;
+        } else {
+            std::cerr << "[ChainEngine] Skipping unknown node type: " << n->name() << "\n";
+            i++;
+        }
+    }
+}
+
+void ChainEngine::processFile(const std::filesystem::path& input,
+                               const std::filesystem::path& outputDir)
+{
+    try {
+        executeFor(input, outputDir);
+    } catch (const std::exception& e) {
+        std::cerr << "[ChainEngine] Error processing '" << input.string()
+                  << "': " << e.what() << "\n";
+    }
+}
+
+void ChainEngine::processBatch(const std::vector<std::filesystem::path>& inputs,
+                                const std::filesystem::path& outputDir)
+{
+    for (const auto& input : inputs) {
+        processFile(input, outputDir);
+    }
+}
+
+void ChainEngine::processFile(const SndFileInfo& info,
+                               const std::filesystem::path& outputDir)
+{
+    processFile(std::filesystem::path(info.fileName), outputDir);
+}
+
+void ChainEngine::processBatch(const SndFileList& inputs,
+                                const std::filesystem::path& outputDir)
+{
+    for (const auto& info : inputs) {
+        if (info) {
+            processFile(*info, outputDir);
+        }
+    }
+}
