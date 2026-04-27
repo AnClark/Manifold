@@ -1,5 +1,7 @@
 #include "DcOffsetWorker.hpp"
 
+#include "utils/SfOpenUtf8.hpp"
+
 #include <cmath>
 
 void DcOffsetWorker::processItem(std::shared_ptr<SndFileInfo> fileInfoInstance)
@@ -14,16 +16,7 @@ void DcOffsetWorker::processItem(std::shared_ptr<SndFileInfo> fileInfoInstance)
     fileInfoInstance->errorMsgDcOffset.clear();
 
     /* 1. 打开音频文件 */
-#ifdef _WIN32
-        // UTF-8 转 UTF-16 (Windows 宽字符)
-        int wlen = MultiByteToWideChar(CP_UTF8, 0, fileInfoInstance->fileName.c_str(), -1, nullptr, 0);
-        std::wstring wpath(wlen - 1, 0);
-        MultiByteToWideChar(CP_UTF8, 0, fileInfoInstance->fileName.c_str(), -1, &wpath[0], wlen);
-        
-        file = sf_wchar_open(wpath.c_str(), SFM_READ, &fileInfo);
-#else
-        file = sf_open(fileInfoInstance->fileName.c_str(), SFM_READ, &fileInfo);
-#endif
+    file = SfOpenUtf8(fileInfoInstance->fileName, SFM_READ, &fileInfo);
     if (!file) {
         fileInfoInstance->errorMsgDcOffset = "Cannot open file";
         fileInfoInstance->errorMsgDcOffset += fileInfoInstance->fileName;

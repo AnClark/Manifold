@@ -54,9 +54,9 @@ int main(int argc, char* argv[])
     auto fileSource = std::make_unique<FileSourceNode>();
     fileSource->init({});
 
-    // 2. ResamplerNode — target 48 kHz, r8brain backend
+    // 2. ResamplerNode — target is customizable, r8brain backend
     auto resampler = std::make_unique<ResamplerNode>();
-    resampler->init({{"rate", "48000"}, {"backend", "r8brain"}});
+    resampler->init({{"rate", "192000"}, {"backend", "r8brain"}});
 
     // 3. DSPNode — looked up by registry ID, no concrete class include needed.
     //    Any processor added via REGISTER_PROCESSOR can be referenced this way.

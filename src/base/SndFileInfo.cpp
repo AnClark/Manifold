@@ -1,4 +1,5 @@
 #include "SndFileInfo.hpp"
+#include "utils/SfOpenUtf8.hpp"
 
 void SndFileInfo::parseSndFile()
 {
@@ -7,16 +8,7 @@ void SndFileInfo::parseSndFile()
     handle = nullptr;
     errorMsg.clear();
 
-#ifdef _WIN32
-    // UTF-8 转 UTF-16 (Windows 宽字符)
-    int wlen = MultiByteToWideChar(CP_UTF8, 0, fileName.c_str(), -1, nullptr, 0);
-    std::wstring wpath(wlen - 1, 0);
-    MultiByteToWideChar(CP_UTF8, 0, fileName.c_str(), -1, &wpath[0], wlen);
-    
-    handle = sf_wchar_open(wpath.c_str(), SFM_READ, &info);
-#else
-    handle = sf_open(fileName.c_str(), SFM_READ, &info);
-#endif
+    handle = SfOpenUtf8(fileName, SFM_READ, &info);
 
     if (handle == nullptr)
     {
