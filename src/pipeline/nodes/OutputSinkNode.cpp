@@ -87,11 +87,13 @@ void OutputSinkNode::consume(std::unique_ptr<AudioStream> stream, NodeContext& c
 
     // Build output path: <outputDir>/<stem>_out.<ext>
     // TODO: Allow applying user's own wildcard
+    // u8string() ensures the stem is returned as UTF-8 on all platforms
+    // (path::string() would return the current ANSI code page on Windows).
     std::string outPath =
-        ctx.outputDir + "/" + (std::filesystem::path(ctx.sourcePath).stem().string() + "_out." + ext);
+        ctx.outputDir + "/" + (std::filesystem::u8path(ctx.sourcePath).stem().u8string() + "_out." + ext);
 
     // Ensure output directory exists
-    std::filesystem::create_directories(ctx.outputDir);
+    std::filesystem::create_directories(std::filesystem::u8path(ctx.outputDir));
 
     SF_INFO outInfo   = {};
     outInfo.samplerate = static_cast<int>(fmt.sampleRate);
