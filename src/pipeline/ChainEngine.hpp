@@ -32,20 +32,20 @@ public:
     explicit ChainEngine(std::vector<std::unique_ptr<Node>> nodes);
 
     /** @brief Process a single file through the chain. Errors are caught and logged. */
-    void processFile(const std::filesystem::path& input,
-                     const std::filesystem::path& outputDir);
+    void processFile(const std::string& input,
+                     const std::string& outputDir);
 
     /** @brief Overload: resolve path from SndFileInfo::fileName. */
     void processFile(const SndFileInfo& info,
-                     const std::filesystem::path& outputDir);
+                     const std::string& outputDir);
 
     /** @brief Process multiple files sequentially. */
-    void processBatch(const std::vector<std::filesystem::path>& inputs,
-                      const std::filesystem::path& outputDir);
+    void processBatch(const std::vector<std::string>& inputs,
+                      const std::string& outputDir);
 
     /** @brief Overload: process a SndFileList sequentially. */
     void processBatch(const SndFileList& inputs,
-                      const std::filesystem::path& outputDir);
+                      const std::string& outputDir);
 
 private:
     std::vector<std::unique_ptr<Node>> nodes_;
@@ -54,6 +54,6 @@ private:
     void validateChain() const;
 
     /** @brief Core per-file execution (propagates exceptions). */
-    void executeFor(const std::filesystem::path& input,
-                    const std::filesystem::path& outputDir);
+    void executeFor(const std::string& input,
+                    const std::string& outputDir);
 };

@@ -1,4 +1,5 @@
 #include "OutputSinkNode.hpp"
+#include "utils/SfOpenUtf8.hpp"
 
 #include <algorithm>
 #include <cctype>
@@ -85,8 +86,9 @@ void OutputSinkNode::consume(std::unique_ptr<AudioStream> stream, NodeContext& c
     std::string ext = extension(formatStr_);
 
     // Build output path: <outputDir>/<stem>_out.<ext>
-    std::filesystem::path outPath =
-        ctx.outputDir / (ctx.sourcePath.stem().string() + "_out." + ext);
+    // TODO: Allow applying user's own wildcard
+    std::string outPath =
+        ctx.outputDir + "/" + (std::filesystem::path(ctx.sourcePath).stem().string() + "_out." + ext);
 
     // Ensure output directory exists
     std::filesystem::create_directories(ctx.outputDir);
@@ -102,10 +104,10 @@ void OutputSinkNode::consume(std::unique_ptr<AudioStream> stream, NodeContext& c
             formatStr_ + "'");
     }
 
-    SNDFILE* outSf = sf_open(outPath.c_str(), SFM_WRITE, &outInfo);
+    SNDFILE* outSf = SfOpenUtf8(outPath.c_str(), SFM_WRITE, &outInfo);
     if (!outSf) {
         throw std::runtime_error(
-            "OutputSinkNode: cannot open output '" + outPath.string() +
+            "OutputSinkNode: cannot open output '" + outPath +
             "': " + sf_strerror(nullptr));
     }
 

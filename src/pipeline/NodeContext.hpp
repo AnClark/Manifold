@@ -23,9 +23,9 @@ public:
     // --------------------------------------------------------------------------
     // Path metadata
 
-    std::filesystem::path sourcePath;       ///< Original input file
-    std::filesystem::path outputDir;        ///< Requested output directory
-    std::filesystem::path currentFilePath;  ///< Set by Sink/Atomic nodes; read by downstream
+    std::string sourcePath;       ///< Original input file
+    std::string outputDir;        ///< Requested output directory
+    std::string currentFilePath;  ///< Set by Sink/Atomic nodes; read by downstream
 
     // --------------------------------------------------------------------------
     // Source audio format (populated by FileSourceNode::create)

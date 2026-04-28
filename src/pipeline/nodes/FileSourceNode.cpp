@@ -1,4 +1,5 @@
 #include "FileSourceNode.hpp"
+#include "utils/SfOpenUtf8.hpp"
 
 #include <stdexcept>
 
@@ -30,10 +31,10 @@ size_t AudioFileStream::read(float* buffer, size_t frames)
 std::unique_ptr<AudioStream> FileSourceNode::create(NodeContext& ctx)
 {
     SF_INFO info = {};
-    SNDFILE* sf = sf_open(ctx.sourcePath.c_str(), SFM_READ, &info);
+    SNDFILE* sf = SfOpenUtf8(ctx.sourcePath.c_str(), SFM_READ, &info);
     if (!sf) {
         throw std::runtime_error(
-            "FileSourceNode: cannot open '" + ctx.sourcePath.string() +
+            "FileSourceNode: cannot open '" + ctx.sourcePath +
             "': " + sf_strerror(nullptr));
     }
 

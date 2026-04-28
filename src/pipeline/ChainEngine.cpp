@@ -38,8 +38,8 @@ void ChainEngine::validateChain() const
     }
 }
 
-void ChainEngine::executeFor(const std::filesystem::path& input,
-                             const std::filesystem::path& outputDir)
+void ChainEngine::executeFor(const std::string& input,
+                             const std::string& outputDir)
 {
     NodeContext ctx;
     ctx.sourcePath = input;
@@ -83,19 +83,19 @@ void ChainEngine::executeFor(const std::filesystem::path& input,
     }
 }
 
-void ChainEngine::processFile(const std::filesystem::path& input,
-                               const std::filesystem::path& outputDir)
+void ChainEngine::processFile(const std::string& input,
+                               const std::string& outputDir)
 {
     try {
         executeFor(input, outputDir);
     } catch (const std::exception& e) {
-        std::cerr << "[ChainEngine] Error processing '" << input.string()
+        std::cerr << "[ChainEngine] Error processing '" << input
                   << "': " << e.what() << "\n";
     }
 }
 
-void ChainEngine::processBatch(const std::vector<std::filesystem::path>& inputs,
-                                const std::filesystem::path& outputDir)
+void ChainEngine::processBatch(const std::vector<std::string>& inputs,
+                                const std::string& outputDir)
 {
     for (const auto& input : inputs) {
         processFile(input, outputDir);
@@ -103,13 +103,13 @@ void ChainEngine::processBatch(const std::vector<std::filesystem::path>& inputs,
 }
 
 void ChainEngine::processFile(const SndFileInfo& info,
-                               const std::filesystem::path& outputDir)
+                               const std::string& outputDir)
 {
-    processFile(std::filesystem::path(info.fileName), outputDir);
+    processFile(std::string(info.fileName), outputDir);
 }
 
 void ChainEngine::processBatch(const SndFileList& inputs,
-                                const std::filesystem::path& outputDir)
+                                const std::string& outputDir)
 {
     for (const auto& info : inputs) {
         if (info) {

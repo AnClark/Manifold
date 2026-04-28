@@ -6,9 +6,9 @@
 void PrintInfoNode::execute(NodeContext& ctx)
 {
     std::cout << "------------------------------------------------------------\n";
-    std::cout << "Source  : " << ctx.sourcePath.string() << "\n";
+    std::cout << "Source  : " << ctx.sourcePath << "\n";
     std::cout << "Output  : "
-              << (ctx.currentFilePath.empty() ? "(none)" : ctx.currentFilePath.string())
+              << (ctx.currentFilePath.empty() ? "(none)" : ctx.currentFilePath)
               << "\n";
 
     std::cout << "Format  : "
