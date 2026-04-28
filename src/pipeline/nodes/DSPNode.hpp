@@ -36,6 +36,22 @@ public:
      */
     explicit DSPNode(ProcessorFactory factory, std::string nodeName = "DSP");
 
+    /**
+     * @brief Convenience helper: returns a factory that constructs processor type T.
+     *
+     * Eliminates the boilerplate lambda in every DSPNode subclass constructor:
+     * @code
+     * // Before:
+     * MyNode::MyNode() : DSPNode([]{ return std::make_unique<MyProcessor>(); }, "My") {}
+     * // After:
+     * MyNode::MyNode() : DSPNode(DSPNode::factoryFor<MyProcessor>(), "My") {}
+     * @endcode
+     */
+    template<typename T>
+    static ProcessorFactory factoryFor() {
+        return [] { return std::make_unique<T>(); };
+    }
+
     std::string name() const override { return nodeName_; }
     void init(const std::unordered_map<std::string, std::string>& params) override;
 

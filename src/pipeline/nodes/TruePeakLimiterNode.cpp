@@ -11,8 +11,7 @@ REGISTER_NODE(
     NodeRole::StreamProcessor);
 
 TruePeakLimiterNode::TruePeakLimiterNode()
-    : DSPNode([] { return std::make_unique<TruePeakLimiterProcessor>(); },
-              "TruePeakLimiter")
+    : DSPNode(DSPNode::factoryFor<TruePeakLimiterProcessor>(), "TruePeakLimiter")
 {}
 
 void TruePeakLimiterNode::configureProcessor(IAudioProcessor& proc, NodeContext& ctx)
