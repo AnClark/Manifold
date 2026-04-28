@@ -63,9 +63,12 @@ add_executable (${PROJECT_NAME} WIN32
     src/UI_Actions.cpp
     src/processors/LoudnessNormalizeProcessor.cpp
     src/processors/TruePeakLimiterProcessor.cpp
+    src/pipeline/NodeRegistry.cpp
     src/pipeline/nodes/DSPNode.cpp
     src/pipeline/nodes/LoudnessNormalizeNode.cpp
     src/pipeline/nodes/TruePeakLimiterNode.cpp
+    src/pipeline/nodes/ResamplerNode.cpp
+    src/pipeline/nodes/LoudnessAnalyzerNode.cpp
 )
 
 #
@@ -115,6 +118,7 @@ target_include_directories (r8brain_pffft_backend PRIVATE deps/r8brain deps/r8br
 target_compile_definitions (r8brain_pffft_backend PRIVATE R8B_PFFFT_DOUBLE=1)
 
 target_link_libraries (${PROJECT_NAME} PRIVATE r8brain_pffft_backend)
+target_compile_definitions (${PROJECT_NAME} PRIVATE R8B_PFFFT_DOUBLE=1)
 
 #
 # Link Against Libraries
@@ -149,6 +153,7 @@ target_link_libraries (${PROJECT_NAME} PUBLIC PkgConfig::SNDFILE)
 # ===========================================================================
 
 set (PIPELINE_SOURCES
+    src/pipeline/NodeRegistry.cpp
     src/pipeline/ChainEngine.cpp
     src/pipeline/nodes/FileSourceNode.cpp
     src/pipeline/nodes/OutputSinkNode.cpp

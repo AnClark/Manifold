@@ -1,5 +1,14 @@
 #include "TruePeakLimiterNode.hpp"
 #include "processors/TruePeakLimiterProcessor.hpp"
+#include "pipeline/NodeRegistry.hpp"
+
+REGISTER_NODE(
+    TruePeakLimiterNode,
+    "true_peak_limiter",
+    "True Peak Limiter",
+    "Attenuates the signal so that the 4x oversampled True Peak does not exceed the configured ceiling (dBTP).",
+    "Dynamics",
+    NodeRole::StreamProcessor);
 
 TruePeakLimiterNode::TruePeakLimiterNode()
     : DSPNode([] { return std::make_unique<TruePeakLimiterProcessor>(); },

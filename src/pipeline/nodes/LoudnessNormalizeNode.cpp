@@ -1,5 +1,14 @@
 #include "LoudnessNormalizeNode.hpp"
 #include "processors/LoudnessNormalizeProcessor.hpp"
+#include "pipeline/NodeRegistry.hpp"
+
+REGISTER_NODE(
+    LoudnessNormalizeNode,
+    "loudness_normalize",
+    "Loudness Normalize",
+    "Normalizes integrated loudness (LUFS-I) to a target level with True Peak ceiling protection.",
+    "Dynamics",
+    NodeRole::StreamProcessor);
 
 LoudnessNormalizeNode::LoudnessNormalizeNode()
     : DSPNode([] { return std::make_unique<LoudnessNormalizeProcessor>(); },

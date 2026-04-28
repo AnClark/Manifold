@@ -1,4 +1,5 @@
 #include "ResamplerNode.hpp"
+#include "pipeline/NodeRegistry.hpp"
 
 // r8brain headers — included only in this translation unit
 #include "CDSPResampler.h"
@@ -8,6 +9,14 @@
 #include <cstring>
 #include <stdexcept>
 #include <vector>
+
+REGISTER_NODE(
+    ResamplerNode,
+    "resampler",
+    "Resampler",
+    "Converts the audio stream to a target sample rate using a high-quality linear-phase resampler.",
+    "Format",
+    NodeRole::StreamProcessor);
 
 // ============================================================================
 // R8BrainBackend::Impl
