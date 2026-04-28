@@ -2,6 +2,7 @@
 
 #include "Application.hpp"
 #include "base/SndFileInfo.hpp"
+#include "base/IAudioProcessor.hpp"
 #include "workers/DcOffsetWorker.hpp"
 #include "workers/EBUR128Worker.hpp"
 #include "workers/SndFileWorker.hpp"
@@ -27,6 +28,7 @@ protected:
     // UI Components
 
     void UI_Files();
+    void UI_Actions();
 
 private:
     SndFileList sndFileList;
@@ -43,4 +45,7 @@ private:
     std::shared_ptr<SndFileInfo> currentPlayingFile;  // 当前正在播放的文件路径
 
     std::string NFDLastError;   // TODO: Display error message on UI
+
+    std::vector<std::unique_ptr<IAudioProcessor>> processorList;    // For accessing processors' metadata
+    void _initProcessorList();
 };
