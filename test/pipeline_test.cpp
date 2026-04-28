@@ -30,18 +30,62 @@
 #include <memory>
 #include <vector>
 
+#ifdef _WIN32
+#include <windows.h>
+#include <shellapi.h>
+// Convert a UTF-16 wide string to a UTF-8 std::string.
+static std::string wideToUtf8(const wchar_t* ws)
+{
+    int len = WideCharToMultiByte(CP_UTF8, 0, ws, -1, nullptr, 0, nullptr, nullptr);
+    if (len <= 1) return {};
+    std::string s(len - 1, '\0');
+    WideCharToMultiByte(CP_UTF8, 0, ws, -1, &s[0], len, nullptr, nullptr);
+    return s;
+}
+#endif
+
+// Forward declaration — contains all pipeline logic.
+static int run(const std::string& inputFile, const std::string& outputDir);
+
 int main(int argc, char* argv[])
 {
+    // ---------------------------------------------------------------------------
+    // On Windows, argv[] is encoded with the current ANSI code page (e.g. GBK on
+    // Chinese Windows), which breaks std::filesystem::u8path() that expects UTF-8.
+    // We use GetCommandLineW() + CommandLineToArgvW() to obtain the real UTF-16
+    // command-line arguments and convert them to UTF-8 ourselves.
+    // This keeps main() as the entry point and works for both console and GUI
+    // subsystems (avoiding the wmain / WinMain linker ambiguity with MinGW).
+    // On Linux/macOS the locale is UTF-8, so argv[] is already correct.
+    // ---------------------------------------------------------------------------
+#ifdef _WIN32
+    int     wargc = 0;
+    wchar_t** wargv = CommandLineToArgvW(GetCommandLineW(), &wargc);
+    if (wargc < 2) {
+        std::cerr << "Usage: " << argv[0]
+                  << " <input_audio_file> [output_directory]\n";
+        LocalFree(wargv);
+        return 1;
+    }
+    const std::string inputFile = wideToUtf8(wargv[1]);
+    const std::string outputDir = wargc >= 3 ? wideToUtf8(wargv[2]) : "pipeline_out";
+    LocalFree(wargv);
+#else
     if (argc < 2) {
         std::cerr << "Usage: " << argv[0]
                   << " <input_audio_file> [output_directory]\n";
         return 1;
     }
+    const std::string inputFile = argv[1];
+    const std::string outputDir = argc >= 3 ? argv[2] : "pipeline_out";
+#endif
+    return run(inputFile, outputDir);
+}
 
-    const std::string inputFile  = argv[1];
-    const std::string outputDir  = argc >= 3 ? argv[2] : "pipeline_out";
-
-    if (!std::filesystem::exists(inputFile)) {
+static int run(const std::string& inputFile, const std::string& outputDir)
+{
+    // inputFile / outputDir are UTF-8 on all platforms at this point.
+    if (!std::filesystem::exists(std::filesystem::u8path(inputFile))) {
         std::cerr << "Error: input file not found: " << inputFile << "\n";
         return 1;
     }
