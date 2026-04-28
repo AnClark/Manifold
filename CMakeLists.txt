@@ -61,9 +61,11 @@ add_executable (${PROJECT_NAME} WIN32
     src/utils/AudioPlayer.cpp
     src/UI_Files.cpp
     src/UI_Actions.cpp
-    src/base/ProcessorRegistry.cpp
     src/processors/LoudnessNormalizeProcessor.cpp
     src/processors/TruePeakLimiterProcessor.cpp
+    src/pipeline/nodes/DSPNode.cpp
+    src/pipeline/nodes/LoudnessNormalizeNode.cpp
+    src/pipeline/nodes/TruePeakLimiterNode.cpp
 )
 
 #
@@ -154,7 +156,8 @@ set (PIPELINE_SOURCES
     src/pipeline/nodes/LoudnessAnalyzerNode.cpp
     src/pipeline/nodes/DSPNode.cpp
     src/pipeline/nodes/PrintInfoNode.cpp
-    src/base/ProcessorRegistry.cpp
+    src/pipeline/nodes/LoudnessNormalizeNode.cpp
+    src/pipeline/nodes/TruePeakLimiterNode.cpp
     src/processors/LoudnessNormalizeProcessor.cpp
     src/processors/TruePeakLimiterProcessor.cpp
 )

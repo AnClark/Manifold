@@ -1,5 +1,4 @@
 #include "TruePeakLimiterProcessor.hpp"
-#include "base/ProcessorRegistry.hpp"
 
 // Use the PFFFT double-precision FFT backend.
 // pffft_double.c is compiled into r8brain_pffft_backend and linked to this binary.
@@ -10,7 +9,6 @@
 #include <cmath>
 #include <vector>
 
-REGISTER_PROCESSOR(TruePeakLimiterProcessor, "true_peak_limiter")
 
 // ---------------------------------------------------------------------------
 

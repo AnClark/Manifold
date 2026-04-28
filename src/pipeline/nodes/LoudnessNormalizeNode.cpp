@@ -1,0 +1,16 @@
+#include "LoudnessNormalizeNode.hpp"
+#include "processors/LoudnessNormalizeProcessor.hpp"
+
+LoudnessNormalizeNode::LoudnessNormalizeNode()
+    : DSPNode([] { return std::make_unique<LoudnessNormalizeProcessor>(); },
+              "LoudnessNormalize")
+{}
+
+void LoudnessNormalizeNode::configureProcessor(IAudioProcessor& proc, NodeContext& ctx)
+{
+    if (auto v = ctx.getSideband<double>("loudness_lufs"))
+        proc.setParameterValue("measured_lufs", static_cast<float>(*v));
+
+    if (auto v = ctx.getSideband<double>("loudness_peak_dbfs"))
+        proc.setParameterValue("measured_peak_dbfs", static_cast<float>(*v));
+}

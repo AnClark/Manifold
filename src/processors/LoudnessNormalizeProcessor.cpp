@@ -1,10 +1,8 @@
 #include "LoudnessNormalizeProcessor.hpp"
-#include "base/ProcessorRegistry.hpp"
 
 #include <algorithm>
 #include <cmath>
 
-REGISTER_PROCESSOR(LoudnessNormalizeProcessor, "loudness_normalize")
 
 LoudnessNormalizeProcessor::LoudnessNormalizeProcessor()
 {

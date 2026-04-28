@@ -3,13 +3,8 @@
  * @brief End-to-end validation of the Node-based pipeline architecture.
  *
  * Builds the chain:
- *   FileSourceNode → ResamplerNode(48000) → DSPNode(TruePeakLimiter)
+ *   FileSourceNode → ResamplerNode(48000) → TruePeakLimiterNode
  *                  → LoudnessAnalyzerNode → OutputSinkNode(wav) → PrintInfoNode
- *
- * The DSPNode step demonstrates wrapping an IAudioProcessor subclass
- * (TruePeakLimiterProcessor) into the pull pipeline via a factory lambda.
- * In production the measured_true_peak_dbtp value would come from a
- * prior analysis pass; here a conservative 0 dBTP is assumed.
  *
  * Usage:
  *   manifold_pipeline_test <input_audio_file> [output_directory]
@@ -18,12 +13,12 @@
  */
 
 #include "pipeline/ChainEngine.hpp"
-#include "pipeline/nodes/DSPNode.hpp"
 #include "pipeline/nodes/FileSourceNode.hpp"
 #include "pipeline/nodes/LoudnessAnalyzerNode.hpp"
 #include "pipeline/nodes/OutputSinkNode.hpp"
 #include "pipeline/nodes/PrintInfoNode.hpp"
 #include "pipeline/nodes/ResamplerNode.hpp"
+#include "pipeline/nodes/TruePeakLimiterNode.hpp"
 
 #include <filesystem>
 #include <iostream>
@@ -102,12 +97,11 @@ static int run(const std::string& inputFile, const std::string& outputDir)
     auto resampler = std::make_unique<ResamplerNode>();
     resampler->init({{"rate", "192000"}, {"backend", "r8brain"}});
 
-    // 3. DSPNode — looked up by registry ID, no concrete class include needed.
-    //    Any processor added via REGISTER_PROCESSOR can be referenced this way.
-    //    In a real batch pipeline the measured_true_peak_dbtp value would
-    //    be obtained from a prior analysis pass; 0.0 dBTP (worst case) is
-    //    used here so the limiter always applies the full ceiling margin.
-    auto truePeakLimiter = DSPNode::fromRegistry("true_peak_limiter", "TruePeakLimiter");
+    // 3. TruePeakLimiterNode — limits True Peak to ceiling.
+    //    In a real batch pipeline, true_peak_dbtp in the sideband would be
+    //    populated by an upstream analysis node; here we fall back to
+    //    static init() params (0.0 dBTP assumed → 1 dB gain reduction).
+    auto truePeakLimiter = std::make_unique<TruePeakLimiterNode>();
     truePeakLimiter->init({
         {"tp_ceiling",              "-1.0"},   // target ceiling: -1 dBTP
         {"measured_true_peak_dbtp", "0.0"},    // assumed peak: 0 dBTP → 1 dB gain reduction

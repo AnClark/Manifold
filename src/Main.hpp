@@ -2,7 +2,6 @@
 
 #include "Application.hpp"
 #include "base/SndFileInfo.hpp"
-#include "base/IAudioProcessor.hpp"
 #include "workers/DcOffsetWorker.hpp"
 #include "workers/EBUR128Worker.hpp"
 #include "workers/SndFileWorker.hpp"
@@ -46,6 +45,4 @@ private:
 
     std::string NFDLastError;   // TODO: Display error message on UI
 
-    std::vector<std::unique_ptr<IAudioProcessor>> processorList;    // For accessing processors' metadata
-    void _initProcessorList();
 };

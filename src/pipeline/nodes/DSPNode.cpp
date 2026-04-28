@@ -1,5 +1,4 @@
 #include "DSPNode.hpp"
-#include "base/ProcessorRegistry.hpp"
 
 #include <algorithm>
 #include <cstdlib>
@@ -97,14 +96,9 @@ DSPNode::DSPNode(ProcessorFactory factory, std::string nodeName)
     , nodeName_(std::move(nodeName))
 {}
 
-std::unique_ptr<DSPNode> DSPNode::fromRegistry(std::string_view processorId,
-                                                std::string nodeName)
+void DSPNode::configureProcessor(IAudioProcessor& /*proc*/, NodeContext& /*ctx*/)
 {
-    std::string id(processorId);
-    if (nodeName.empty()) nodeName = id;
-    return std::make_unique<DSPNode>(
-        [id]{ return ProcessorRegistry::getInstance().create(id); },
-        std::move(nodeName));
+    // Default: no-op. Subclasses override to inject sideband values.
 }
 
 void DSPNode::init(const std::unordered_map<std::string, std::string>& params)
@@ -114,7 +108,7 @@ void DSPNode::init(const std::unordered_map<std::string, std::string>& params)
 
 std::unique_ptr<AudioStream> DSPNode::wrap(
     std::unique_ptr<AudioStream> upstream,
-    NodeContext& /*ctx*/)
+    NodeContext& ctx)
 {
     auto processor = factory_();
 
@@ -127,6 +121,9 @@ std::unique_ptr<AudioStream> DSPNode::wrap(
             // Non-numeric params are silently ignored here
         }
     }
+
+    // Allow subclasses to inject per-file runtime values (e.g. from sideband)
+    configureProcessor(*processor, ctx);
 
     return std::make_unique<DSPStream>(std::move(upstream), std::move(processor));
 }

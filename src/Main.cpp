@@ -18,9 +18,6 @@ void ManifoldApp::onInit()
     ImFontConfig config;
     config.MergeMode = true;
     ImGui::GetIO().Fonts->AddFontFromMemoryCompressedTTF(DroidSansFallbackFont_compressed_data, DroidSansFallbackFont_compressed_size, 16.0f, &config);
-
-    // Initialize processor list for cacheing
-    _initProcessorList();
 }
 
 void ManifoldApp::onTerminate()
