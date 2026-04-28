@@ -38,8 +38,8 @@ int main(int argc, char* argv[])
         return 1;
     }
 
-    const std::filesystem::path inputFile  = argv[1];
-    const std::filesystem::path outputDir  = argc >= 3 ? argv[2] : "pipeline_out";
+    const std::string inputFile  = argv[1];
+    const std::string outputDir  = argc >= 3 ? argv[2] : "pipeline_out";
 
     if (!std::filesystem::exists(inputFile)) {
         std::cerr << "Error: input file not found: " << inputFile << "\n";
