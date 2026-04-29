@@ -13,12 +13,12 @@
  */
 
 #include "pipeline/ChainEngine.hpp"
-#include "pipeline/nodes/FileSourceNode.hpp"
-#include "pipeline/nodes/LoudnessAnalyzerNode.hpp"
-#include "pipeline/nodes/OutputSinkNode.hpp"
-#include "pipeline/nodes/PrintInfoNode.hpp"
-#include "pipeline/nodes/ResamplerNode.hpp"
-#include "pipeline/nodes/TruePeakLimiterNode.hpp"
+#include "pipeline/base_nodes/FileSourceNode.hpp"
+#include "pipeline/action_nodes/LoudnessAnalyzerNode.hpp"
+#include "pipeline/base_nodes/OutputSinkNode.hpp"
+#include "pipeline/action_nodes/PrintInfoNode.hpp"
+#include "pipeline/base_nodes/ResamplerNode.hpp"
+#include "pipeline/action_nodes/TruePeakLimiterNode.hpp"
 
 #include <filesystem>
 #include <iostream>

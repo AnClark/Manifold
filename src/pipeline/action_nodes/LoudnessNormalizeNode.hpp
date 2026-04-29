@@ -1,6 +1,6 @@
 #pragma once
 
-#include "DSPNode.hpp"
+#include "../base_nodes/DSPNode.hpp"
 
 /**
  * @brief DSP node that applies integrated loudness (LUFS-I) normalisation.

@@ -64,11 +64,11 @@ add_executable (${PROJECT_NAME} WIN32
     src/processors/LoudnessNormalizeProcessor.cpp
     src/processors/TruePeakLimiterProcessor.cpp
     src/pipeline/NodeRegistry.cpp
-    src/pipeline/nodes/DSPNode.cpp
-    src/pipeline/nodes/LoudnessNormalizeNode.cpp
-    src/pipeline/nodes/TruePeakLimiterNode.cpp
-    src/pipeline/nodes/ResamplerNode.cpp
-    src/pipeline/nodes/LoudnessAnalyzerNode.cpp
+    src/pipeline/base_nodes/DSPNode.cpp
+    src/pipeline/base_nodes/ResamplerNode.cpp    
+    src/pipeline/action_nodes/LoudnessNormalizeNode.cpp
+    src/pipeline/action_nodes/TruePeakLimiterNode.cpp
+    src/pipeline/action_nodes/LoudnessAnalyzerNode.cpp
 )
 
 #
@@ -155,14 +155,14 @@ target_link_libraries (${PROJECT_NAME} PUBLIC PkgConfig::SNDFILE)
 set (PIPELINE_SOURCES
     src/pipeline/NodeRegistry.cpp
     src/pipeline/ChainEngine.cpp
-    src/pipeline/nodes/FileSourceNode.cpp
-    src/pipeline/nodes/OutputSinkNode.cpp
-    src/pipeline/nodes/ResamplerNode.cpp
-    src/pipeline/nodes/LoudnessAnalyzerNode.cpp
-    src/pipeline/nodes/DSPNode.cpp
-    src/pipeline/nodes/PrintInfoNode.cpp
-    src/pipeline/nodes/LoudnessNormalizeNode.cpp
-    src/pipeline/nodes/TruePeakLimiterNode.cpp
+    src/pipeline/base_nodes/FileSourceNode.cpp
+    src/pipeline/base_nodes/OutputSinkNode.cpp
+    src/pipeline/base_nodes/ResamplerNode.cpp
+    src/pipeline/base_nodes/DSPNode.cpp    
+    src/pipeline/action_nodes/LoudnessAnalyzerNode.cpp
+    src/pipeline/action_nodes/PrintInfoNode.cpp
+    src/pipeline/action_nodes/LoudnessNormalizeNode.cpp
+    src/pipeline/action_nodes/TruePeakLimiterNode.cpp
     src/processors/LoudnessNormalizeProcessor.cpp
     src/processors/TruePeakLimiterProcessor.cpp
 )
