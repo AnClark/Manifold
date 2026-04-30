@@ -6,6 +6,8 @@
 #include "workers/EBUR128Worker.hpp"
 #include "workers/SndFileWorker.hpp"
 #include "utils/AudioPlayer.hpp"
+#include "pipeline/Node.hpp"
+#include "base/IAudioProcessor.hpp"
 
 #include <unordered_set>
 
@@ -45,4 +47,6 @@ private:
 
     std::string NFDLastError;   // TODO: Display error message on UI
 
+    std::vector<std::unique_ptr<Node>> nodeChain;  // Store the current node chain for UI display and management
+    std::unordered_map<std::string, std::vector<AudioProcessorParam>> dspNodeParamDefCache;  // Cache for DSP node parameter definitions, key is node name
 };
