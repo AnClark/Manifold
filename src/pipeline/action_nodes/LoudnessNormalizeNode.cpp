@@ -11,7 +11,7 @@ REGISTER_NODE(
     NodeRole::StreamProcessor);
 
 LoudnessNormalizeNode::LoudnessNormalizeNode()
-    : DSPNode(DSPNode::factoryFor<LoudnessNormalizeProcessor>(), "LoudnessNormalize")
+    : DSPNode(DSPNode::makeProcessor<LoudnessNormalizeProcessor>(), "LoudnessNormalize")
 {}
 
 void LoudnessNormalizeNode::configureProcessorFromNodeContext(IAudioProcessor& proc, NodeContext& ctx)

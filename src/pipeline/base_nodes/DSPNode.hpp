@@ -38,17 +38,18 @@ public:
 
     /**
      * @brief Convenience helper: returns a factory that constructs processor type T.
+     * Function name is inspired by std::make_unique() and std::make_shared().
      *
      * Eliminates the boilerplate lambda in every DSPNode subclass constructor:
      * @code
      * // Before:
      * MyNode::MyNode() : DSPNode([]{ return std::make_unique<MyProcessor>(); }, "My") {}
      * // After:
-     * MyNode::MyNode() : DSPNode(DSPNode::factoryFor<MyProcessor>(), "My") {}
+     * MyNode::MyNode() : DSPNode(DSPNode::makeProcessor<MyProcessor>(), "My") {}
      * @endcode
      */
     template<typename T>
-    static ProcessorFactory factoryFor() {
+    static ProcessorFactory makeProcessor() {
         return [] { return std::make_unique<T>(); };
     }
 
