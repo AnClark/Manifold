@@ -96,7 +96,7 @@ DSPNode::DSPNode(ProcessorFactory factory, std::string nodeName)
     , nodeName_(std::move(nodeName))
 {}
 
-void DSPNode::configureProcessor(IAudioProcessor& /*proc*/, NodeContext& /*ctx*/)
+void DSPNode::configureProcessorFromNodeContext(IAudioProcessor& /*proc*/, NodeContext& /*ctx*/)
 {
     // Default: no-op. Subclasses override to inject sideband values.
 }
@@ -123,7 +123,7 @@ std::unique_ptr<AudioStream> DSPNode::wrap(
     }
 
     // Allow subclasses to inject per-file runtime values (e.g. from sideband)
-    configureProcessor(*processor, ctx);
+    configureProcessorFromNodeContext(*processor, ctx);
 
     return std::make_unique<DSPStream>(std::move(upstream), std::move(processor));
 }

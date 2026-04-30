@@ -14,7 +14,7 @@ LoudnessNormalizeNode::LoudnessNormalizeNode()
     : DSPNode(DSPNode::factoryFor<LoudnessNormalizeProcessor>(), "LoudnessNormalize")
 {}
 
-void LoudnessNormalizeNode::configureProcessor(IAudioProcessor& proc, NodeContext& ctx)
+void LoudnessNormalizeNode::configureProcessorFromNodeContext(IAudioProcessor& proc, NodeContext& ctx)
 {
     if (auto v = ctx.getSideband<double>("loudness_lufs"))
         proc.setParameterValue("measured_lufs", static_cast<float>(*v));

@@ -21,5 +21,5 @@ public:
     std::string name() const override { return "LoudnessNormalize"; }
 
 protected:
-    void configureProcessor(IAudioProcessor& proc, NodeContext& ctx) override;
+    void configureProcessorFromNodeContext(IAudioProcessor& proc, NodeContext& ctx) override;
 };

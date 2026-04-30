@@ -70,7 +70,7 @@ protected:
      * inject it into the processor via proc.setParameterValue().
      * The default implementation does nothing.
      */
-    virtual void configureProcessor(IAudioProcessor& proc, NodeContext& ctx);
+    virtual void configureProcessorFromNodeContext(IAudioProcessor& proc, NodeContext& ctx);
 
 private:
     ProcessorFactory factory_;
