@@ -3,23 +3,34 @@
 #include <algorithm>
 #include <cmath>
 
+static constexpr AudioProcessorParam ParamList[] = {
+    {"target_lufs", "Specify target LUFS-I level", -36.0f, -6.0f, -16.0f },
+    {"tp_ceiling", "Specify top ceiling (dB)", -9.0f, 0.0f, -1.0f },
+    {"measured_lufs", "Specify LUFS-I measured by Manifold.", -100.0f, 0.0f, 0.0f },
+    {"measured_pead_dbfs", "", -100.0f, 0.0f, 0.0f },
+};
 
-LoudnessNormalizeProcessor::LoudnessNormalizeProcessor()
+LoudnessNormalizeProcessor::LoudnessNormalizeProcessor() : IAudioProcessor(pParamCount)
 {
-    //                          id                    default   min     max
-    addParameter("target_lufs",        -16.0f,  -36.0f,   -6.0f);
-    addParameter("tp_ceiling",          -1.0f,   -9.0f,    0.0f);
-    addParameter("measured_lufs",        0.0f, -100.0f,    0.0f);   // Passed in fileInfo.lufsI
-    addParameter("measured_peak_dbfs",   0.0f, -100.0f,    0.0f);   // Passed in fileInfo.maxSamplePeak_dBFS
+    for (uint32_t i = 0; i < pParamCount; ++i)
+        paramValues[i] = ParamList[i].def;
+}
+
+const AudioProcessorParam& LoudnessNormalizeProcessor::getParameterDefintion(uint32_t index) const
+{
+    if (index >= pParamCount)
+        return EmptyParam;
+    
+    return ParamList[index];
 }
 
 void LoudnessNormalizeProcessor::process(
     const float** inputs, float** outputs, int channels, size_t frameCount)
 {
-    const float targetLufs     = getParameterValue("target_lufs");
-    const float tpCeiling      = getParameterValue("tp_ceiling");
-    const float measuredLufs   = getParameterValue("measured_lufs");
-    const float measuredPeakDb = getParameterValue("measured_peak_dbfs");
+    const float& targetLufs     = paramValues[pTargetLufs]; //getParameterValue(pTargetLufs);
+    const float& tpCeiling      = paramValues[pTpCeiling];
+    const float& measuredLufs   = paramValues[pMeasuredLufs];
+    const float& measuredPeakDb = paramValues[pMeasuredPeakDbfs];
 
     // Gain required to hit target loudness
     float gainDb = targetLufs - measuredLufs;

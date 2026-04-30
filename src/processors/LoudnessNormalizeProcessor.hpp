@@ -38,12 +38,23 @@ class LoudnessNormalizeProcessor : public IAudioProcessor
 public:
     LoudnessNormalizeProcessor();
 
+    enum ParamIndex
+    {
+        pTargetLufs = 0,
+        pTpCeiling,
+        pMeasuredLufs,
+        pMeasuredPeakDbfs,
+        pParamCount
+    };
+
     const char* getName()        const override { return "Loudness Normalize"; }
     const char* getDescription() const override
     {
         return "Normalizes integrated loudness (LUFS-I) to a target level "
                "with True Peak ceiling protection.";
     }
+
+    const AudioProcessorParam& getParameterDefintion(uint32_t index) const override;
 
     void process(const float** inputs, float** outputs, int channels, size_t frameCount) override;
 };

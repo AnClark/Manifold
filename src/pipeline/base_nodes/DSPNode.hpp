@@ -63,6 +63,29 @@ public:
         std::unique_ptr<AudioStream> upstream,
         NodeContext& ctx) override;
 
+    /**
+     * @brief For UI: Get parameter definitions from IAudioProcessor instance.
+     * 
+     * When adding a node, UI can directly invoke this method to get parameter list dynamically,
+     * without knowing what processor is. This makes Manifold extensible if I want to add
+     * new DSPNodes/Audio Processors in future (no need to hard-code metadata).
+     * 
+     * Currently, fetchProcessorParamList() creates a temporary instance to fetch parameter list
+     * via IAudioProcessor::getParameterDefintion().
+     * 
+     * Developers can override this default implementation.
+     */
+    virtual void fetchProcessorParamList(std::vector<AudioProcessorParam>& output)
+    {
+        auto tmpProcessor = factory_();
+        output.clear();
+
+        for (int index = 0; index < tmpProcessor->getParameterCount(); index++)
+        {
+            output.push_back(tmpProcessor->getParameterDefintion(index));
+        }
+    }
+
 protected:
     /**
      * @brief Hook called after static init() params are applied, before streaming begins.

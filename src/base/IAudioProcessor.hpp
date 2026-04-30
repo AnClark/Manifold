@@ -3,19 +3,27 @@
 #include <vector>
 #include <string>
 #include <vector>
+#include <cstring>
+#include <cstdint>
 
 struct AudioProcessorParam
 {
-    std::string id;
-    float value;
-    float min;
-    float max;
-    float def;
+    const char* id = "";
+    const char* description = "";
+    float min = 0.0f;
+    float max = 1.0f;
+    float def = 0.0f;
 };
-typedef std::vector<AudioProcessorParam> AudioProcessorParamList;
+static AudioProcessorParam EmptyParam;  // For fallback usage (e.g. Invalid param index)
 
 class IAudioProcessor {
 public:
+    IAudioProcessor(uint32_t paramCount) : paramCount(paramCount)
+    {
+        // Resize (not reserve) so that size() == paramCount immediately.
+        // Subclass constructors are then responsible for filling in default values.
+        paramValues.resize(paramCount, 0.0f);
+    }
     virtual ~IAudioProcessor() = default;
 
     // --------------------------------------------------------------------------
@@ -27,50 +35,50 @@ public:
     // --------------------------------------------------------------------------
     // Parameters
 
-    void addParameter(const char* id, float defaultValue, float minValue, float maxValue)
+    uint32_t getParameterCount() { return paramCount; }
+
+    virtual const AudioProcessorParam& getParameterDefintion(uint32_t index) const
     {
-        _paramList.push_back({id, defaultValue, minValue, maxValue, defaultValue});
+        return EmptyParam;
+    };
+
+    float getParameterValue(uint32_t index) const
+    {
+        if (index >= paramCount || index >= paramValues.size() )
+            return 0.0f;
+        
+        return paramValues[index];
     }
 
-    const AudioProcessorParam& getParameterData(const char* id) const 
+    void setParameterValue(uint32_t index, float value)
     {
-        // Find parameter by id
-        for (const auto& param : _paramList)
-        {
-            if (param.id == id)
-                return param;
-        }
+        if (index >= paramCount || index >= paramValues.size() )
+            return;
 
-        // Return empty param if not found
-        static AudioProcessorParam emptyParam = {"", 0.0f, 0.0f, 0.0f, 0.0f};
-        return emptyParam;
-    }
-
-    float getParameterValue(const char* id) const
-    {
-        return getParameterData(id).value;
-    }
-
-    void setParameterValue(const char* id, float value)
-    {
-        for (auto& param : _paramList)
-        {
-            if (param.id == id)
-            {
-                param.value = value;
-                onParameterChanged(id, value);
-                return;
-            }
-        }
+        paramValues[index] = value;
+        onParameterChanged(index, value);
 
         // If parameter not found, do nothing.
         // TODO: Consider logging a warning or throwing an exception in log.
     }
 
+    void setParameterValue(const char* id, float value)
+    {
+        for (uint32_t index = 0; index < paramCount; index++)
+        {
+            const AudioProcessorParam& currentParam = getParameterDefintion(index);
+            if (std::strcmp(currentParam.id, id) == 0)
+            {
+                setParameterValue(index, value);
+                return;
+            }
+        }
+    }
+
     // --------------------------------------------------------------------------
     // Event callbacks (optional overrides)
 
-    virtual void onParameterChanged(const char* id, float newValue) {}
+    virtual void onParameterChanged(uint32_t index, float newValue) {}
     virtual void onProcessStart() {}    // TODO: This is preserved. Not ready to implement this yet.
     virtual void onProcessEnd() {}      // TODO: This is preserved. Not ready to implement this yet.
 
@@ -79,6 +87,10 @@ public:
 
     virtual void process(const float** inputs, float** outputs, int channels, size_t frameCount) = 0;
 
-private:
-    AudioProcessorParamList _paramList;
+protected:
+    // --------------------------------------------------------------------------
+    // Internal data (visible in subclasses)
+
+    std::vector<float> paramValues;
+    uint32_t paramCount;
 };

@@ -12,18 +12,30 @@
 
 // ---------------------------------------------------------------------------
 
-TruePeakLimiterProcessor::TruePeakLimiterProcessor()
+static constexpr AudioProcessorParam ParamList[] = {
+    {"tp_ceiling",              "Specify True Peak ceiling (dBTP)",    -9.0f,   0.0f,  -1.0f },
+    {"measured_true_peak_dbtp", "Measured True Peak (injected at runtime)", -100.0f, 0.0f,  0.0f },
+};
+
+TruePeakLimiterProcessor::TruePeakLimiterProcessor() : IAudioProcessor(pParamCount)
 {
-    //                              id                          default   min      max
-    addParameter("tp_ceiling",              -1.0f,   -9.0f,   0.0f);
-    addParameter("measured_true_peak_dbtp",  0.0f, -100.0f,   0.0f);
+    for (uint32_t i = 0; i < pParamCount; ++i)
+        paramValues[i] = ParamList[i].def;
+}
+
+const AudioProcessorParam& TruePeakLimiterProcessor::getParameterDefintion(uint32_t index) const
+{
+    if (index >= pParamCount)
+        return EmptyParam;
+
+    return ParamList[index];
 }
 
 void TruePeakLimiterProcessor::process(
     const float** inputs, float** outputs, int channels, size_t frameCount)
 {
-    const float tpCeiling  = getParameterValue("tp_ceiling");
-    const float measuredTp = getParameterValue("measured_true_peak_dbtp");
+    const float& tpCeiling  = paramValues[pTpCeiling];
+    const float& measuredTp = paramValues[pMeasuredTruePeakDbtp];
 
     // Only attenuate — if the signal is already below the ceiling, this is a pass-through.
     const float gainDb     = std::min(0.0f, tpCeiling - measuredTp);

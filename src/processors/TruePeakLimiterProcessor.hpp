@@ -42,6 +42,15 @@ public:
                "does not exceed the configured ceiling (dBTP).";
     }
 
+    enum ParamIndex
+    {
+        pTpCeiling = 0,
+        pMeasuredTruePeakDbtp,
+        pParamCount
+    };
+
+    const AudioProcessorParam& getParameterDefintion(uint32_t index) const override;
+
     void process(const float** inputs, float** outputs, int channels, size_t frameCount) override;
 
     /**
