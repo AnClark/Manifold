@@ -9,6 +9,7 @@
 struct AudioProcessorParam
 {
     const char* id = "";
+    const char* displayName = "";
     const char* description = "";
     float min = 0.0f;
     float max = 1.0f;

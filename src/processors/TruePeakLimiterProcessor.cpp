@@ -13,8 +13,8 @@
 // ---------------------------------------------------------------------------
 
 static constexpr AudioProcessorParam ParamList[] = {
-    {"tp_ceiling",              "Specify True Peak ceiling (dBTP)",    -9.0f,   0.0f,  -1.0f },
-    {"measured_true_peak_dbtp", "Measured True Peak (injected at runtime)", -100.0f, 0.0f,  0.0f },
+    {"tp_ceiling",             "True Peak Ceiling (dBTP)", "Specify True Peak ceiling (dBTP)",    -9.0f,   0.0f,  -1.0f },
+    {"measured_true_peak_dbtp", "Measured True Peak", "Measured True Peak (injected at runtime)", -100.0f, 0.0f,  0.0f },
 };
 
 TruePeakLimiterProcessor::TruePeakLimiterProcessor() : IAudioProcessor(pParamCount)

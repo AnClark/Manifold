@@ -4,10 +4,10 @@
 #include <cmath>
 
 static constexpr AudioProcessorParam ParamList[] = {
-    {"target_lufs", "Specify target LUFS-I level", -36.0f, -6.0f, -16.0f },
-    {"tp_ceiling", "Specify top ceiling (dB)", -9.0f, 0.0f, -1.0f },
-    {"measured_lufs", "Specify LUFS-I measured by Manifold.", -100.0f, 0.0f, 0.0f },
-    {"measured_pead_dbfs", "", -100.0f, 0.0f, 0.0f },
+    {"target_lufs", "Target LUFS-I", "Specify target LUFS-I level", -36.0f, -6.0f, -16.0f },
+    {"tp_ceiling", "Top Ceiling (dB)", "Specify top ceiling (dB)", -9.0f, 0.0f, -1.0f },
+    {"measured_lufs", "Measured LUFS-I", "Specify LUFS-I measured by Manifold.", -100.0f, 0.0f, 0.0f },
+    {"measured_pead_dbfs", "Measured Peak dBFS", "", -100.0f, 0.0f, 0.0f },
 };
 
 LoudnessNormalizeProcessor::LoudnessNormalizeProcessor() : IAudioProcessor(pParamCount)
