@@ -38,6 +38,14 @@ public:
     virtual std::string name() const = 0;
 
     /**
+     * @brief Tell others what the type of the node is. Useful for determining Node type
+     * on some situations (e.g. Action view), without RTTI.
+     *
+     * This is optional. Not all types of node needs this.
+     */
+    virtual std::string nodeHint() const { return "Unspecified"; }
+
+    /**
      * @brief Configure the node from a string-string parameter map.
      *
      * Called once during chain construction. Throws std::invalid_argument on

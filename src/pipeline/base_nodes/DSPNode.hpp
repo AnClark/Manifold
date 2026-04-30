@@ -56,6 +56,8 @@ public:
     std::string name() const override { return nodeName_; }
     void init(const std::unordered_map<std::string, std::string>& params) override;
 
+    std::string nodeHint() const override { return "DSP"; }
+
     PortType primaryInput()  const override { return PortType::AudioStream; }
     PortType primaryOutput() const override { return PortType::AudioStream; }
 
