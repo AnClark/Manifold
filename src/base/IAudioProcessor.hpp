@@ -6,6 +6,13 @@
 #include <cstring>
 #include <cstdint>
 
+enum AudioProcessorParamType
+{
+    kParamFloat,
+    kParamInt,
+    kParamEnum
+};
+
 struct AudioProcessorParam
 {
     const char* id = "";
@@ -14,8 +21,15 @@ struct AudioProcessorParam
     float min = 0.0f;
     float max = 1.0f;
     float def = 0.0f;
+    AudioProcessorParamType type = kParamFloat;
 };
 static AudioProcessorParam EmptyParam;  // For fallback usage (e.g. Invalid param index)
+
+struct AudioProcessorEnumItem
+{
+    const char* displayText;
+    float value;
+};
 
 class IAudioProcessor {
 public:
