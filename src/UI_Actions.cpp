@@ -77,6 +77,8 @@ void ManifoldApp::UI_Actions()
                                         if (nodeChain.back()->nodeHint() == "DSP")
                                         {
                                             // If it's a DSP node, fetch its parameter definitions and cache them for later use in UI
+                                            // FIXME: This may not needed anymore, since every Node can implement drawUI() to query parameter definitions on the fly,
+                                            //        without needing this separate cache. To be refactored.
                                             std::vector<AudioProcessorParam> paramDefs;
                                             dynamic_cast<DSPNode*>(nodeChain.back().get())->fetchProcessorParamList(paramDefs);
                                             const auto name = nodeChain.back()->name();
@@ -106,19 +108,56 @@ void ManifoldApp::UI_Actions()
                 if (ImGui::BeginChild("Actions_Editor", ImVec2(0, 0), ImGuiWindowFlags_AlwaysAutoResize))
                 {
                     // DEBUG: Just display the current node chain as text for now. Later this will be the actual configuration panel for each node.
-                    ImGui::Text("Current Node Chain:");
+                    ImGui::SeparatorText("Current Node Chain");
                     for (size_t i = 0; i < nodeChain.size(); i++)
                     {
-                        ImGui::Text("%d. %s", (int)i + 1, nodeChain[i]->name().c_str());
-
-                        // Print parameter definitions if it's a DSP node (for demonstration)
-                        if (nodeChain[i]->nodeHint() == "DSP")
                         {
-                            const auto& paramDefs = dspNodeParamDefCache[nodeChain[i]->name()];
-                            for (const auto& param : paramDefs)
+                            const auto& currentNode = nodeChain[i].get();
+                            constexpr auto actionEditorFlags = ImGuiWindowFlags_MenuBar;
+
+                            ImGui::PushStyleVar(ImGuiStyleVar_ChildRounding, 5.0f);
+                            ImGui::PushID(reinterpret_cast<uintptr_t>(currentNode));
+
+                            float uiWidth, uiHeight;
+                            currentNode->getUiSize(uiWidth, uiHeight);
+
+                            if (ImGui::BeginChild("ActionEditor", ImVec2(uiWidth, uiHeight), ImGuiChildFlags_Borders, actionEditorFlags))
                             {
-                                ImGui::Text("    - %s (%.2f to %.2f, default %.2f)", param.displayName, param.min, param.max, param.def);
+                                if (ImGui::BeginMenuBar())
+                                {
+                                    ImGui::Text("[%02llu] %s", i, currentNode->name().c_str());
+                                    if (ImGui::Button("Remove", ImVec2(80, 0)))
+                                    {
+                                        nodeChain.erase(nodeChain.begin() + i);
+                                        ImGui::EndMenuBar();
+                                        ImGui::EndChild();
+                                        ImGui::PopID();
+                                        ImGui::PopStyleVar();
+                                        break;  // Important: break here to avoid accessing invalid memory after erase
+                                    }
+                                    ImGui::EndMenuBar();
+                                }
+#if 1
+                            // Print parameter definitions if it's a DSP node (for demonstration)
+                            if (nodeChain[i]->nodeHint() == "DSP")
+                            {
+                                const auto& paramDefs = dspNodeParamDefCache[nodeChain[i]->name()];
+                                for (const auto& param : paramDefs)
+                                {
+                                    ImGui::Text("    - %s (%.2f to %.2f, default %.2f)", param.displayName, param.min, param.max, param.def);
+                                }
                             }
+#else
+                                currentNode->drawUI();
+#endif
+                                ImGui::EndChild();                                
+                            }
+
+                            ImGui::PopID();
+                            ImGui::PopStyleVar();
+
+                            // Add a neat margin
+                            ImGui::Dummy(ImVec2(0, 8));
                         }
                     } 
 
