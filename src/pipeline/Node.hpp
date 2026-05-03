@@ -55,6 +55,27 @@ public:
 
     virtual PortType primaryInput()  const = 0;
     virtual PortType primaryOutput() const = 0;
+
+    /**
+     * @brief Draw the node's UI inside the Action Editor panel. Optional; only needed for nodes with
+     * configurable parameters.
+     *
+     * Called by the Action Editor when the node is selected. The node can use ImGui calls to draw its UI,
+     * and should use getUiSize() to report its desired size.
+     */
+    virtual void drawUI() {}
+
+    /**
+     * @brief Get the desired size of the node's UI panel in the Action Editor. Optional; only needed for nodes with
+     * configurable parameters.
+     *
+     * @note The default size is for debug purposes, and should be overridden by nodes with actual UI.
+     */
+    virtual void getUiSize(float& width, float& height)
+    {
+        width = 0.0f;
+        height = 100.0f;
+    }
 };
 
 // --------------------------------------------------------------------------
