@@ -12,48 +12,76 @@
 // Format resolution helpers
 // --------------------------------------------------------------------------
 
-int OutputSinkNode::majorFormat(const std::string& fmt)
+OutputSinkNode::ContainerFormat OutputSinkNode::parseFormat(const std::string& s)
 {
-    if (fmt == "wav")  return SF_FORMAT_WAV;
-    if (fmt == "flac") return SF_FORMAT_FLAC;
-    if (fmt == "ogg")  return SF_FORMAT_OGG;
-    if (fmt == "opus") return SF_FORMAT_OGG;   // OGG container, Opus codec
-    if (fmt == "aiff") return SF_FORMAT_AIFF;
-    if (fmt == "caf")  return SF_FORMAT_CAF;
-    if (fmt == "w64")  return SF_FORMAT_W64;
-    return SF_FORMAT_WAV;  // fallback
+    if (s == "wav")  return ContainerFormat::Wav;
+    if (s == "flac") return ContainerFormat::Flac;
+    if (s == "ogg")  return ContainerFormat::Ogg;
+    if (s == "opus") return ContainerFormat::Opus;
+    if (s == "aiff") return ContainerFormat::Aiff;
+    if (s == "caf")  return ContainerFormat::Caf;
+    if (s == "w64")  return ContainerFormat::W64;
+    throw std::invalid_argument("OutputSinkNode: unknown format '" + s + "'");
 }
 
-int OutputSinkNode::subtypeFormat(const std::string& fmt,
-                                   const std::string& subtypeOverride)
+OutputSinkNode::SubtypeOverride OutputSinkNode::parseSubtype(const std::string& s)
+{
+    if (s.empty() || s == "auto") return SubtypeOverride::Auto;
+    if (s == "pcm16")   return SubtypeOverride::Pcm16;
+    if (s == "pcm24")   return SubtypeOverride::Pcm24;
+    if (s == "pcm32")   return SubtypeOverride::Pcm32;
+    if (s == "float32") return SubtypeOverride::Float32;
+    throw std::invalid_argument("OutputSinkNode: unknown subtype '" + s + "'");
+}
+
+int OutputSinkNode::majorFormat(ContainerFormat fmt)
+{
+    switch (fmt) {
+        case ContainerFormat::Wav:  return SF_FORMAT_WAV;
+        case ContainerFormat::Flac: return SF_FORMAT_FLAC;
+        case ContainerFormat::Ogg:  return SF_FORMAT_OGG;
+        case ContainerFormat::Opus: return SF_FORMAT_OGG;   // OGG container, Opus codec
+        case ContainerFormat::Aiff: return SF_FORMAT_AIFF;
+        case ContainerFormat::Caf:  return SF_FORMAT_CAF;
+        case ContainerFormat::W64:  return SF_FORMAT_W64;
+    }
+    return SF_FORMAT_WAV;  // unreachable
+}
+
+int OutputSinkNode::subtypeFormat(ContainerFormat fmt, SubtypeOverride subtype)
 {
     // Explicit override takes precedence
-    if (!subtypeOverride.empty()) {
-        if (subtypeOverride == "pcm16")   return SF_FORMAT_PCM_16;
-        if (subtypeOverride == "pcm24")   return SF_FORMAT_PCM_24;
-        if (subtypeOverride == "pcm32")   return SF_FORMAT_PCM_32;
-        if (subtypeOverride == "float32") return SF_FORMAT_FLOAT;
+    switch (subtype) {
+        case SubtypeOverride::Pcm16:   return SF_FORMAT_PCM_16;
+        case SubtypeOverride::Pcm24:   return SF_FORMAT_PCM_24;
+        case SubtypeOverride::Pcm32:   return SF_FORMAT_PCM_32;
+        case SubtypeOverride::Float32: return SF_FORMAT_FLOAT;
+        case SubtypeOverride::Auto:    break;
     }
 
     // Per-format defaults
-    if (fmt == "flac") return SF_FORMAT_PCM_24;
-    if (fmt == "ogg")  return SF_FORMAT_VORBIS;
+    switch (fmt) {
+        case ContainerFormat::Flac: return SF_FORMAT_PCM_24;
+        case ContainerFormat::Ogg:  return SF_FORMAT_VORBIS;
 #ifdef SF_FORMAT_OPUS
-    if (fmt == "opus") return SF_FORMAT_OPUS;
+        case ContainerFormat::Opus: return SF_FORMAT_OPUS;
 #endif
-    if (fmt == "caf")  return SF_FORMAT_PCM_24;
-    return SF_FORMAT_PCM_16;  // WAV, AIFF, W64 default to 16-bit
+        case ContainerFormat::Caf:  return SF_FORMAT_PCM_24;
+        default:                    return SF_FORMAT_PCM_16;  // WAV, AIFF, W64 default to 16-bit
+    }
 }
 
-std::string OutputSinkNode::extension(const std::string& fmt)
+std::string OutputSinkNode::extension(ContainerFormat fmt)
 {
-    if (fmt == "opus") return "ogg";  // Opus uses .ogg container extension
-    if (fmt == "flac") return "flac";
-    if (fmt == "ogg")  return "ogg";
-    if (fmt == "aiff") return "aiff";
-    if (fmt == "caf")  return "caf";
-    if (fmt == "w64")  return "w64";
-    return "wav";
+    switch (fmt) {
+        case ContainerFormat::Opus: return "ogg";   // Opus uses .ogg container extension
+        case ContainerFormat::Flac: return "flac";
+        case ContainerFormat::Ogg:  return "ogg";
+        case ContainerFormat::Aiff: return "aiff";
+        case ContainerFormat::Caf:  return "caf";
+        case ContainerFormat::W64:  return "w64";
+        default:                    return "wav";
+    }
 }
 
 // --------------------------------------------------------------------------
@@ -64,16 +92,16 @@ void OutputSinkNode::init(const std::unordered_map<std::string, std::string>& pa
 {
     auto it = params.find("format");
     if (it != params.end()) {
-        formatStr_ = it->second;
-        std::transform(formatStr_.begin(), formatStr_.end(),
-                       formatStr_.begin(), ::tolower);
+        std::string s = it->second;
+        std::transform(s.begin(), s.end(), s.begin(), ::tolower);
+        format_ = parseFormat(s);
     }
 
     it = params.find("subtype");
     if (it != params.end()) {
-        subtypeStr_ = it->second;
-        std::transform(subtypeStr_.begin(), subtypeStr_.end(),
-                       subtypeStr_.begin(), ::tolower);
+        std::string s = it->second;
+        std::transform(s.begin(), s.end(), s.begin(), ::tolower);
+        subtype_ = parseSubtype(s);
     }
 }
 
@@ -81,9 +109,9 @@ void OutputSinkNode::consume(std::unique_ptr<AudioStream> stream, NodeContext& c
 {
     const AudioFormat& fmt = stream->format();
 
-    int sfMajor   = majorFormat(formatStr_);
-    int sfSubtype = subtypeFormat(formatStr_, subtypeStr_);
-    std::string ext = extension(formatStr_);
+    int sfMajor   = majorFormat(format_);
+    int sfSubtype = subtypeFormat(format_, subtype_);
+    std::string ext = extension(format_);
 
     // Build output path: <outputDir>/<stem>_out.<ext>
     // TODO: Allow applying user's own wildcard
@@ -102,8 +130,8 @@ void OutputSinkNode::consume(std::unique_ptr<AudioStream> stream, NodeContext& c
 
     if (!sf_format_check(&outInfo)) {
         throw std::runtime_error(
-            "OutputSinkNode: invalid libsndfile format combination for '" +
-            formatStr_ + "'");
+            "OutputSinkNode: invalid libsndfile format combination (format enum=" +
+            std::to_string(static_cast<int>(format_)) + ")");
     }
 
     SNDFILE* outSf = SfOpenUtf8(outPath.c_str(), SFM_WRITE, &outInfo);
