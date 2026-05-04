@@ -77,8 +77,7 @@ void ManifoldApp::UI_Actions()
                                         if (nodeChain.back()->nodeHint() == "DSP")
                                         {
                                             // If it's a DSP node, fetch its parameter definitions and cache them for later use in UI
-                                            // FIXME: This may not needed anymore, since every Node can implement drawUI() to query parameter definitions on the fly,
-                                            //        without needing this separate cache. To be refactored.
+                                            // (e.g. To load default values)
                                             std::vector<AudioProcessorParam> paramDefs;
                                             dynamic_cast<DSPNode*>(nodeChain.back().get())->fetchProcessorParamList(paramDefs);
                                             const auto name = nodeChain.back()->name();
@@ -137,7 +136,7 @@ void ManifoldApp::UI_Actions()
                                     }
                                     ImGui::EndMenuBar();
                                 }
-#if 1
+#if 0
                             // Print parameter definitions if it's a DSP node (for demonstration)
                             if (nodeChain[i]->nodeHint() == "DSP")
                             {
