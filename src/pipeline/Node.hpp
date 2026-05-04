@@ -35,6 +35,19 @@ class Node {
 public:
     virtual ~Node() = default;
 
+    /**
+     * @brief Get the name of the node (displayed in the UI).
+     *
+     * UI invokes this to display the loaded node's name. It should be a human-readable string, e.g. "Loudness Normalize".
+     *
+     * @note Not to be confused with NodeDescriptor::displayName, which is used for the node selection menu.
+     * Node::name() is for the instantiated node in the chain, while NodeDescriptor::displayName is for the available node list in the UI.
+     * Using displayName for node menu prevents us from initializing the node (which may require parameters) just to get its name.
+     *
+     * FIXME: May need to be refactored in the future, or, allowing users to rename themselves in the chain,
+     *        just like what REAPER does with its FX chain?
+     *        In that case, Node::name() can be the default name (same as displayName), and users can edit it in the UI.
+     */
     virtual std::string name() const = 0;
 
     /**
