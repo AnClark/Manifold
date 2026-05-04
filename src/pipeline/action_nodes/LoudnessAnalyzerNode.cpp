@@ -5,13 +5,6 @@
 #include <iostream>
 #include <vector>
 
-REGISTER_NODE(
-    LoudnessAnalyzerNode,
-    "loudness_analyzer",
-    "Loudness Analyzer",
-    "Transparent pass-through that measures EBU R128 integrated loudness and max sample peak.",
-    "Analysis",
-    NodeRole::StreamProcessor);
 
 // ============================================================================
 // LoudnessAnalyzerStream
