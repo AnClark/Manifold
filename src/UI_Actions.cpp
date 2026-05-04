@@ -36,7 +36,7 @@ namespace ImGuiExt
 
 void ManifoldApp::UI_Actions()
 {
-    if (ImGui::Begin("Actions"))
+    if (ImGui::BeginChild("Actions"))
     {
         {
             constexpr static ImGuiTableFlags flags = ImGuiTableFlags_SizingStretchSame | ImGuiTableFlags_Resizable | ImGuiTableFlags_ContextMenuInBody;
@@ -190,5 +190,5 @@ void ManifoldApp::UI_Actions()
             ImGui::PopStyleVar();
         }
     }
-    ImGui::End();
+    ImGui::EndChild();
 }

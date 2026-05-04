@@ -11,10 +11,17 @@
 
 #include <unordered_set>
 
+enum UIState
+{
+    pUIFiles,
+    pUIActions,
+    pUILog
+};
+
 class ManifoldApp : public ImGuiApplication
 {
 public:
-    ManifoldApp() : ImGuiApplication("Manifold"), lastClickedIndex(-1)
+    ManifoldApp() : ImGuiApplication("Manifold"), lastClickedIndex(-1), uiState(pUIFiles)
     {}
 
 protected:
@@ -32,6 +39,8 @@ protected:
     void UI_Actions();
 
 private:
+    UIState uiState;
+
     SndFileList sndFileList;
     std::unordered_set<std::string> sndFilePathSet;  // 归一化路径 key，用于 O(1) 重复检测
     int detectedDuplicateCount = 0;  // 本次添加过程中检测到的重复文件数量
