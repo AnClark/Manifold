@@ -56,4 +56,7 @@ private:
     /** @brief Core per-file execution (propagates exceptions). */
     void executeFor(const std::string& input,
                     const std::string& outputDir);
+
+    /** @brief Overload: run the node chain against a pre-built context (propagates exceptions). */
+    void executeFor(NodeContext& ctx);
 };

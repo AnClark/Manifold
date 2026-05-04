@@ -38,13 +38,8 @@ void ChainEngine::validateChain() const
     }
 }
 
-void ChainEngine::executeFor(const std::string& input,
-                             const std::string& outputDir)
+void ChainEngine::executeFor(NodeContext& ctx)
 {
-    NodeContext ctx;
-    ctx.sourcePath = input;
-    ctx.outputDir  = outputDir;
-
     size_t i = 0;
     while (i < nodes_.size()) {
         Node* n = nodes_[i].get();
@@ -83,6 +78,15 @@ void ChainEngine::executeFor(const std::string& input,
     }
 }
 
+void ChainEngine::executeFor(const std::string& input,
+                             const std::string& outputDir)
+{
+    NodeContext ctx;
+    ctx.sourcePath = input;
+    ctx.outputDir  = outputDir;
+    executeFor(ctx);
+}
+
 void ChainEngine::processFile(const std::string& input,
                                const std::string& outputDir)
 {
@@ -105,7 +109,23 @@ void ChainEngine::processBatch(const std::vector<std::string>& inputs,
 void ChainEngine::processFile(const SndFileInfo& info,
                                const std::string& outputDir)
 {
-    processFile(std::string(info.fileName), outputDir);
+    NodeContext ctx;
+    ctx.sourcePath = info.fileName;
+    ctx.outputDir  = outputDir;
+
+    // Inject Worker-analysed loudness data into sideband so that
+    // LoudnessNormalizeNode can use it directly without re-measuring.
+    if (info.isR128ParsedOK) {
+        ctx.setSideband("loudness_lufs",      info.lufsI);
+        ctx.setSideband("loudness_peak_dbfs", info.maxSamplePeak_dBFS);
+    }
+
+    try {
+        executeFor(ctx);
+    } catch (const std::exception& e) {
+        std::cerr << "[ChainEngine] Error processing '" << info.fileName
+                  << "': " << e.what() << "\n";
+    }
 }
 
 void ChainEngine::processBatch(const SndFileList& inputs,
