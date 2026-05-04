@@ -46,6 +46,12 @@ void DcOffsetWorker::processItem(std::shared_ptr<SndFileInfo> fileInfoInstance)
     }
     sf_close(file);
 
+    if (totalFrames == 0) {
+        // Empty file — leave all offsets at 0 (no bias to remove)
+        fileInfoInstance->isDcOffsetCalculatedOK = true;
+        return;
+    }
+
     for (auto& s : fileInfoInstance->dcOffsets)
         s /= static_cast<double>(totalFrames);
 
