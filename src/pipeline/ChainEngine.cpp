@@ -120,6 +120,11 @@ void ChainEngine::processFile(const SndFileInfo& info,
         ctx.setSideband("loudness_peak_dbfs", info.maxSamplePeak_dBFS);
     }
 
+    // Inject per-channel DC offsets measured by DcOffsetWorker.
+    if (info.isDcOffsetCalculatedOK) {
+        ctx.setSideband("dc_offsets", info.dcOffsets);
+    }
+
     try {
         executeFor(ctx);
     } catch (const std::exception& e) {

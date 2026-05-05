@@ -63,12 +63,14 @@ add_executable (${PROJECT_NAME} WIN32
     src/UI_Actions.cpp
     src/processors/LoudnessNormalizeProcessor.cpp
     src/processors/TruePeakLimiterProcessor.cpp
+    src/processors/DcOffsetRemoveProcessor.cpp
     src/pipeline/NodeRegistry.cpp
     src/pipeline/base_nodes/DSPNode.cpp
     src/pipeline/base_nodes/ResamplerNode.cpp    
     src/pipeline/action_nodes/LoudnessNormalizeNode.cpp
     src/pipeline/action_nodes/TruePeakLimiterNode.cpp
     src/pipeline/action_nodes/LoudnessAnalyzerNode.cpp
+    src/pipeline/action_nodes/DcOffsetRemoveNode.cpp
 )
 
 #
