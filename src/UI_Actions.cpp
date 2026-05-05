@@ -2,7 +2,10 @@
 #include "pipeline/NodeRegistry.hpp"
 
 #include "imgui.h"
+#include "nfd.hpp"
 #include "pipeline/base_nodes/DSPNode.hpp"
+
+#include "../fonts/IconFontAwesome5.h"
 
 namespace ImGuiExt
 {
@@ -36,6 +39,16 @@ namespace ImGuiExt
 
 void ManifoldApp::UI_Actions()
 {
+    //
+    // LAMBDAS: Sub widgets / sub procedures
+    //
+    auto _drawActionBlock = [this]() {
+
+    };
+
+    //
+    // Main Window
+    //
     if (ImGui::BeginChild("Actions"))
     {
         {
@@ -47,7 +60,9 @@ void ManifoldApp::UI_Actions()
             {
                 ImGui::TableNextRow();
 
-                // Left Panel: Actions list
+                //
+                // LEFT PANEL: Actions list
+                //
                 ImGui::TableSetColumnIndex(0);
 
                 if (ImGui::BeginChild("Actions_List", ImVec2(0, 0), ImGuiWindowFlags_AlwaysAutoResize))
@@ -101,18 +116,35 @@ void ManifoldApp::UI_Actions()
                 }
                 ImGui::EndChild();
 
-                // Right panel: Action configuration
+                //
+                // RIGHT PANEL: Action configuration
+                //
                 ImGui::TableSetColumnIndex(1);
 
                 if (ImGui::BeginChild("Actions_Editor", ImVec2(0, 0), ImGuiWindowFlags_AlwaysAutoResize))
                 {
                     // DEBUG: Just display the current node chain as text for now. Later this will be the actual configuration panel for each node.
                     ImGui::SeparatorText("Current Node Chain");
-                    for (size_t i = 0; i < nodeChain.size(); i++)
+
+                    // ── Drag-and-drop reorder state (persists across frames) ─────────────
+                    int&  s_dragSourceIdx = this->dragDropState.dragSourceIdx;   // index of item being dragged (-1 = none)
+                    int&  s_dropTargetIdx = this->dragDropState.dropTargetIdx;   // insertion point (0..N)
+                    bool& s_isDragging    = this->dragDropState.isDragging;     // true once mouse moved past threshold
+
+                    // Per-frame bounding data for each item (screen Y coords)
+                    const size_t chainSize = nodeChain.size();
+                    std::vector<float> itemTopY(chainSize, 0.0f);
+                    std::vector<float> itemBotY(chainSize, 0.0f);
+
+                    // FontAwesome font is at Fonts[1] (loaded separately in Main.cpp)
+                    ImFont* faFont = (ImGui::GetIO().Fonts->Fonts.Size > 1)
+                                     ? ImGui::GetIO().Fonts->Fonts[1] : nullptr;
+
+                    for (size_t i = 0; i < chainSize; i++)
                     {
                         {
                             const auto& currentNode = nodeChain[i].get();
-                            constexpr auto actionEditorFlags = ImGuiWindowFlags_MenuBar;
+                            constexpr auto actionEditorFlags = 0;//ImGuiWindowFlags_MenuBar;
 
                             ImGui::PushStyleVar(ImGuiStyleVar_ChildRounding, 5.0f);
                             ImGui::PushID(reinterpret_cast<uintptr_t>(currentNode));
@@ -120,37 +152,83 @@ void ManifoldApp::UI_Actions()
                             float uiWidth, uiHeight;
                             currentNode->getUiSize(uiWidth, uiHeight);
 
-                            if (ImGui::BeginChild("ActionEditor", ImVec2(uiWidth, uiHeight), ImGuiChildFlags_Borders, actionEditorFlags))
+                            // Record top Y of this item (screen coords) before drawing
+                            itemTopY[i] = ImGui::GetCursorScreenPos().y;
+
+                            // Dim the item currently being dragged so position is visually clear
+                            const bool isBeingDragged = s_isDragging && (s_dragSourceIdx == (int)i);
+                            if (isBeingDragged)
+                                ImGui::PushStyleVar(ImGuiStyleVar_Alpha, ImGui::GetStyle().Alpha * 0.45f);
+
+                            if (ImGui::BeginChild("SingleActionEditor", ImVec2(uiWidth, uiHeight), ImGuiChildFlags_Borders, actionEditorFlags))
                             {
-                                if (ImGui::BeginMenuBar())
+                                // Topbar
+                                ImGui::BeginGroup();
                                 {
-                                    ImGui::Text("[%02llu] %s", i, currentNode->name().c_str());
-                                    if (ImGui::Button("Remove", ImVec2(80, 0)))
+                                    // ── Drag handle ──────────────────────────────────────
                                     {
-                                        nodeChain.erase(nodeChain.begin() + i);
-                                        ImGui::EndMenuBar();
-                                        ImGui::EndChild();
-                                        ImGui::PopID();
-                                        ImGui::PopStyleVar();
-                                        break;  // Important: break here to avoid accessing invalid memory after erase
+                                        if (faFont) ImGui::PushFont(faFont, 14.0f);
+                                        ImGui::TextUnformatted(ICON_FA_GRIP_VERTICAL);
+                                        if (faFont) ImGui::PopFont();
+
+                                        if (ImGui::IsItemHovered())
+                                            ImGui::SetMouseCursor(ImGuiMouseCursor_ResizeAll);
+
+                                        if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal))
+                                            ImGui::SetTooltip("Drag to reorder node chain");
+
+                                        // Initiate drag when grip is pressed
+                                        if (ImGui::IsItemHovered()
+                                            && ImGui::IsMouseDown(ImGuiMouseButton_Left)
+                                            && s_dragSourceIdx == -1)
+                                            s_dragSourceIdx = (int)i;
                                     }
-                                    ImGui::EndMenuBar();
+                                    ImGui::SameLine(0, 10);
+                                    // ─────────────────────────────────────────────────────
+
+                                    ImGui::Text("[%02llu] %s", i, currentNode->name().c_str());
+                                    ImGui::SameLine();
+
+                                    constexpr float toolButtonWidth = 25.0f;
+                                    ImGui::SetCursorPosX(ImGui::GetContentRegionAvail().x - toolButtonWidth);
+                                    if (faFont) ImGui::PushFont(faFont, 14.0f);
+                                    if (ImGui::Button(ICON_FA_BACKSPACE, ImVec2(20, 0)))
+                                    {
+                                        // Reset drag state on remove
+                                        dragDropState.reset();
+
+                                        nodeChain.erase(nodeChain.begin() + i);
+
+                                        // IMPORTANT:
+                                        // After erasing the node, the current ImGui group for this item becomes invalid (since the underlying node object is destroyed),
+                                        // so we must give end to the rest of the code in this block with a break statement to avoid messing up the ImGui state.
+                                        if (faFont) ImGui::PopFont();
+                                        ImGui::EndGroup();
+                                        ImGui::EndChild();
+                                        if (isBeingDragged) ImGui::PopStyleVar(); // pop Alpha
+                                        ImGui::PopID();
+                                        ImGui::PopStyleVar();                      // pop ChildRounding
+                                        break;  // IMPORTANT: break here to avoid accessing invalid memory after erase
+                                    }
+                                    if (faFont) ImGui::PopFont();
+                                    if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal))
+                                        ImGui::SetTooltip("Remove current node");
+
+                                    ImGui::Separator();
+                                    ImGui::EndGroup();
                                 }
-#if 0
-                            // Print parameter definitions if it's a DSP node (for demonstration)
-                            if (nodeChain[i]->nodeHint() == "DSP")
-                            {
-                                const auto& paramDefs = dspNodeParamDefCache[nodeChain[i]->name()];
-                                for (const auto& param : paramDefs)
-                                {
-                                    ImGui::Text("    - %s (%.2f to %.2f, default %.2f)", param.displayName, param.min, param.max, param.def);
-                                }
-                            }
-#else
+
+                                // Node-specific UI
                                 currentNode->drawUI();
-#endif
+
                                 ImGui::EndChild();                                
                             }
+
+                            if (isBeingDragged)
+                                ImGui::PopStyleVar(); // pop Alpha
+
+                            // Record bottom Y after child ends
+                            itemBotY[i] = ImGui::GetCursorScreenPos().y;
 
                             ImGui::PopID();
                             ImGui::PopStyleVar();
@@ -158,9 +236,14 @@ void ManifoldApp::UI_Actions()
                             // Add a neat margin
                             ImGui::Dummy(ImVec2(0, 8));
                         }
-                    } 
+                    }
 
-                    // Footer: Output settings
+                    // ── Drag-and-drop logic (runs every frame after the list loop) ────────
+                    _dragDropIdle(itemTopY, itemBotY);
+
+                    //
+                    // FOOTER: Output settings
+                    //
                     ImGuiExt::MakeFooter(200.0f);
                     ImGui::Separator();
                     
@@ -168,8 +251,43 @@ void ManifoldApp::UI_Actions()
                         ImGui::BeginGroup();
 
                         ImGui::Text("Folder");
-                        ImGui::SameLine(0, 50);
-                        ImGui::Button("Select folder...");   
+                        ImGui::SameLine(0, 30);
+                        
+                        {
+                            // Calculate background color: 30% lighter than window background
+                            const ImVec4 bgColor = ImGui::GetStyle().Colors[ImGuiCol_WindowBg];
+                            const ImVec4 lighterBg = ImVec4(
+                                bgColor.x + (1.0f - bgColor.x) * 0.125f,
+                                bgColor.y + (1.0f - bgColor.y) * 0.125f,
+                                bgColor.z + (1.0f - bgColor.z) * 0.125f,
+                                bgColor.w
+                            );
+                            
+                            // Draw background rectangle for the text area
+                            ImDrawList* drawList = ImGui::GetWindowDrawList();
+                            ImVec2 textPos = ImGui::GetCursorScreenPos();
+                            float textWidth = ImGui::GetContentRegionAvail().x;
+                            float textHeight = ImGui::GetTextLineHeight();
+                            drawList->AddRectFilled(textPos, ImVec2(textPos.x + textWidth, textPos.y + textHeight), 
+                                                    ImGui::ColorConvertFloat4ToU32(lighterBg));
+                            
+                            if (outputPath.empty())
+                                ImGui::TextDisabled("(empty)");
+                            else
+                                ImGui::Text("%s", outputPath.c_str());
+                        }
+
+                        constexpr float selectButtonWidth = 160.0f;
+                        ImGui::SetCursorPosX(ImGui::GetContentRegionAvail().x - selectButtonWidth - 5.0f);
+                        if (ImGui::Button("Select Output Folder...", ImVec2(selectButtonWidth, 0)))
+                        {
+                            nfdu8char_t* pickedPath = nullptr;
+                            if (NFD::PickFolder(pickedPath) == NFD_OKAY)
+                            {
+                                outputPath = pickedPath;
+                                NFD::FreePath(pickedPath);
+                            }
+                        }
 
                         ImGui::EndGroup();    
                     }
@@ -191,4 +309,86 @@ void ManifoldApp::UI_Actions()
         }
     }
     ImGui::EndChild();
+}
+
+void ManifoldApp::_dragDropIdle(const std::vector<float>& itemTopY, const std::vector<float>& itemBotY)
+{
+    int&  s_dragSourceIdx = dragDropState.dragSourceIdx;
+    int&  s_dropTargetIdx = dragDropState.dropTargetIdx;
+    bool& s_isDragging    = dragDropState.isDragging;
+
+    if (s_dragSourceIdx < 0 || s_dragSourceIdx >= (int)nodeChain.size())
+        return;
+
+    if (!ImGui::IsMouseDown(ImGuiMouseButton_Left))
+    {
+        // Mouse released: perform reorder if drop position is meaningful
+        if (s_isDragging
+            && s_dropTargetIdx >= 0
+            && s_dropTargetIdx != s_dragSourceIdx
+            && s_dropTargetIdx != s_dragSourceIdx + 1)
+        {
+            auto node = std::move(nodeChain[s_dragSourceIdx]);
+            nodeChain.erase(nodeChain.begin() + s_dragSourceIdx);
+            int insertAt = (s_dropTargetIdx > s_dragSourceIdx)
+                           ? s_dropTargetIdx - 1
+                           : s_dropTargetIdx;
+            nodeChain.insert(nodeChain.begin() + insertAt, std::move(node));
+        }
+        
+        dragDropState.reset();
+        return;
+    }
+
+    // Activate drag once mouse moves beyond threshold
+    if (!s_isDragging)
+    {
+        ImVec2 delta = ImGui::GetMouseDragDelta(ImGuiMouseButton_Left, 3.0f);
+        if (delta.x != 0.0f || delta.y != 0.0f)
+            s_isDragging = true;
+    }
+
+    if (!s_isDragging || (int)itemTopY.size() != (int)nodeChain.size())
+        return;
+
+    ImGui::SetMouseCursor(ImGuiMouseCursor_ResizeAll);
+
+    // Compute drop target: compare mouse Y against each item's midpoint
+    const float mouseY = ImGui::GetMousePos().y;
+    s_dropTargetIdx = (int)nodeChain.size(); // default: after last
+    for (int j = 0; j < (int)nodeChain.size(); j++)
+    {
+        const float midY = (itemTopY[j] + itemBotY[j]) * 0.5f;
+        if (mouseY < midY)
+        {
+            s_dropTargetIdx = j;
+            break;
+        }
+    }
+
+    // Determine indicator line Y (between items / at edges)
+    float indicatorY = 0.0f;
+    if (!itemTopY.empty())
+    {
+        if (s_dropTargetIdx <= 0)
+            indicatorY = itemTopY[0];
+        else if (s_dropTargetIdx >= (int)nodeChain.size())
+            indicatorY = itemBotY.back();
+        else
+            indicatorY = itemTopY[s_dropTargetIdx];
+    }
+
+    // Draw Windows-Explorer-style drop indicator:
+    // a horizontal line with filled circle caps
+    const ImU32 lineColor = IM_COL32(30, 144, 255, 230);
+    ImDrawList* drawList  = ImGui::GetWindowDrawList();
+    const float x0        = ImGui::GetWindowPos().x + 8.0f;
+    const float x1        = ImGui::GetWindowPos().x + ImGui::GetWindowWidth() - 8.0f;
+
+    drawList->AddLine(
+        ImVec2(x0 + 8.0f, indicatorY),
+        ImVec2(x1,         indicatorY),
+        lineColor, 2.0f);
+    drawList->AddCircleFilled(ImVec2(x0 + 4.0f, indicatorY), 4.0f, lineColor);
+    drawList->AddCircleFilled(ImVec2(x1,         indicatorY), 4.0f, lineColor);
 }

@@ -58,4 +58,22 @@ private:
 
     std::vector<std::unique_ptr<Node>> nodeChain;  // Store the current node chain for UI display and management
     std::unordered_map<std::string, std::vector<AudioProcessorParam>> dspNodeParamDefCache;  // Cache for DSP node parameter definitions, key is node name
+    std::string outputPath;
+
+    // Node Chain drag/drop (DnD) states & procedures
+    struct NodeChainDnDState
+    {
+        int dragSourceIdx = -1;
+        int dropTargetIdx = -1;
+        bool isDragging = false;
+
+        void reset()
+        {
+            dragSourceIdx = -1;
+            dropTargetIdx = -1;
+            isDragging = false;
+        }
+    };
+    NodeChainDnDState dragDropState;
+    void _dragDropIdle(const std::vector<float>& itemTopY, const std::vector<float>& itemBotY);
 };
