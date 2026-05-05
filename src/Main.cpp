@@ -51,19 +51,23 @@ void ManifoldApp::onImGuiDisplay()
     ImGui::SetNextWindowPos(viewport->Pos);
     ImGui::SetNextWindowSize(viewport->Size);
 
+    // FontAwesome font is at Fonts[1] (loaded separately in Main.cpp)
+    ImFont* faFont = (ImGui::GetIO().Fonts->Fonts.Size > 1)
+                        ? ImGui::GetIO().Fonts->Fonts[1] : nullptr;
+
     if (ImGui::Begin("Main Window", nullptr, filesWindowFlag))
     {
         // Action bar
         {
             ImGui::BeginGroup();
-            auto uiSwitchButton = [this](const char* label, UIState newState, const char* tooltip)
+            auto uiSwitchButton = [this, faFont](const char* label, UIState newState, const char* tooltip)
             {
-                ImGui::PushFont(ImGui::GetIO().Fonts->Fonts[1]);
+                if (faFont) ImGui::PushFont(faFont);
                 if (ImGui::Button(label, ImVec2(40, 40)))
                 {
                     this->uiState = newState;
                 }
-                ImGui::PopFont();
+                if (faFont) ImGui::PopFont();
 
                 if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal | ImGuiHoveredFlags_NoSharedDelay))
                     ImGui::SetTooltip("%s", tooltip);
