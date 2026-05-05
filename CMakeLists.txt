@@ -64,6 +64,7 @@ add_executable (${PROJECT_NAME} WIN32
     src/processors/LoudnessNormalizeProcessor.cpp
     src/processors/TruePeakLimiterProcessor.cpp
     src/processors/DcOffsetRemoveProcessor.cpp
+    src/processors/PeakNormalizeProcessor.cpp
     src/pipeline/NodeRegistry.cpp
     src/pipeline/base_nodes/DSPNode.cpp
     src/pipeline/base_nodes/ResamplerNode.cpp    
@@ -71,6 +72,7 @@ add_executable (${PROJECT_NAME} WIN32
     src/pipeline/action_nodes/TruePeakLimiterNode.cpp
     src/pipeline/action_nodes/LoudnessAnalyzerNode.cpp
     src/pipeline/action_nodes/DcOffsetRemoveNode.cpp
+    src/pipeline/action_nodes/PeakNormalizeNode.cpp
 )
 
 #
