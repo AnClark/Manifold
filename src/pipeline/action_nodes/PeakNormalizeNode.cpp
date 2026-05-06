@@ -18,10 +18,6 @@ PeakNormalizeNode::PeakNormalizeNode()
 
 void PeakNormalizeNode::init(const std::unordered_map<std::string, std::string>& params)
 {
-    // Let DSPNode handle generic numeric param forwarding
-    DSPNode::init(params);
-
-    // Also sync our local UI state from "target_dbfs" if provided
     auto it = params.find("target_dbfs");
     if (it != params.end()) {
         try { targetDbfs_ = std::stof(it->second); } catch (...) {}

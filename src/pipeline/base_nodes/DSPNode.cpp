@@ -101,26 +101,11 @@ void DSPNode::configureProcessorFromNodeContext(IAudioProcessor& /*proc*/, NodeC
     // Default: no-op. Subclasses override to inject sideband values.
 }
 
-void DSPNode::init(const std::unordered_map<std::string, std::string>& params)
-{
-    initParams_ = params;
-}
-
 std::unique_ptr<AudioStream> DSPNode::wrap(
     std::unique_ptr<AudioStream> upstream,
     NodeContext& ctx)
 {
     auto processor = factory_();
-
-    // Apply numeric parameters supplied via init()
-    for (const auto& [key, value] : initParams_) {
-        try {
-            float v = std::stof(value);
-            processor->setParameterValue(key.c_str(), v);
-        } catch (...) {
-            // Non-numeric params are silently ignored here
-        }
-    }
 
     // Allow subclasses to inject per-file runtime values (e.g. from sideband)
     configureProcessorFromNodeContext(*processor, ctx);

@@ -54,7 +54,7 @@ public:
     }
 
     std::string name() const override { return nodeName_; }
-    void init(const std::unordered_map<std::string, std::string>& params) override;
+    void init(const std::unordered_map<std::string, std::string>& /*params*/) override {}
 
     std::string nodeHint() const override { return "DSP"; }
 
@@ -101,7 +101,4 @@ protected:
 private:
     ProcessorFactory factory_;
     std::string      nodeName_;
-
-    // Configuration params forwarded to the processor via setParameterValue
-    std::unordered_map<std::string, std::string> initParams_;
 };
