@@ -28,9 +28,19 @@ public:
     std::string currentFilePath;  ///< Set by Sink/Atomic nodes; read by downstream
 
     // --------------------------------------------------------------------------
-    // Source audio format (populated by FileSourceNode::create)
+    // Audio format metadata
 
+    /** Original source file format. Set once by FileSourceNode::create(). Read-only after that. */
     AudioFormat sourceFormat;
+
+    /**
+     * @brief Current format at this point in the chain.
+     *
+     * Updated by ChainEngine after every create() and wrap() call.
+     * Nodes that need the live channel count / sample rate (e.g. DcOffsetRemoveNode,
+     * PrintInfoNode) should read this rather than sourceFormat.
+     */
+    AudioFormat currentFormat;
 
     // --------------------------------------------------------------------------
     // Sideband data (typed key-value store for cross-node communication)

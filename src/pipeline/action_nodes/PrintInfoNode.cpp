@@ -11,10 +11,15 @@ void PrintInfoNode::execute(NodeContext& ctx)
               << (ctx.currentFilePath.empty() ? "(none)" : ctx.currentFilePath)
               << "\n";
 
-    std::cout << "Format  : "
+    std::cout << "Source  : "
               << ctx.sourceFormat.sampleRate << " Hz, "
               << ctx.sourceFormat.channels   << " ch, "
               << ctx.sourceFormat.bitDepth   << "-bit\n";
+
+    std::cout << "Current : "
+              << ctx.currentFormat.sampleRate << " Hz, "
+              << ctx.currentFormat.channels   << " ch, "
+              << ctx.currentFormat.bitDepth   << "-bit\n";
 
     auto lufs = ctx.getSideband<double>("loudness_lufs");
     if (lufs.has_value()) {

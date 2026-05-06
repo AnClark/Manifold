@@ -49,6 +49,7 @@ void ChainEngine::executeFor(NodeContext& ctx)
         if (auto* src = dynamic_cast<SourceNode*>(n)) {
             // Build the stream pipeline for this file
             auto stream = src->create(ctx);
+            ctx.currentFormat = stream->format();  // initialise from source
             i++;
 
             // Wrap through each StreamProcessorNode
@@ -58,6 +59,7 @@ void ChainEngine::executeFor(NodeContext& ctx)
                 if (auto* proc = dynamic_cast<StreamProcessorNode*>(nodes_[i]);
                     proc && !dynamic_cast<StreamSinkNode*>(nodes_[i])) {
                     stream = proc->wrap(std::move(stream), ctx);
+                    ctx.currentFormat = stream->format();  // sync after channel/rate-changing wrap
                     i++;
                 } else if (auto* sink = dynamic_cast<StreamSinkNode*>(nodes_[i])) {
                     sink->consume(std::move(stream), ctx);
