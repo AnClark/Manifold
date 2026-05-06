@@ -5,22 +5,38 @@
 /**
  * @brief DSP node that limits True Peak (dBTP) with 4× oversampled detection.
  *
- * Wraps TruePeakLimiterProcessor. Before each file starts streaming,
- * configureProcessor() reads the per-file True Peak measurement written to
- * NodeContext::sideband by an upstream node (e.g. a future TruePeakAnalyzerNode):
+ * Unlike other DSPNode subclasses, this node overrides wrap() entirely to
+ * implement a self-contained two-pass approach:
  *
- *   "true_peak_dbtp" (double) → fed to "measured_true_peak_dbtp"
+ *   1. Drain the entire upstream stream into an in-memory buffer.
+ *   2. Measure True Peak via TruePeakLimiterProcessor::measureTruePeakDbtp()
+ *      (4× oversampled, r8brain CDSPResampler24).
+ *   3. Compute the required attenuation and replay the buffer with that gain.
  *
- * If the sideband key is absent, the processor retains whatever value was set
- * via Node::init() (static configuration), which defaults to 0 dBTP.
- * Static parameter tp_ceiling can be set via Node::init().
+ * No external sideband injection is needed; the node is fully self-contained.
+ *
+ * Parameters (set via Node::init()):
+ *   "tp_ceiling"  — True Peak ceiling in dBTP (default: -1.0)
  */
 class TruePeakLimiterNode : public DSPNode {
 public:
     TruePeakLimiterNode();
 
-    std::string name() const override { return "TruePeakLimiter"; }
+    std::string name() const override { return "True Peak Limiter"; }
 
-protected:
-    void configureProcessorFromNodeContext(IAudioProcessor& proc, NodeContext& ctx) override;
+    void init(const std::unordered_map<std::string, std::string>& params) override;
+
+    std::unique_ptr<AudioStream> wrap(
+        std::unique_ptr<AudioStream> upstream,
+        NodeContext& ctx) override;
+
+    void drawUI() override;
+    void getUiSize(float& width, float& height) override
+    {
+        width  = 0.0f;
+        height = 100.0f + 8.0f;
+    }
+
+private:
+    float tpCeiling_ = -1.0f;  ///< dBTP ceiling; matches TruePeakLimiterProcessor default
 };

@@ -34,6 +34,14 @@ const AudioProcessorParam& TruePeakLimiterProcessor::getParameterDefintion(uint3
 void TruePeakLimiterProcessor::process(
     const float** inputs, float** outputs, int channels, size_t frameCount)
 {
+    // NOTE: This method is NOT called by TruePeakLimiterNode.
+    // That node overrides DSPNode::wrap() entirely and implements a self-contained
+    // two-pass strategy: it buffers the full stream, calls the static
+    // measureTruePeakDbtp(), then replays with a pre-computed scalar gain.
+    // This method exists for standalone / programmatic use of the processor
+    // (e.g. unit tests or future pipeline variants that inject "measured_true_peak_dbtp"
+    // via sideband instead of buffering).
+
     const float& tpCeiling  = paramValues[pTpCeiling];
     const float& measuredTp = paramValues[pMeasuredTruePeakDbtp];
 
