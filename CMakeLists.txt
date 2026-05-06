@@ -66,6 +66,7 @@ add_executable (${PROJECT_NAME} WIN32
     src/processors/DcOffsetRemoveProcessor.cpp
     src/processors/PeakNormalizeProcessor.cpp
     src/pipeline/NodeRegistry.cpp
+    src/pipeline/ChainEngine.cpp
     src/pipeline/base_nodes/DSPNode.cpp
     src/pipeline/base_nodes/ResamplerNode.cpp    
     src/pipeline/action_nodes/LoudnessNormalizeNode.cpp
