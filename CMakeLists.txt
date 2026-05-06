@@ -194,4 +194,5 @@ target_link_libraries (manifold_pipeline_test PRIVATE
     r8brain_pffft_backend
     ebur128
     PkgConfig::SNDFILE
+    imgui
 )
