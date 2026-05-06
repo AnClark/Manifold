@@ -89,7 +89,7 @@ void ManifoldApp::UI_Actions()
                                         auto node = NodeRegistry::getInstance().create(d->id);
                                         {
                                             std::scoped_lock lock(nodeChainMutex);
-                                        nodeChain.emplace_back(std::move(node));
+                                            nodeChain.emplace_back(std::move(node));
                                         }
 
                                         if (nodeChain.back()->nodeHint() == "DSP")
@@ -202,7 +202,7 @@ void ManifoldApp::UI_Actions()
 
                                         {
                                             std::scoped_lock lock(nodeChainMutex);
-                                        nodeChain.erase(nodeChain.begin() + i);
+                                            nodeChain.erase(nodeChain.begin() + i);
                                         }
 
                                         // IMPORTANT:
@@ -304,6 +304,93 @@ void ManifoldApp::UI_Actions()
                         ImGui::Text("File Name");
 
                         ImGui::EndGroup();
+                    }
+
+                    {
+                        ImGui::Spacing();
+                        static int errnumber = -1;
+#if _WIN32
+                        constexpr const char* TEST_OUTPUT_DIR = "R:\\";
+#else
+                        constexpr const char* TEST_OUTPUT_DIR = "/tmp/";
+#endif
+                        if (ImGui::Button("Test rendering the first file in file list"))
+                        {
+                            singleFileProcessorWorker.setOutputDir(TEST_OUTPUT_DIR);
+                            if (sndFileList.size() > 0 && nodeChain.size() > 0)
+                            {
+                                singleFileProcessorWorker.addFile(sndFileList[0]);
+                                errnumber = 0;
+                            }
+                            else if (sndFileList.size() <= 0)
+                            {
+                                errnumber = 1;
+                            }
+                            else
+                            {
+                                errnumber = 2;
+                            }
+                        }
+
+                        if (ImGui::Button("Test rendering all files in the list"))
+                        {
+                            singleFileProcessorWorker.setOutputDir(TEST_OUTPUT_DIR);
+                            if (sndFileList.size() > 0 && nodeChain.size() > 0)
+                            {
+                                for (auto item : sndFileList)
+                                    singleFileProcessorWorker.addFile(item);
+                                errnumber = 0;
+                            }
+                            else if (sndFileList.size() <= 0)
+                            {
+                                errnumber = 1;
+                            }
+                            else
+                            {
+                                errnumber = 2;
+                            }
+                        }
+
+                        switch (errnumber)
+                        {
+                            case 0:
+                                ImGui::TextDisabled("File(s) added to processor queue");
+                                break;
+                            case 1:
+                                ImGui::TextDisabled("File list is empty");
+                                break;
+                            case 2:
+                                ImGui::TextDisabled("Node chain is empty");
+                                break;
+                        }
+
+                        if (singleFileProcessorWorker.queryIfProcessing())
+                        {
+                            std::string filePath;
+                            size_t nodeIndex;
+                            std::string nodeName;
+                            singleFileProcessorWorker.queryProcessingState(filePath, nodeIndex, nodeName);
+                            ImGui::Text("Processing: %s (Node %zu: %s)", 
+                                filePath.c_str(),
+                                nodeIndex,
+                                nodeName.c_str());
+                        }
+                        else
+                        {
+                            ImGui::TextDisabled("Processor is idle");
+                        }
+
+                        if (sndFileList.size() > 0 && singleFileProcessorWorker.queryIfProcessingFile(sndFileList[0]))
+                        {
+                            ImGui::TextDisabled("INFO: The first file in the list is currently being processed");
+                        }
+
+                        if (sndFileList.size() > 0 && sndFileList[0]->errorMsgNodeChain.size() > 0)
+                        {
+                            ImGui::Spacing();
+                            ImGui::TextColored(ImVec4(1.0f, 0.4f, 0.4f, 1.0f), "Error in processing the first file:");
+                            ImGui::TextWrapped("%s", sndFileList[0]->errorMsgNodeChain.c_str());
+                        }
                     }
                 }
                 ImGui::EndChild();
