@@ -58,6 +58,7 @@ add_executable (${PROJECT_NAME} WIN32
     src/workers/SndFileWorker.cpp
     src/workers/EBUR128Worker.cpp
     src/workers/DcOffsetWorker.cpp
+    src/workers/SingleFileProcessorWorker.cpp
     src/utils/AudioPlayer.cpp
     src/UI_Files.cpp
     src/UI_Actions.cpp
@@ -67,6 +68,8 @@ add_executable (${PROJECT_NAME} WIN32
     src/processors/PeakNormalizeProcessor.cpp
     src/pipeline/NodeRegistry.cpp
     src/pipeline/ChainEngine.cpp
+    src/pipeline/base_nodes/FileSourceNode.cpp
+    src/pipeline/base_nodes/OutputSinkNode.cpp
     src/pipeline/base_nodes/DSPNode.cpp
     src/pipeline/base_nodes/ResamplerNode.cpp    
     src/pipeline/action_nodes/LoudnessNormalizeNode.cpp

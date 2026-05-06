@@ -3,8 +3,8 @@
 #include <iostream>
 #include <stdexcept>
 
-ChainEngine::ChainEngine(std::vector<std::unique_ptr<Node>>& nodes)
-    : nodes_(nodes)
+ChainEngine::ChainEngine(std::vector<Node*> nodes)
+    : nodes_(std::move(nodes))
 {
     validateChain();
 }
@@ -13,17 +13,17 @@ void ChainEngine::validateChain() const
 {
     size_t i = 0;
     while (i < nodes_.size()) {
-        const Node* n = nodes_[i].get();
+        const Node* n = nodes_[i];
 
         if (dynamic_cast<const SourceNode*>(n)) {
             // Expect zero or more StreamProcessorNodes, then exactly one StreamSinkNode
             i++;
             while (i < nodes_.size() &&
-                   dynamic_cast<const StreamProcessorNode*>(nodes_[i].get()) &&
-                   !dynamic_cast<const StreamSinkNode*>(nodes_[i].get())) {
+                   dynamic_cast<const StreamProcessorNode*>(nodes_[i]) &&
+                   !dynamic_cast<const StreamSinkNode*>(nodes_[i])) {
                 i++;
             }
-            if (i >= nodes_.size() || !dynamic_cast<const StreamSinkNode*>(nodes_[i].get())) {
+            if (i >= nodes_.size() || !dynamic_cast<const StreamSinkNode*>(nodes_[i])) {
                 throw std::runtime_error(
                     "ChainEngine: stream segment starting with SourceNode has no terminating StreamSinkNode");
             }
@@ -42,7 +42,7 @@ void ChainEngine::executeFor(NodeContext& ctx)
 {
     size_t i = 0;
     while (i < nodes_.size()) {
-        Node* n = nodes_[i].get();
+        Node* n = nodes_[i];
 
         // NOTE: "dynamic_cast" is used here to determine the node type at runtime.
         //       It returns nullptr if the cast fails, allowing us to safely check the node type.
@@ -55,11 +55,11 @@ void ChainEngine::executeFor(NodeContext& ctx)
             while (i < nodes_.size()) {
                 // NOTE: The first "if" statement conforms to C++17's "if with initializer" syntax,
                 //       allowing us to declare and initialize "proc" within the statement, just like "for" loops.
-                if (auto* proc = dynamic_cast<StreamProcessorNode*>(nodes_[i].get());
-                    proc && !dynamic_cast<StreamSinkNode*>(nodes_[i].get())) {
+                if (auto* proc = dynamic_cast<StreamProcessorNode*>(nodes_[i]);
+                    proc && !dynamic_cast<StreamSinkNode*>(nodes_[i])) {
                     stream = proc->wrap(std::move(stream), ctx);
                     i++;
-                } else if (auto* sink = dynamic_cast<StreamSinkNode*>(nodes_[i].get())) {
+                } else if (auto* sink = dynamic_cast<StreamSinkNode*>(nodes_[i])) {
                     sink->consume(std::move(stream), ctx);
                     i++;
                     break;
@@ -141,4 +141,13 @@ void ChainEngine::processBatch(const SndFileList& inputs,
             processFile(*info, outputDir);
         }
     }
+}
+
+std::vector<Node*> ChainEngine::toView(const std::vector<std::unique_ptr<Node>>& nodes)
+{
+    std::vector<Node*> view;
+    view.reserve(nodes.size());
+    for (const auto& n : nodes)
+        view.push_back(n.get());
+    return view;
 }

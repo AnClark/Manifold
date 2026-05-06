@@ -5,6 +5,7 @@
 #include "workers/DcOffsetWorker.hpp"
 #include "workers/EBUR128Worker.hpp"
 #include "workers/SndFileWorker.hpp"
+#include "workers/SingleFileProcessorWorker.hpp"
 #include "utils/AudioPlayer.hpp"
 #include "pipeline/Node.hpp"
 #include "base/IAudioProcessor.hpp"
@@ -50,6 +51,7 @@ private:
     SndFileWorker sndFileWorker;
     EBUR128Worker ebur128Worker;
     DcOffsetWorker dcOffsetWorker;
+    SingleFileProcessorWorker singleFileProcessorWorker;
 
     AudioPlayer audioPlayer;
     std::shared_ptr<SndFileInfo> currentPlayingFile;  // 当前正在播放的文件路径

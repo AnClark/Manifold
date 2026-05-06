@@ -29,7 +29,8 @@
  */
 class ChainEngine {
 public:
-    explicit ChainEngine(std::vector<std::unique_ptr<Node>>& nodes);
+    /** @brief Construct from a non-owning view of nodes (raw pointers). */
+    explicit ChainEngine(std::vector<Node*> nodes);
 
     /** @brief Process a single file through the chain. Errors are caught and logged. */
     void processFile(const std::string& input,
@@ -47,8 +48,16 @@ public:
     void processBatch(const SndFileList& inputs,
                       const std::string& outputDir);
 
+    /**
+     * @brief Converts an owning unique_ptr chain to a non-owning raw-pointer view.
+     *
+     * Useful when constructing a ChainEngine from an existing
+     * std::vector<std::unique_ptr<Node>> without transferring ownership.
+     */
+    static std::vector<Node*> toView(const std::vector<std::unique_ptr<Node>>& nodes);
+
 private:
-    std::vector<std::unique_ptr<Node>>& nodes_;
+    std::vector<Node*> nodes_;
 
     /** @brief Validates chain structure; throws on malformed chains. */
     void validateChain() const;

@@ -9,6 +9,9 @@
 
 void ManifoldApp::onInit()
 {
+    // Wire up the node chain pointer so the worker can access it
+    singleFileProcessorWorker.setNodeChain(this->nodeChain);
+
     // Initialize NFD
     NFD_Init();
 
@@ -34,6 +37,9 @@ void ManifoldApp::onTerminate()
     //         after onTerminate() returns.
     ebur128Worker.requestCancelProcessing();
     dcOffsetWorker.requestCancelProcessing();
+
+    // Stop all pending/on-progress audio rendering
+    singleFileProcessorWorker.requestCancelProcessing();
 
     // Cleanup NFD
     NFD_Quit();
