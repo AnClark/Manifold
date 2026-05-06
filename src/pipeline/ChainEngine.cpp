@@ -98,14 +98,6 @@ void ChainEngine::processFile(const std::string& input,
     }
 }
 
-void ChainEngine::processBatch(const std::vector<std::string>& inputs,
-                                const std::string& outputDir)
-{
-    for (const auto& input : inputs) {
-        processFile(input, outputDir);
-    }
-}
-
 void ChainEngine::processFile(const SndFileInfo& info,
                                const std::string& outputDir)
 {
@@ -130,16 +122,6 @@ void ChainEngine::processFile(const SndFileInfo& info,
     } catch (const std::exception& e) {
         std::cerr << "[ChainEngine] Error processing '" << info.fileName
                   << "': " << e.what() << "\n";
-    }
-}
-
-void ChainEngine::processBatch(const SndFileList& inputs,
-                                const std::string& outputDir)
-{
-    for (const auto& info : inputs) {
-        if (info) {
-            processFile(*info, outputDir);
-        }
     }
 }
 

@@ -40,14 +40,6 @@ public:
     void processFile(const SndFileInfo& info,
                      const std::string& outputDir);
 
-    /** @brief Process multiple files sequentially. */
-    void processBatch(const std::vector<std::string>& inputs,
-                      const std::string& outputDir);
-
-    /** @brief Overload: process a SndFileList sequentially. */
-    void processBatch(const SndFileList& inputs,
-                      const std::string& outputDir);
-
     /**
      * @brief Converts an owning unique_ptr chain to a non-owning raw-pointer view.
      *
