@@ -3,8 +3,8 @@
 #include <iostream>
 #include <stdexcept>
 
-ChainEngine::ChainEngine(std::vector<std::unique_ptr<Node>> nodes)
-    : nodes_(std::move(nodes))
+ChainEngine::ChainEngine(std::vector<std::unique_ptr<Node>>& nodes)
+    : nodes_(nodes)
 {
     validateChain();
 }

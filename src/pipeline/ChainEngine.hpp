@@ -29,7 +29,7 @@
  */
 class ChainEngine {
 public:
-    explicit ChainEngine(std::vector<std::unique_ptr<Node>> nodes);
+    explicit ChainEngine(std::vector<std::unique_ptr<Node>>& nodes);
 
     /** @brief Process a single file through the chain. Errors are caught and logged. */
     void processFile(const std::string& input,
@@ -48,7 +48,7 @@ public:
                       const std::string& outputDir);
 
 private:
-    std::vector<std::unique_ptr<Node>> nodes_;
+    std::vector<std::unique_ptr<Node>>& nodes_;
 
     /** @brief Validates chain structure; throws on malformed chains. */
     void validateChain() const;

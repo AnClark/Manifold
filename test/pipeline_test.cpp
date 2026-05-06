@@ -131,7 +131,7 @@ static int run(const std::string& inputFile, const std::string& outputDir)
     nodes.push_back(std::move(sink));
     nodes.push_back(std::move(printer));
 
-    ChainEngine engine(std::move(nodes));
+    ChainEngine engine(nodes);
     engine.processFile(inputFile, outputDir);
 
     return 0;
