@@ -190,9 +190,9 @@ void ManifoldApp::UI_Actions()
                                     ImGui::SameLine();
 
                                     constexpr float toolButtonWidth = 25.0f;
-                                    ImGui::SetCursorPosX(ImGui::GetContentRegionAvail().x - toolButtonWidth);
+                                    ImGui::SetCursorPosX(ImGui::GetCursorPosX() + ImGui::GetContentRegionAvail().x - toolButtonWidth);
                                     if (faFont) ImGui::PushFont(faFont, 14.0f);
-                                    if (ImGui::Button(ICON_FA_BACKSPACE, ImVec2(20, 0)))
+                                    if (ImGui::Button(ICON_FA_BACKSPACE, ImVec2(toolButtonWidth, 0)))
                                     {
                                         // Reset drag state on remove
                                         dragDropState.reset();
