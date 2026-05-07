@@ -10,7 +10,7 @@
 void ManifoldApp::onInit()
 {
     // Wire up the node chain pointer so the worker can access it
-    singleFileProcessorWorker.setNodeChain(this->nodeChain);
+    singleFileProcessorWorker.setNodeChain(this->nodeChain, this->nodeChainMutex);
 
     // Initialize NFD
     NFD_Init();

@@ -87,7 +87,10 @@ void ManifoldApp::UI_Actions()
                                     try 
                                     {
                                         auto node = NodeRegistry::getInstance().create(d->id);
+                                        {
+                                            std::scoped_lock lock(nodeChainMutex);
                                         nodeChain.emplace_back(std::move(node));
+                                        }
 
                                         if (nodeChain.back()->nodeHint() == "DSP")
                                         {
@@ -197,7 +200,10 @@ void ManifoldApp::UI_Actions()
                                         // Reset drag state on remove
                                         dragDropState.reset();
 
+                                        {
+                                            std::scoped_lock lock(nodeChainMutex);
                                         nodeChain.erase(nodeChain.begin() + i);
+                                        }
 
                                         // IMPORTANT:
                                         // After erasing the node, the current ImGui group for this item becomes invalid (since the underlying node object is destroyed),
@@ -328,6 +334,7 @@ void ManifoldApp::_dragDropIdle(const std::vector<float>& itemTopY, const std::v
             && s_dropTargetIdx != s_dragSourceIdx
             && s_dropTargetIdx != s_dragSourceIdx + 1)
         {
+            std::scoped_lock lock(nodeChainMutex);
             auto node = std::move(nodeChain[s_dragSourceIdx]);
             nodeChain.erase(nodeChain.begin() + s_dragSourceIdx);
             int insertAt = (s_dropTargetIdx > s_dragSourceIdx)

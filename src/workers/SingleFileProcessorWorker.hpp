@@ -8,7 +8,12 @@
 class SingleFileProcessorWorker : public IWorker
 {
 public:
-    void setNodeChain(std::vector<std::unique_ptr<Node>>& nodeChain) { nodeChain_ = &nodeChain; }
+    void setNodeChain(std::vector<std::shared_ptr<Node>>& nodeChain, std::mutex& mutex)
+    {
+        nodeChain_ = &nodeChain;
+        nodeChainMutex_ = &mutex;
+    }
+
     void setOutputDir(std::string outputDir) 
     {
         std::scoped_lock<std::mutex> lock(outputDirMutex);
@@ -31,7 +36,8 @@ protected:
     void processItem(std::shared_ptr<SndFileInfo> fileInfoInstance) override;
 
 private:
-    std::vector<std::unique_ptr<Node>>* nodeChain_ = nullptr;
+    std::vector<std::shared_ptr<Node>>* nodeChain_ = nullptr;
+    std::mutex*                          nodeChainMutex_ = nullptr;
     std::string outputDir_;
 
     FileSourceNode sourceNode_;  ///< Implicitly prepended to the user-supplied chain

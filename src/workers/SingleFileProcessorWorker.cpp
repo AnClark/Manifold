@@ -6,8 +6,21 @@ void SingleFileProcessorWorker::processItem(std::shared_ptr<SndFileInfo> fileInf
     if (!fileInfoInstance || fileInfoInstance->aboutToBeRemoved || shouldCancelProcessing)
         return;
     
-    if (!nodeChain_ || nodeChain_->size() <= 0)
+    if (!nodeChain_ || !nodeChainMutex_)
         return;
+
+    // Take a snapshot of the node chain under lock.
+    // The lock is held only for the duration of the copy (microseconds),
+    // so the UI thread is never blocked during actual audio processing.
+    // Holding shared_ptr copies keeps every Node alive for the full file
+    // even if the UI deletes it from nodeChain in the meantime.
+    std::vector<std::shared_ptr<Node>> snapshot;
+    {
+        std::scoped_lock lock(*nodeChainMutex_);
+        if (nodeChain_->empty())
+            return;
+        snapshot = *nodeChain_;
+    }
 
     // Set processing state for UI progress reporting
     {
@@ -23,11 +36,11 @@ void SingleFileProcessorWorker::processItem(std::shared_ptr<SndFileInfo> fileInf
     std::string outputDir_Copied = std::string(this->outputDir_);
     if (isLocked) outputDirMutex.unlock();
 
-    // Build a non-owning view with sourceNode_ implicitly prepended
+    // Build a non-owning view from the snapshot with sourceNode_ implicitly prepended
     std::vector<Node*> localView;
-    localView.reserve(1 + nodeChain_->size());
+    localView.reserve(2 + snapshot.size());
     localView.push_back(&sourceNode_);
-    for (auto& n : *nodeChain_)
+    for (auto& n : snapshot)
         localView.push_back(n.get());
     
     outputNode_.init({{"format", "wav"}, {"subtype", "pcm16"}});

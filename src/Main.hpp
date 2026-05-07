@@ -58,7 +58,8 @@ private:
 
     std::string NFDLastError;   // TODO: Display error message on UI
 
-    std::vector<std::unique_ptr<Node>> nodeChain;  // Store the current node chain for UI display and management
+    std::vector<std::shared_ptr<Node>> nodeChain;  // Store the current node chain for UI display and management
+    std::mutex nodeChainMutex;                      // Protects nodeChain against concurrent access by the worker thread
     std::unordered_map<std::string, std::vector<AudioProcessorParam>> dspNodeParamDefCache;  // Cache for DSP node parameter definitions, key is node name
     std::string outputPath;
 
