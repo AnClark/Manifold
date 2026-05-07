@@ -40,6 +40,9 @@ void ChainEngine::validateChain() const
 
 void ChainEngine::executeFor(NodeContext& ctx)
 {
+    // FIXME: updateProgess() does not show the real progress, because the real processing happens in StreamSinkNode::consume(),
+    //        which is called at the end of the segment.
+    //        To show real progress, we may need to do more jobs.
     auto updateProgress = [&](size_t idx) {
         if (onProgress)
             onProgress(idx, nodes_[idx]->name());
