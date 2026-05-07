@@ -7,6 +7,7 @@
 #include <optional>
 #include <string>
 #include <unordered_map>
+#include <functional>
 
 /**
  * @brief Per-file processing context.

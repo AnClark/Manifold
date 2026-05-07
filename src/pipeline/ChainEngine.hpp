@@ -48,6 +48,26 @@ public:
      */
     static std::vector<Node*> toView(const std::vector<std::unique_ptr<Node>>& nodes);
 
+    /**
+     * @brief Set callbacks for reporting progress and errors back to the UI.
+     * Should be invoked by the Worker after construction but before processing starts.
+     * 
+     * @see SingleFileProcessorWorker::processItem() for example usage.
+     */
+    void setProgressCallback(std::function<void(size_t nodeIdx, std::string_view nodeName)> callback) {
+        onProgress = std::move(callback);
+    }
+
+    /**
+     * @brief Set callbacks for reporting progress and errors back to the UI.
+     * Should be invoked by the Worker after construction but before processing starts.
+     * 
+     * @see SingleFileProcessorWorker::processItem() for example usage.
+     */
+    void setErrorCallback(std::function<void(std::string_view errorMsg)> callback) {
+        onError = std::move(callback);
+    }
+
 private:
     std::vector<Node*> nodes_;
 
@@ -60,4 +80,10 @@ private:
 
     /** @brief Overload: run the node chain against a pre-built context (propagates exceptions). */
     void executeFor(NodeContext& ctx);
+
+    /** @brief Callbacks for reporting progress back to the UI (optional, set by Worker before processing) */
+    std::function<void(size_t nodeIdx, std::string_view nodeName)> onProgress;
+
+    /** @brief Callback for reporting errors back to the UI (optional, set by Worker before processing) */
+    std::function<void(std::string_view errorMsg)>                 onError;
 };

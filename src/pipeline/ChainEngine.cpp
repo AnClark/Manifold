@@ -40,6 +40,11 @@ void ChainEngine::validateChain() const
 
 void ChainEngine::executeFor(NodeContext& ctx)
 {
+    auto updateProgress = [&](size_t idx) {
+        if (onProgress)
+            onProgress(idx, nodes_[idx]->name());
+    };
+
     size_t i = 0;
     while (i < nodes_.size()) {
         Node* n = nodes_[i];
@@ -47,6 +52,8 @@ void ChainEngine::executeFor(NodeContext& ctx)
         // NOTE: "dynamic_cast" is used here to determine the node type at runtime.
         //       It returns nullptr if the cast fails, allowing us to safely check the node type.
         if (auto* src = dynamic_cast<SourceNode*>(n)) {
+            updateProgress(i);  // Set progress callback for UI updates (if set)
+
             // Build the stream pipeline for this file
             auto stream = src->create(ctx);
             ctx.currentFormat = stream->format();  // initialise from source
@@ -58,10 +65,14 @@ void ChainEngine::executeFor(NodeContext& ctx)
                 //       allowing us to declare and initialize "proc" within the statement, just like "for" loops.
                 if (auto* proc = dynamic_cast<StreamProcessorNode*>(nodes_[i]);
                     proc && !dynamic_cast<StreamSinkNode*>(nodes_[i])) {
+                    updateProgress(i);  // Set progress callback for UI updates (if set)
+
                     stream = proc->wrap(std::move(stream), ctx);
                     ctx.currentFormat = stream->format();  // sync after channel/rate-changing wrap
                     i++;
                 } else if (auto* sink = dynamic_cast<StreamSinkNode*>(nodes_[i])) {
+                    updateProgress(i);  // Set progress callback for UI updates (if set)
+
                     sink->consume(std::move(stream), ctx);
                     i++;
                     break;
@@ -71,6 +82,8 @@ void ChainEngine::executeFor(NodeContext& ctx)
                 }
             }
         } else if (auto* atomic = dynamic_cast<AtomicNode*>(n)) {
+            updateProgress(i);  // Set progress callback for UI updates (if set)
+
             atomic->execute(ctx);
             i++;
         } else {
@@ -95,6 +108,7 @@ void ChainEngine::processFile(const std::string& input,
     try {
         executeFor(input, outputDir);
     } catch (const std::exception& e) {
+        // TODO: Distinguish the two overloads of processFile() and feed this error message to logging system.
         std::cerr << "[ChainEngine] Error processing '" << input
                   << "': " << e.what() << "\n";
     }
@@ -122,8 +136,13 @@ void ChainEngine::processFile(const SndFileInfo& info,
     try {
         executeFor(ctx);
     } catch (const std::exception& e) {
+        // TODO: Feed this error message to logging system.
         std::cerr << "[ChainEngine] Error processing '" << info.fileName
                   << "': " << e.what() << "\n";
+
+        // Report error back to UI via callback (if set)
+        if (onError)
+            onError(e.what());
     }
 }
 
