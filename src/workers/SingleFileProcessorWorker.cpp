@@ -9,6 +9,28 @@ void SingleFileProcessorWorker::processItem(std::shared_ptr<SndFileInfo> fileInf
     if (!nodeChain_ || !nodeChainMutex_)
         return;
 
+    // Guard: reject files whose background analysis is still pending.
+    // We distinguish "pending" (flag=false AND error message is empty) from
+    // "failed" (flag=false AND error message is non-empty). Failed analyses are
+    // allowed through so that nodes can fall back to their passthrough behaviour;
+    // only truly pending analyses are intercepted to avoid silently producing
+    // incorrect output (e.g. DcOffsetRemoveNode doing nothing, LoudnessNormalize
+    // applying a wrong gain).
+    {
+        const bool parsePending   = !fileInfoInstance->isParseOK
+                                    && fileInfoInstance->errorMsg.empty();
+        const bool r128Pending    = !fileInfoInstance->isR128ParsedOK
+                                    && fileInfoInstance->errorMsgR128.empty();
+        const bool dcPending      = !fileInfoInstance->isDcOffsetCalculatedOK
+                                    && fileInfoInstance->errorMsgDcOffset.empty();
+        if (parsePending || r128Pending || dcPending) {
+            fileInfoInstance->errorMsgNodeChain =
+                "File analysis is still in progress (LUFS / DC offset not yet computed). "
+                "Please wait for the analysis to finish and try again.";
+            return;
+        }
+    }
+
     // Take a snapshot of the node chain under lock.
     // The lock is held only for the duration of the copy (microseconds),
     // so the UI thread is never blocked during actual audio processing.
