@@ -209,6 +209,13 @@ static const char* const kModeHints[4] = {
 
 void ChannelMixNode::drawUI()
 {
+    const float labelWidth = ImGui::CalcTextSize("Mix Mode").x + 20.0f;
+
+    ImGui::Spacing();
+    ImGui::AlignTextToFramePadding();
+    ImGui::Text("Mix Mode");
+    ImGui::SameLine(labelWidth);
+
     int current = static_cast<int>(mode_);
     ImGui::SetNextItemWidth(-1.0f);
     if (ImGui::Combo("##mix_mode", &current, kModeLabels, 4))
