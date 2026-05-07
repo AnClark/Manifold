@@ -344,11 +344,11 @@ void ManifoldApp::UI_Files()
                     
                     // 第二列：Bit Depth
                     ImGui::TableSetColumnIndex(1);
-                    ImGui::Text(sndFileList[i]->isParseOK ? sndFileList[i]->getBitDepth() : "---");
+                    ImGui::Text("%s", sndFileList[i]->isParseOK ? sndFileList[i]->getBitDepth() : "---");
 
                     // 第三列：Duration
                     ImGui::TableSetColumnIndex(2);
-                    ImGui::Text(sndFileList[i]->durationString);
+                    ImGui::Text("%s", sndFileList[i]->durationString);
 
                     // 第四列：Sample Count
                     ImGui::TableSetColumnIndex(3);
