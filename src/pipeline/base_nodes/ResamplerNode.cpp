@@ -4,6 +4,8 @@
 // r8brain headers — included only in this translation unit
 #include "CDSPResampler.h"
 
+#include <imgui.h>
+
 #include <algorithm>
 #include <cassert>
 #include <cstring>
@@ -250,6 +252,17 @@ private:
 // ResamplerNode
 // ============================================================================
 
+// Common sample rates exposed in the UI
+static constexpr double kPresetRates[] = {
+    22050.0, 32000.0, 44100.0, 48000.0,
+    88200.0, 96000.0, 176400.0, 192000.0
+};
+static constexpr int kPresetRateCount =
+    static_cast<int>(sizeof(kPresetRates) / sizeof(kPresetRates[0]));
+
+static constexpr const char* kBackendNames[] = { "r8brain", "libsamplerate" };
+static constexpr int kBackendCount = 2;
+
 void ResamplerNode::init(const std::unordered_map<std::string, std::string>& params)
 {
     auto it = params.find("rate");
@@ -261,6 +274,83 @@ void ResamplerNode::init(const std::unordered_map<std::string, std::string>& par
 
     it = params.find("backend");
     if (it != params.end()) backendId_ = it->second;
+
+    // Sync UI indices from loaded values
+    rateIdx_ = 3;  // fallback to 48000
+    for (int i = 0; i < kPresetRateCount; ++i) {
+        if (std::abs(kPresetRates[i] - targetRate_) < 0.5) {
+            rateIdx_ = i;
+            break;
+        }
+    }
+    backendIdx_ = 0;
+    for (int i = 0; i < kBackendCount; ++i) {
+        if (backendId_ == kBackendNames[i]) {
+            backendIdx_ = i;
+            break;
+        }
+    }
+}
+
+void ResamplerNode::drawUI()
+{
+    const float labelWidth = ImGui::CalcTextSize("True Peak Ceiling").x + 20.0f;
+
+    ImGui::Spacing();
+    ImGui::AlignTextToFramePadding();
+    ImGui::Text("Target Rate");
+    ImGui::SameLine(labelWidth);
+    ImGui::SetNextItemWidth(-1.0f);
+    // Build a display string for the current rate
+    if (ImGui::BeginCombo("##target_rate",
+            [&]() -> const char* {
+                static char buf[32];
+                if (rateIdx_ >= 0 && rateIdx_ < kPresetRateCount) {
+                    int r = static_cast<int>(kPresetRates[rateIdx_]);
+                    snprintf(buf, sizeof(buf), "%d Hz", r);
+                } else {
+                    snprintf(buf, sizeof(buf), "%.0f Hz", targetRate_);
+                }
+                return buf;
+            }()))
+    {
+        for (int i = 0; i < kPresetRateCount; ++i) {
+            char label[32];
+            snprintf(label, sizeof(label), "%d Hz",
+                     static_cast<int>(kPresetRates[i]));
+            bool selected = (i == rateIdx_);
+            if (ImGui::Selectable(label, selected)) {
+                rateIdx_    = i;
+                targetRate_ = kPresetRates[i];
+            }
+            if (selected)
+                ImGui::SetItemDefaultFocus();
+        }
+        ImGui::EndCombo();
+    }
+
+    ImGui::Spacing();
+    ImGui::AlignTextToFramePadding();
+    ImGui::Text("Backend");
+    ImGui::SameLine(labelWidth);
+    ImGui::SetNextItemWidth(-1.0f);
+    if (ImGui::BeginCombo("##backend", kBackendNames[backendIdx_])) {
+        for (int i = 0; i < kBackendCount; ++i) {
+            bool selected = (i == backendIdx_);
+            if (ImGui::Selectable(kBackendNames[i], selected)) {
+                backendIdx_ = i;
+                backendId_  = kBackendNames[i];
+            }
+            if (selected)
+                ImGui::SetItemDefaultFocus();
+        }
+        ImGui::EndCombo();
+    }
+
+    ImGui::Spacing();
+    ImGui::Separator();
+    ImGui::Spacing();
+    ImGui::TextDisabled("src rate is read from upstream at process time.");
 }
 
 std::unique_ptr<ResamplerBackend> ResamplerNode::makeBackend() const

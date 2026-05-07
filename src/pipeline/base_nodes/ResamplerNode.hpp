@@ -118,6 +118,13 @@ public:
     PortType primaryInput()  const override { return PortType::AudioStream; }
     PortType primaryOutput() const override { return PortType::AudioStream; }
 
+    void drawUI() override;
+    void getUiSize(float& width, float& height) override
+    {
+        width  = 0.0f;
+        height = 148.0f;
+    }
+
     std::unique_ptr<AudioStream> wrap(
         std::unique_ptr<AudioStream> upstream,
         NodeContext& ctx) override;
@@ -125,6 +132,10 @@ public:
 private:
     double      targetRate_ = 48000.0;
     std::string backendId_  = "r8brain";
+
+    // UI state: indices into the preset arrays
+    int rateIdx_    = 3;  ///< default points to 48000
+    int backendIdx_ = 0;  ///< 0 = r8brain, 1 = libsamplerate
 
     std::unique_ptr<ResamplerBackend> makeBackend() const;
 };
