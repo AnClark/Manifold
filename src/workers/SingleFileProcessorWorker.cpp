@@ -1,5 +1,8 @@
 #include "SingleFileProcessorWorker.hpp"
 #include "pipeline/ChainEngine.hpp"
+#include "utils/LogManager.hpp"
+
+static constexpr const char* LOG_TAG = "Single File Processor";
 
 void SingleFileProcessorWorker::processItem(std::shared_ptr<SndFileInfo> fileInfoInstance)
 {
@@ -8,6 +11,8 @@ void SingleFileProcessorWorker::processItem(std::shared_ptr<SndFileInfo> fileInf
     
     if (!nodeChain_ || !nodeChainMutex_)
         return;
+
+    LOG_INFOF(LOG_TAG, "Begin processing file '%s'", fileInfoInstance->filePath.c_str());
 
     // Guard: reject files whose background analysis is still pending.
     // We distinguish "pending" (flag=false AND error message is empty) from
@@ -27,6 +32,7 @@ void SingleFileProcessorWorker::processItem(std::shared_ptr<SndFileInfo> fileInf
             fileInfoInstance->errorMsgNodeChain =
                 "File analysis is still in progress (LUFS / DC offset not yet computed). "
                 "Please wait for the analysis to finish and try again.";
+            LOG_ERRORF(LOG_TAG, "File '%s' analysis is still in progress.", fileInfoInstance->filePath.c_str());
             return;
         }
     }
@@ -78,9 +84,11 @@ void SingleFileProcessorWorker::processItem(std::shared_ptr<SndFileInfo> fileInf
         std::scoped_lock<std::mutex> lock(stateMutex);
         currentState.nodeIndex = idx;
         currentState.nodeName  = name;
+        LOG_INFOF(LOG_TAG, "Processing file '%s': now at node %zu (%s)", currentState.filePath.c_str(), idx, name.data());
     });
     engine.setErrorCallback([&](std::string_view msg) {
         fileInfoInstance->errorMsgNodeChain = msg;
+        LOG_ERRORF(LOG_TAG, "File '%s' processing error: %s", fileInfoInstance->filePath.c_str(), msg.data());
     });
 
     // Now everything is set up, let's go!
@@ -88,4 +96,6 @@ void SingleFileProcessorWorker::processItem(std::shared_ptr<SndFileInfo> fileInf
 
     // Remember to reset isProcessing flag after done
     isProcessing.store(false);
+
+    LOG_INFOF(LOG_TAG, "Finished processing file '%s'", fileInfoInstance->filePath.c_str());
 }
