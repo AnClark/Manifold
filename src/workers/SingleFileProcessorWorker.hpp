@@ -32,6 +32,11 @@ public:
         nodeName = currentState.nodeName;
     }
 
+    bool queryIfProcessingFile(std::shared_ptr<SndFileInfo> fileInfo)
+    {
+        return (isProcessing.load() && reinterpret_cast<uintptr_t>(fileInfo.get()) == currentState.currentFileInfoPtr);
+    }
+
 protected:
     void processItem(std::shared_ptr<SndFileInfo> fileInfoInstance) override;
 
@@ -52,6 +57,7 @@ private:
         std::string filePath;       // Currently processing file
         size_t      nodeIndex  = 0; // Currently processing node index
         std::string nodeName;       // Currently processing node name
+        uintptr_t   currentFileInfoPtr; // Pointer of current SndFileInfo which is being processed (for comparing in queryIfProcessingFile())
     };
 
     std::atomic<bool> isProcessing{false};

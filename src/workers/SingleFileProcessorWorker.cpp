@@ -50,6 +50,7 @@ void SingleFileProcessorWorker::processItem(std::shared_ptr<SndFileInfo> fileInf
         currentState.filePath = fileInfoInstance->filePath;
         currentState.nodeIndex = 0;
         currentState.nodeName = "";
+        currentState.currentFileInfoPtr = reinterpret_cast<uintptr_t>(fileInfoInstance.get());
     }
     isProcessing.store(true);
 
