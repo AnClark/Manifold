@@ -178,6 +178,10 @@ void ChannelMixNode::init(const std::unordered_map<std::string, std::string>& pa
     else if (m == "surround_to_stereo") mode_ = MixMode::SurroundToStereo;
     else if (m == "to_mono")            mode_ = MixMode::ToMono;
     else throw std::invalid_argument("[ChannelMix] Unknown mode: " + m);
+
+    auto pt = params.find("pass_through_on_mismatch");
+    if (pt != params.end())
+        passThroughOnInputChannelMismatch_ = (pt->second == "true" || pt->second == "1");
 }
 
 std::unique_ptr<AudioStream> ChannelMixNode::wrap(
@@ -185,7 +189,20 @@ std::unique_ptr<AudioStream> ChannelMixNode::wrap(
     NodeContext& /*ctx*/)
 {
     const int inCh = upstream->format().channels;
-    validateChannels(mode_, inCh);
+    if (passThroughOnInputChannelMismatch_) {
+        try {
+            validateChannels(mode_, inCh);
+        } catch (const std::runtime_error& e) {
+            // TODO: Write to log system. Also consider feeding this message to a dedicated warning variable (like errorMsgNodeChain)
+            fprintf(stderr, "[ChannelMix] Warning: %s -- passing through unchanged.\n", e.what());
+
+            // Directy return the upstream stream as-is, without wrapping it in a ChannelMixStream,
+            // effectively bypassing this node's processing.
+            return upstream;
+        }
+    } else {
+        validateChannels(mode_, inCh);
+    }
     return std::make_unique<ChannelMixStream>(std::move(upstream), mode_, inCh);
 }
 
@@ -223,4 +240,23 @@ void ChannelMixNode::drawUI()
 
     ImGui::Spacing();
     ImGui::TextDisabled("%s", kModeHints[static_cast<int>(mode_)]);
+
+    ImGui::Spacing();
+    ImGui::Separator();
+    ImGui::Spacing();
+    ImGui::Checkbox("Pass through on input channel mismatch", &passThroughOnInputChannelMismatch_);
+    if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal) && ImGui::BeginItemTooltip())
+    {
+        ImGui::Text("Notice about this option:");
+        ImGui::BulletText("When enabled, if the upstream channel count is incompatible with the selected mode, the node will pass the stream through unchanged\n"
+                          "instead of treating it as an error.");
+        ImGui::BulletText("When disabled, a channel count mismatch will throw an error, useful for checking your input file's channel format.");
+        ImGui::Separator();
+        ImGui::Text("This option can be useful to prevent the entire chain from breaking due to a channel count mismatch, "
+                    "especially when the node is used in a\n"
+                    "non-critical part of the chain or when the input format is uncertain.");
+        ImGui::EndTooltip();
+    }
+    ImGui::SameLine();
+    ImGui::TextDisabled("(Hover on the checkbox for more details)");
 }

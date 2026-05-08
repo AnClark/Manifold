@@ -20,14 +20,16 @@
  *
  * ### Error handling
  * If the upstream channel count is incompatible with the selected mode, wrap()
- * throws std::runtime_error.  ChainEngine::processFile() catches and logs it;
- * other files in the batch continue processing normally.
+ * throws std::runtime_error by default.  When `pass_through_on_mismatch` is
+ * enabled the exception is suppressed: a warning is printed to stderr and the
+ * upstream stream is returned unchanged.
  *
  * ### init() parameters
- * | Key    | Values                                                    | Default          |
- * |--------|-----------------------------------------------------------|------------------|
- * | `mode` | `stereo_to_mono`, `mono_to_stereo`, `surround_to_stereo`, | `stereo_to_mono` |
- * |        | `to_mono`                                                 |                  |
+ * | Key                        | Values                                                    | Default          |
+ * |----------------------------|-----------------------------------------------------------|------------------|
+ * | `mode`                     | `stereo_to_mono`, `mono_to_stereo`, `surround_to_stereo`, | `stereo_to_mono` |
+ * |                            | `to_mono`                                                 |                  |
+ * | `pass_through_on_mismatch` | `true` / `false`                                          | `false`          |
  */
 class ChannelMixNode : public Node, public StreamProcessorNode {
 public:
@@ -54,9 +56,10 @@ public:
     void getUiSize(float& width, float& height) override
     {
         width  = 0.0f;
-        height = 98.0f;
+        height = 136.0f;
     }
 
 private:
-    MixMode mode_ = MixMode::StereoToMono;
+    MixMode mode_                  = MixMode::StereoToMono;
+    bool    passThroughOnInputChannelMismatch_ = false;
 };
