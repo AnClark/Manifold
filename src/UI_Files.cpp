@@ -104,7 +104,7 @@ void ManifoldApp::UI_Files()
                         }
 
                         auto newFilePtr = std::make_shared<SndFileInfo>();
-                        newFilePtr->filePath.assign(path.get());
+                        newFilePtr->updateFilePath(path.get());
                         sndFileList.push_back(newFilePtr);
                         sndFilePathSet.insert(std::move(pathKey));
 
@@ -223,8 +223,8 @@ void ManifoldApp::UI_Files()
                                 switch (spec.ColumnIndex)
                                 {
                                     case 0: // File Name
-                                        return ascending ? a->filePath < b->filePath
-                                                         : a->filePath > b->filePath;
+                                        return ascending ? a->fileNameBase < b->fileNameBase
+                                                         : a->fileNameBase > b->fileNameBase;
                                     case 1: // Bit Depth
                                     {
                                         std::string da(a->getBitDepth()), db(b->getBitDepth());
@@ -290,7 +290,7 @@ void ManifoldApp::UI_Files()
                         ImGui::PushStyleColor(ImGuiCol_HeaderActive, IM_COL32(0xcc + 64, 0x5f + 64, 0x71 + 64, 127));
                     }
 
-                    if (ImGui::Selectable(sndFileList[i]->filePath.c_str(), sndFileList[i]->selected, selectableFlags))
+                    if (ImGui::Selectable(sndFileList[i]->fileNameBase.c_str(), sndFileList[i]->selected, selectableFlags))
                     {
                         // 单选/多选/范围选择逻辑
                         if (ImGui::GetIO().KeyShift && lastClickedIndex != -1)
@@ -336,6 +336,17 @@ void ManifoldApp::UI_Files()
                         {
                             ImGui::Text("Error while parsing audio file:");
                             ImGui::BulletText("%s", sndFileList[i]->errorMsg.c_str());
+                            ImGui::Separator();
+                            ImGui::Text("%s", sndFileList[i]->filePath.c_str());
+                            ImGui::EndTooltip();
+                        }
+                    }
+                    else
+                    {
+                        // Show full path as tooltip
+                        if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayShort | ImGuiHoveredFlags_NoSharedDelay) && ImGui::BeginItemTooltip())
+                        {
+                            ImGui::Text("%s", sndFileList[i]->filePath.c_str());
                             ImGui::EndTooltip();
                         }
                     }

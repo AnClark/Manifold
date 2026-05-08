@@ -37,6 +37,7 @@ struct SndFileInfo
     
     char durationString[16] = "---"; // Cache for duration string to avoid repeated formatting
 
+    void updateFilePath(const char* newFileName);
     void parseSndFile();
     void parseSndFile(const char* newFileName);
     double getDurationSeconds() const;

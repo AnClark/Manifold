@@ -1,6 +1,14 @@
 #include "SndFileInfo.hpp"
 #include "utils/SfOpenUtf8.hpp"
 
+#include <filesystem>
+
+void SndFileInfo::updateFilePath(const char* newFileName)
+{
+    this->filePath.assign(newFileName);
+    this->fileNameBase = std::filesystem::path(newFileName).filename().string();
+}
+
 void SndFileInfo::parseSndFile()
 {
     info = {};
@@ -27,7 +35,7 @@ void SndFileInfo::parseSndFile()
 
 void SndFileInfo::parseSndFile(const char* newFileName)
 {
-    this->filePath = newFileName;
+    updateFilePath(newFileName);
     parseSndFile();
 }
 
