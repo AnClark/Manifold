@@ -1,4 +1,5 @@
 #include "Main.hpp"
+#include "utils/LogManager.hpp"
 
 #include "imgui.h"
 #include "nfd.h"
@@ -9,6 +10,11 @@
 
 void ManifoldApp::onInit()
 {
+    // Initialize and configure Log Manager
+    // - Set log buffer size to 4096 entries
+    // - Set log min level to Debug
+    LogManager::instance(4096).setMinLevel(LogLevel::Debug);
+
     // Wire up the node chain pointer so the worker can access it
     singleFileProcessorWorker.setNodeChain(this->nodeChain, this->nodeChainMutex);
 
@@ -25,6 +31,8 @@ void ManifoldApp::onInit()
 
     // Load FontAwesome 5
     ImGui::GetIO().Fonts->AddFontFromMemoryCompressedTTF(FontAwesomeTTF_compressed_data, FontAwesomeTTF_compressed_size, 20.0f, nullptr);
+
+    LOG_INFO("Main", "Manifold initialized");
 }
 
 void ManifoldApp::onTerminate()
@@ -106,6 +114,9 @@ void ManifoldApp::onImGuiDisplay()
                 break;
             case pUIActions:
                 UI_Actions();
+                break;
+            case pUILog:
+                UI_Log();
                 break;
             default:
                 UI_Files();

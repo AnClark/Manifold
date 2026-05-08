@@ -7,6 +7,7 @@
 #include "workers/SndFileWorker.hpp"
 #include "workers/SingleFileProcessorWorker.hpp"
 #include "utils/AudioPlayer.hpp"
+#include "utils/LogManager.hpp"
 #include "pipeline/Node.hpp"
 #include "base/IAudioProcessor.hpp"
 
@@ -38,6 +39,7 @@ protected:
 
     void UI_Files();
     void UI_Actions();
+    void UI_Log();
 
 private:
     UIState uiState;
@@ -79,4 +81,20 @@ private:
     };
     NodeChainDnDState dragDropState;
     void _dragDropIdle(const std::vector<float>& itemTopY, const std::vector<float>& itemBotY);
+
+    // =============================================================
+    // Log UI state
+
+    struct LogUIState
+    {
+        std::vector<LogEntry> snapshot;          // Filtered snapshot of log entries for ImGuiListClipper display (oldest first)
+        uint64_t              lastSeq    = 0;    // Last sequence number at the time of the snapshot
+        bool                  dirty      = true; // If true, force re-filtering (e.g., when filter conditions change)
+        int                   selectedIdx   = -1;
+        bool                  autoScroll    = true;
+        bool                  scrollToEnd   = false;
+        char                  keywordBuf[256] = {};
+        int                   minLevelIdx   = 1; // 0=Trace … 5=Fatal
+    };
+    LogUIState logUI;
 };

@@ -53,6 +53,7 @@ add_executable (${PROJECT_NAME} WIN32
     ${SRC_IMGUI}
     deps/imgui-application/Application.cpp
     src/Main.cpp
+    src/utils/LogManager.cpp
     src/base/SndFileInfo.cpp
     src/base/Worker.cpp
     src/workers/SndFileWorker.cpp
@@ -62,6 +63,7 @@ add_executable (${PROJECT_NAME} WIN32
     src/utils/AudioPlayer.cpp
     src/UI_Files.cpp
     src/UI_Actions.cpp
+    src/UI_Log.cpp
     src/processors/LoudnessNormalizeProcessor.cpp
     src/processors/TruePeakLimiterProcessor.cpp
     src/processors/DcOffsetRemoveProcessor.cpp
@@ -174,6 +176,7 @@ set (PIPELINE_SOURCES
     src/pipeline/action_nodes/TruePeakLimiterNode.cpp
     src/processors/LoudnessNormalizeProcessor.cpp
     src/processors/TruePeakLimiterProcessor.cpp
+    src/utils/LogManager.cpp
 )
 
 add_executable (manifold_pipeline_test
