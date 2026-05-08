@@ -17,7 +17,7 @@ AudioPlayer::AudioPlayer() : isFileLoaded(false), isDeviceInitialized(false), is
     decoderConfig.customBackendCount    = static_cast<ma_uint32>(pBackends.size());
 }
 
-void AudioPlayer::loadAudioFile(const char* fileName)
+void AudioPlayer::loadAudioFile(const char* filePath)
 {
     // Stop previous playback and unload previous file if any
     if (isFileLoaded || isDeviceInitialized || isPlaying)
@@ -29,13 +29,13 @@ void AudioPlayer::loadAudioFile(const char* fileName)
     // On Windows, fopen (used internally by miniaudio) uses the ANSI code page and cannot
     // open UTF-8 paths with CJK/non-ASCII characters. Convert to wchar_t* and use the
     // wide-char variant instead.
-    std::wstring wPath = std::filesystem::u8path(fileName).wstring();
+    std::wstring wPath = std::filesystem::u8path(filePath).wstring();
     result = ma_decoder_init_file_w(wPath.c_str(), &decoderConfig, &decoder);
 #else
-    result = ma_decoder_init_file(fileName, &decoderConfig, &decoder);
+    result = ma_decoder_init_file(filePath, &decoderConfig, &decoder);
 #endif
     if (result != MA_SUCCESS) {
-        errorMsg = std::string("Could not load file: ") + fileName + "\n";
+        errorMsg = std::string("Could not load file: ") + filePath + "\n";
         return;
     }
 

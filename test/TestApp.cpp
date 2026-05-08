@@ -112,7 +112,7 @@ public:
                 {
                     SF_INFO& info = sndfile_worker.parsedFileList[0].info;
                     ImGui::Text("Parsed ONE file:");
-                    ImGui::BulletText("File Name: %s", sndfile_worker.parsedFileList[0].fileName.c_str());
+                    ImGui::BulletText("File Name: %s", sndfile_worker.parsedFileList[0].filePath.c_str());
                     ImGui::BulletText("Frames: %lld", info.frames);
                     ImGui::BulletText("Sample rate: %d", info.samplerate);
                     ImGui::BulletText("Channels: %d", info.channels);

@@ -121,7 +121,7 @@ void ChainEngine::processFile(const SndFileInfo& info,
                                const std::string& outputDir)
 {
     NodeContext ctx;
-    ctx.sourcePath = info.fileName;
+    ctx.sourcePath = info.filePath;
     ctx.outputDir  = outputDir;
 
     // Inject Worker-analysed loudness data into sideband so that
@@ -140,7 +140,7 @@ void ChainEngine::processFile(const SndFileInfo& info,
         executeFor(ctx);
     } catch (const std::exception& e) {
         // TODO: Feed this error message to logging system.
-        std::cerr << "[ChainEngine] Error processing '" << info.fileName
+        std::cerr << "[ChainEngine] Error processing '" << info.filePath
                   << "': " << e.what() << "\n";
 
         // Report error back to UI via callback (if set)

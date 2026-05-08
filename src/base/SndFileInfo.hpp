@@ -10,7 +10,8 @@
 
 struct SndFileInfo
 {
-    std::string fileName;
+    std::string filePath;       // Full filename with path
+    std::string fileNameBase;   // Base filename
     SNDFILE *handle = nullptr;  // Handle for parsing sound file, not kept open after parsing is done
 
     SF_INFO info = {};

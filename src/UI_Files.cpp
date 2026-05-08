@@ -29,7 +29,7 @@ void ManifoldApp::UI_Files()
             {
                 currentPlayingFile = sndFileList[lastClickedIndex];
 
-                audioPlayer.loadAudioFile(currentPlayingFile->fileName.c_str());
+                audioPlayer.loadAudioFile(currentPlayingFile->filePath.c_str());
                 audioPlayer.initDevice();
                 audioPlayer.play();
             }
@@ -104,7 +104,7 @@ void ManifoldApp::UI_Files()
                         }
 
                         auto newFilePtr = std::make_shared<SndFileInfo>();
-                        newFilePtr->fileName.assign(path.get());
+                        newFilePtr->filePath.assign(path.get());
                         sndFileList.push_back(newFilePtr);
                         sndFilePathSet.insert(std::move(pathKey));
 
@@ -155,7 +155,7 @@ void ManifoldApp::UI_Files()
                     if (f->selected)
                     {
                         f->aboutToBeRemoved = true;
-                        sndFilePathSet.erase(makePathKey(f->fileName.c_str()));
+                        sndFilePathSet.erase(makePathKey(f->filePath.c_str()));
                     }
 
                 // 从列表中移除已选中项（shared_ptr 析构后对象由 worker 决定何时真正释放）
@@ -223,8 +223,8 @@ void ManifoldApp::UI_Files()
                                 switch (spec.ColumnIndex)
                                 {
                                     case 0: // File Name
-                                        return ascending ? a->fileName < b->fileName
-                                                         : a->fileName > b->fileName;
+                                        return ascending ? a->filePath < b->filePath
+                                                         : a->filePath > b->filePath;
                                     case 1: // Bit Depth
                                     {
                                         std::string da(a->getBitDepth()), db(b->getBitDepth());
@@ -290,7 +290,7 @@ void ManifoldApp::UI_Files()
                         ImGui::PushStyleColor(ImGuiCol_HeaderActive, IM_COL32(0xcc + 64, 0x5f + 64, 0x71 + 64, 127));
                     }
 
-                    if (ImGui::Selectable(sndFileList[i]->fileName.c_str(), sndFileList[i]->selected, selectableFlags))
+                    if (ImGui::Selectable(sndFileList[i]->filePath.c_str(), sndFileList[i]->selected, selectableFlags))
                     {
                         // 单选/多选/范围选择逻辑
                         if (ImGui::GetIO().KeyShift && lastClickedIndex != -1)

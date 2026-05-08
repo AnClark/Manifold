@@ -20,10 +20,10 @@ void EBUR128Worker::processItem(std::shared_ptr<SndFileInfo> fileInfoInstance)
     fileInfoInstance->errorMsgR128.clear();
 
     /* 1. 打开音频文件 */
-    file = SfOpenUtf8(fileInfoInstance->fileName, SFM_READ, &fileInfo);
+    file = SfOpenUtf8(fileInfoInstance->filePath, SFM_READ, &fileInfo);
     if (!file) {
         fileInfoInstance->errorMsgR128 = "Cannot open file";
-        fileInfoInstance->errorMsgR128 += fileInfoInstance->fileName;
+        fileInfoInstance->errorMsgR128 += fileInfoInstance->filePath;
         fileInfoInstance->errorMsgR128 += ": ";
         fileInfoInstance->errorMsgR128 += sf_strerror(NULL);
         return;

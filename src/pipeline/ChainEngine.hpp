@@ -36,7 +36,7 @@ public:
     void processFile(const std::string& input,
                      const std::string& outputDir);
 
-    /** @brief Overload: resolve path from SndFileInfo::fileName. */
+    /** @brief Overload: resolve path from SndFileInfo::filePath. */
     void processFile(const SndFileInfo& info,
                      const std::string& outputDir);
 

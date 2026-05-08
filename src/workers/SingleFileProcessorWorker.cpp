@@ -47,7 +47,7 @@ void SingleFileProcessorWorker::processItem(std::shared_ptr<SndFileInfo> fileInf
     // Set processing state for UI progress reporting
     {
         std::scoped_lock<std::mutex> lock(stateMutex);
-        currentState.fileName = fileInfoInstance->fileName;
+        currentState.filePath = fileInfoInstance->filePath;
         currentState.nodeIndex = 0;
         currentState.nodeName = "";
     }

@@ -24,10 +24,10 @@ public:
         return isProcessing.load();
     }
 
-    void queryProcessingState(std::string& fileName, size_t& nodeIndex, std::string& nodeName)
+    void queryProcessingState(std::string& filePath, size_t& nodeIndex, std::string& nodeName)
     {
         std::scoped_lock<std::mutex> lock(stateMutex);
-        fileName = currentState.fileName;
+        filePath = currentState.filePath;
         nodeIndex = currentState.nodeIndex;
         nodeName = currentState.nodeName;
     }
@@ -49,7 +49,7 @@ private:
     // Processing state for the current file. Only accessed by the worker thread, so no mutex needed.
 
     struct ProcessingState {
-        std::string fileName;       // Currently processing file
+        std::string filePath;       // Currently processing file
         size_t      nodeIndex  = 0; // Currently processing node index
         std::string nodeName;       // Currently processing node name
     };

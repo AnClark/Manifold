@@ -16,10 +16,10 @@ void DcOffsetWorker::processItem(std::shared_ptr<SndFileInfo> fileInfoInstance)
     fileInfoInstance->errorMsgDcOffset.clear();
 
     /* 1. 打开音频文件 */
-    file = SfOpenUtf8(fileInfoInstance->fileName, SFM_READ, &fileInfo);
+    file = SfOpenUtf8(fileInfoInstance->filePath, SFM_READ, &fileInfo);
     if (!file) {
         fileInfoInstance->errorMsgDcOffset = "Cannot open file";
-        fileInfoInstance->errorMsgDcOffset += fileInfoInstance->fileName;
+        fileInfoInstance->errorMsgDcOffset += fileInfoInstance->filePath;
         fileInfoInstance->errorMsgDcOffset += ": ";
         fileInfoInstance->errorMsgDcOffset += sf_strerror(NULL);
         return;

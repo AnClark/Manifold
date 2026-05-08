@@ -13,7 +13,7 @@ public:
         cleanUp();
     }
 
-    void loadAudioFile(const char* fileName);
+    void loadAudioFile(const char* filePath);
     void cleanUp();
 
     const char* getErrorMsg() { return errorMsg.c_str(); }

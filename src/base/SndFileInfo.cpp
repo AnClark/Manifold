@@ -8,7 +8,7 @@ void SndFileInfo::parseSndFile()
     handle = nullptr;
     errorMsg.clear();
 
-    handle = SfOpenUtf8(fileName, SFM_READ, &info);
+    handle = SfOpenUtf8(filePath, SFM_READ, &info);
 
     if (handle == nullptr)
     {
@@ -27,7 +27,7 @@ void SndFileInfo::parseSndFile()
 
 void SndFileInfo::parseSndFile(const char* newFileName)
 {
-    this->fileName = newFileName;
+    this->filePath = newFileName;
     parseSndFile();
 }
 

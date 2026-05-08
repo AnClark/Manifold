@@ -23,7 +23,7 @@ void SndFileWorker::sndFileWorkerMainFuction(SndFileWorker *workerInstance)
 
             // 在锁外进行文件 I/O 操作
             SndFileInfo pendingFile;
-            pendingFile.fileName = std::string(fileName);
+            pendingFile.filePath = std::string(fileName);
             pendingFile.info = {};  // 先初始化 SF_INFO，以防异常结果
 
 #ifdef _WIN32

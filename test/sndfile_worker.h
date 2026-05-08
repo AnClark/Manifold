@@ -9,7 +9,7 @@
 
 struct SndFileInfo
 {
-    std::string fileName;
+    std::string filePath;
     SNDFILE *handle;
     SF_INFO info;
 };
