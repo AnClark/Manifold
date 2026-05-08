@@ -1,6 +1,6 @@
 #include "ChainEngine.hpp"
 
-#include <iostream>
+#include "utils/LogManager.hpp"
 #include <stdexcept>
 
 ChainEngine::ChainEngine(std::vector<Node*> nodes)
@@ -90,7 +90,7 @@ void ChainEngine::executeFor(NodeContext& ctx)
             atomic->execute(ctx);
             i++;
         } else {
-            std::cerr << "[ChainEngine] Skipping unknown node type: " << n->name() << "\n";
+            LOG_WARNF("ChainEngine", "Skipping unknown node type: %s", n->name().c_str());
             i++;
         }
     }
@@ -111,9 +111,7 @@ void ChainEngine::processFile(const std::string& input,
     try {
         executeFor(input, outputDir);
     } catch (const std::exception& e) {
-        // TODO: Distinguish the two overloads of processFile() and feed this error message to logging system.
-        std::cerr << "[ChainEngine] Error processing '" << input
-                  << "': " << e.what() << "\n";
+        LOG_ERRORF("ChainEngine", "DIRECT PROCESSING: Error processing '%s': %s", input.c_str(), e.what());
     }
 }
 
@@ -139,9 +137,7 @@ void ChainEngine::processFile(const SndFileInfo& info,
     try {
         executeFor(ctx);
     } catch (const std::exception& e) {
-        // TODO: Feed this error message to logging system.
-        std::cerr << "[ChainEngine] Error processing '" << info.filePath
-                  << "': " << e.what() << "\n";
+        LOG_ERRORF("ChainEngine", "Error processing '%s': %s", info.filePath.c_str(), e.what());
 
         // Report error back to UI via callback (if set)
         if (onError)
