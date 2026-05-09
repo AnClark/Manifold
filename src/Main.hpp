@@ -45,8 +45,8 @@ private:
     UIState uiState;
 
     SndFileList sndFileList;
-    std::unordered_set<std::string> sndFilePathSet;  // 归一化路径 key，用于 O(1) 重复检测
-    int detectedDuplicateCount = 0;  // 本次添加过程中检测到的重复文件数量
+    std::unordered_set<std::string> sndFilePathSet;  // Normalized path key, used for O(1) duplicate detection
+    int detectedDuplicateCount = 0;  // Number of duplicate files detected during the current addition process. Will RESET after showing the warning to avoid stale warnings on next additions.
     int lastClickedIndex;
     std::mutex sndFileListMutex;
 
@@ -56,7 +56,7 @@ private:
     SingleFileProcessorWorker singleFileProcessorWorker;
 
     AudioPlayer audioPlayer;
-    std::shared_ptr<SndFileInfo> currentPlayingFile;  // 当前正在播放的文件路径
+    std::shared_ptr<SndFileInfo> currentPlayingFile;  // Currently playing file
 
     std::string NFDLastError;   // TODO: Display error message on UI
 
