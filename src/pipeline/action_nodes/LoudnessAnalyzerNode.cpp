@@ -1,8 +1,9 @@
 #include "LoudnessAnalyzerNode.hpp"
 #include "pipeline/NodeRegistry.hpp"
 
+#include "utils/LogManager.hpp"
+
 #include <cmath>
-#include <iostream>
 #include <vector>
 
 
@@ -27,7 +28,7 @@ public:
             EBUR128_MODE_I | EBUR128_MODE_SAMPLE_PEAK);
 
         if (!ebur128State_) {
-            std::cerr << "[LoudnessAnalyzer] ebur128_init failed — loudness will not be measured\n";
+            LOG_FATAL("LoudnessAnalyzer", "ebur128_init failed — loudness will not be measured");
         }
     }
 
