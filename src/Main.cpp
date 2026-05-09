@@ -3,10 +3,14 @@
 
 #include "imgui.h"
 #include "nfd.h"
+#include "ImGuiNotify_MOD.hpp"
 
 #include "../fonts/DroidSans.hpp"
 #include "../fonts/DroidSansFallback.hpp"
 #include "../fonts/FontAwesome5.hpp"
+
+// Font Awesome 6 bundled with ImGuiNotify
+#include "fonts/fa-solid-900.h"
 
 void ManifoldApp::onInit()
 {
@@ -28,6 +32,8 @@ void ManifoldApp::onInit()
     ImFontConfig config;
     config.MergeMode = true;
     ImGui::GetIO().Fonts->AddFontFromMemoryCompressedTTF(DroidSansFallbackFont_compressed_data, DroidSansFallbackFont_compressed_size, 16.0f, &config);
+    // 3. Merge FontAwesome 6 icons into the same font (for ImGuiNotify's icons)
+    ImGui::GetIO().Fonts->AddFontFromMemoryCompressedTTF(fa_solid_900_compressed_data, fa_solid_900_compressed_size, 20.0f, &config);
 
     // Load FontAwesome 5
     ImGui::GetIO().Fonts->AddFontFromMemoryCompressedTTF(FontAwesomeTTF_compressed_data, FontAwesomeTTF_compressed_size, 20.0f, nullptr);
@@ -126,6 +132,16 @@ void ManifoldApp::onImGuiDisplay()
     ImGui::End();
 
 
+    // Render ImGuiNotify notifications
+    // NOTICE: Even though in ImGui namespace, ImGuiNotify is a third-party library!
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 2.0f);
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 1.0f);
+    ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.13f, 0.14f, 0.15f, 1.00f));
+
+    ImGui::RenderNotifications();  // ← Core
+
+    ImGui::PopStyleVar(2);
+    ImGui::PopStyleColor(1);
 }
 
 int main()
