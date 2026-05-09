@@ -1,5 +1,6 @@
 #include "ChannelMixNode.hpp"
 #include "pipeline/NodeRegistry.hpp"
+#include "utils/LogManager.hpp"
 
 #include <imgui.h>
 
@@ -194,7 +195,7 @@ std::unique_ptr<AudioStream> ChannelMixNode::wrap(
             validateChannels(mode_, inCh);
         } catch (const std::runtime_error& e) {
             // TODO: Write to log system. Also consider feeding this message to a dedicated warning variable (like errorMsgNodeChain)
-            fprintf(stderr, "[ChannelMix] Warning: %s -- passing through unchanged.\n", e.what());
+            LOG_WARN("ChannelMix", std::string(e.what()) + " -- passing through unchanged.");
 
             // Directy return the upstream stream as-is, without wrapping it in a ChannelMixStream,
             // effectively bypassing this node's processing.
