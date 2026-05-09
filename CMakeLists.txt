@@ -39,6 +39,8 @@ include_directories (
     deps/miniaudio
     deps/miniaudio-libsndfile
     deps/r8brain
+    deps/ImGuiNotify
+    deps/ImGuiNotify/fonts
 )
 
 # Load pkg-config for finding dependencies, and let it prefer finding static libraries
