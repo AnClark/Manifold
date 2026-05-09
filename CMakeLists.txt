@@ -80,6 +80,7 @@ add_executable (${PROJECT_NAME} WIN32
     src/pipeline/action_nodes/DcOffsetRemoveNode.cpp
     src/pipeline/action_nodes/PeakNormalizeNode.cpp
     src/pipeline/action_nodes/ChannelMixNode.cpp
+    src/pipeline/action_nodes/TrimSilenceNode.cpp
 )
 
 #
