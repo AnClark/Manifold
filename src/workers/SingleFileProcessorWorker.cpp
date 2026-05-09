@@ -84,7 +84,7 @@ void SingleFileProcessorWorker::processItem(std::shared_ptr<SndFileInfo> fileInf
         std::scoped_lock<std::mutex> lock(stateMutex);
         currentState.nodeIndex = idx;
         currentState.nodeName  = name;
-        LOG_INFOF(LOG_TAG, "Processing file '%s': now at node %zu (%s)", currentState.filePath.c_str(), idx, name.data());
+        LOG_TRACEF(LOG_TAG, "Processing file '%s': now at node %zu (%s)", currentState.filePath.c_str(), idx, name.data());
     });
     engine.setErrorCallback([&](std::string_view msg) {
         fileInfoInstance->errorMsgNodeChain = msg;
