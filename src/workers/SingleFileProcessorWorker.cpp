@@ -60,10 +60,12 @@ void SingleFileProcessorWorker::processItem(std::shared_ptr<SndFileInfo> fileInf
     }
     isProcessing.store(true);
 
-    // Create a local copy of outputDir in case of unexpected nasty situations
-    bool isLocked = outputDirMutex.try_lock();
-    std::string outputDir_Copied = std::string(this->outputDir_);
-    if (isLocked) outputDirMutex.unlock();
+    // Create a local copy of outputDir under lock
+    std::string outputDir_Copied;
+    {
+        std::scoped_lock<std::mutex> lock(outputDirMutex);
+        outputDir_Copied = outputDir_;
+    }
 
     // Build a non-owning view from the snapshot with sourceNode_ implicitly prepended
     std::vector<Node*> localView;
