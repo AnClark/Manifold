@@ -1,6 +1,8 @@
 #pragma once
 
 #include "../Node.hpp"
+#include "base/AudioFormats.hpp"
+using namespace AudioFormats;
 
 #include <sndfile.h>
 #include <string>
@@ -20,12 +22,6 @@
  */
 class OutputSinkNode : public Node, public StreamSinkNode {
 public:
-    /** Supported output container formats. */
-    enum class ContainerFormat  { Wav, Flac, Ogg, Opus, Aiff, Caf, W64 };
-
-    /** PCM sub-format override; Auto means per-format default. */
-    enum class SubtypeOverride  { Auto, Pcm16, Pcm24, Pcm32, Float32 };
-
     std::string name() const override { return "OutputSink"; }
     void init(const std::unordered_map<std::string, std::string>& params) override;
 
@@ -37,21 +33,4 @@ public:
 private:
     ContainerFormat format_  = ContainerFormat::Wav;
     SubtypeOverride subtype_ = SubtypeOverride::Auto;
-
-    /** @return ContainerFormat parsed from a lowercase format string.
-     *  @throws std::invalid_argument for unknown format strings. */
-    static ContainerFormat parseFormat(const std::string& s);
-
-    /** @return SubtypeOverride parsed from a lowercase subtype string.
-     *  @throws std::invalid_argument for unknown subtype strings. */
-    static SubtypeOverride parseSubtype(const std::string& s);
-
-    /** @return libsndfile major format constant for the given format. */
-    static int majorFormat(ContainerFormat fmt);
-
-    /** @return libsndfile subtype constant. */
-    static int subtypeFormat(ContainerFormat fmt, SubtypeOverride subtype);
-
-    /** @return file extension (without leading dot). */
-    static std::string extension(ContainerFormat fmt);
 };
