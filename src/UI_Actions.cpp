@@ -289,6 +289,109 @@ void ManifoldApp::UI_Actions()
                         ImGui::EndGroup();
                     }
 
+                    // Output format selector
+                    {
+                        ImGui::BeginGroup();
+
+                        constexpr float kLabelW = 60.0f;
+
+                        // ── Container format ──────────────────────────────
+                        {
+                            struct FmtEntry { ContainerFormat fmt; const char* label; };
+                            static constexpr FmtEntry kFormats[] = {
+                                { ContainerFormat::Wav,  "WAV (.wav)"        },
+                                { ContainerFormat::Flac, "FLAC (.flac)"      },
+                                { ContainerFormat::Ogg,  "OGG Vorbis (.ogg)" },
+                                { ContainerFormat::Opus, "Opus (.ogg)"       },
+                                { ContainerFormat::Aiff, "AIFF (.aiff)"      },
+                                { ContainerFormat::Caf,  "CAF (.caf)"        },
+                                { ContainerFormat::W64,  "Wave64 (.w64)"     },
+                            };
+
+                            const char* fmtPreview = "?";
+                            for (const auto& e : kFormats)
+                                if (e.fmt == outputFormat) { fmtPreview = e.label; break; }
+
+                            ImGui::AlignTextToFramePadding();
+                            ImGui::Text("Format");
+                            ImGui::SameLine(kLabelW);
+                            ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x - 5.0f);
+                            if (ImGui::BeginCombo("##out_fmt", fmtPreview))
+                            {
+                                for (const auto& e : kFormats)
+                                {
+                                    const bool sel = (e.fmt == outputFormat);
+                                    if (ImGui::Selectable(e.label, sel))
+                                        outputFormat = e.fmt;
+                                    if (sel) ImGui::SetItemDefaultFocus();
+                                }
+                                ImGui::EndCombo();
+                            }
+                        }
+
+                        ImGui::Spacing();
+
+                        // ── Sample subtype ────────────────────────────────
+                        {
+                            const bool codecLocked = (outputFormat == ContainerFormat::Ogg ||
+                                                      outputFormat == ContainerFormat::Opus);
+                            const bool isFlac      = (outputFormat == ContainerFormat::Flac);
+
+                            struct SubEntry { SubtypeOverride sub; const char* label; bool flacOk; };
+                            static constexpr SubEntry kSubtypes[] = {
+                                { SubtypeOverride::Auto,     "Auto (format default)", true  },
+                                { SubtypeOverride::Pcm16,    "PCM 16-bit",            true  },
+                                { SubtypeOverride::Pcm24,    "PCM 24-bit",            true  },
+                                { SubtypeOverride::Pcm32,    "PCM 32-bit",            false },
+                                { SubtypeOverride::Float32,  "Float 32-bit",          false },
+                                { SubtypeOverride::Double64, "Double 64-bit",         false },
+                            };
+
+                            // Compute preview label, accounting for clamping
+                            const char* subPreview;
+                            if (codecLocked)
+                            {
+                                subPreview = (outputFormat == ContainerFormat::Opus)
+                                             ? "Opus (fixed)" : "Vorbis (fixed)";
+                            }
+                            else if (isFlac
+                                     && outputSubtype != SubtypeOverride::Auto
+                                     && outputSubtype != SubtypeOverride::Pcm16)
+                            {
+                                subPreview = "PCM 24-bit (clamped)";
+                            }
+                            else
+                            {
+                                subPreview = "?";
+                                for (const auto& e : kSubtypes)
+                                    if (e.sub == outputSubtype) { subPreview = e.label; break; }
+                            }
+
+                            ImGui::AlignTextToFramePadding();
+                            ImGui::Text("Subtype");
+                            ImGui::SameLine(kLabelW);
+                            ImGui::BeginDisabled(codecLocked);
+                            ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x - 5.0f);
+                            if (ImGui::BeginCombo("##out_sub", subPreview))
+                            {
+                                for (const auto& e : kSubtypes)
+                                {
+                                    const bool unsupported = isFlac && !e.flacOk;
+                                    if (unsupported) ImGui::BeginDisabled(true);
+                                    const bool sel = (e.sub == outputSubtype);
+                                    if (ImGui::Selectable(e.label, sel) && !unsupported)
+                                        outputSubtype = e.sub;
+                                    if (sel && !unsupported) ImGui::SetItemDefaultFocus();
+                                    if (unsupported) ImGui::EndDisabled();
+                                }
+                                ImGui::EndCombo();
+                            }
+                            ImGui::EndDisabled();
+                        }
+
+                        ImGui::EndGroup();
+                    }
+
                     {
                         ImGui::Spacing();
 
@@ -311,6 +414,7 @@ void ManifoldApp::UI_Actions()
                                 nextRunId++, outputPath, std::move(nodeNames));
 
                             singleFileProcessorWorker.setOutputDir(outputPath);
+                            singleFileProcessorWorker.setOutputFormat(outputFormat, outputSubtype);
 
                             {
                                 std::scoped_lock lock(sndFileListMutex);

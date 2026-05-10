@@ -67,6 +67,8 @@ private:
     std::mutex nodeChainMutex;                      // Protects nodeChain against concurrent access by the worker thread
     std::unordered_map<std::string, std::vector<AudioProcessorParam>> dspNodeParamDefCache;  // Cache for DSP node parameter definitions, key is node name
     std::string outputPath;
+    ContainerFormat outputFormat  = ContainerFormat::Wav;
+    SubtypeOverride outputSubtype = SubtypeOverride::Auto;
 
     std::vector<std::shared_ptr<ProcessingRun>> processingRuns;  ///< History of all runs (oldest first)
     uint64_t nextRunId = 1;
