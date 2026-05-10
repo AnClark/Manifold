@@ -225,10 +225,9 @@ void ManifoldApp::UI_Actions()
                                 }
 
                                 // Node-specific UI
-                                currentNode->drawUI();
-
-                                ImGui::EndChild();                                
+                                currentNode->drawUI();       
                             }
+                            ImGui::EndChild(); 
 
                             if (isBeingDragged)
                                 ImGui::PopStyleVar(); // pop Alpha
