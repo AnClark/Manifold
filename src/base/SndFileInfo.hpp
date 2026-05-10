@@ -30,8 +30,6 @@ struct SndFileInfo
     bool isDcOffsetCalculatedOK = false;
     std::string errorMsgDcOffset;
 
-    std::string errorMsgNodeChain; // Errors thrown during processing (e.g. by ChainEngine or nodes) are stored here to be displayed on UI
-
     bool selected = false;           // Mark if selected in File List
     std::atomic<bool> aboutToBeRemoved{false}; // Set to true when removed by user; workers skip processing
     
