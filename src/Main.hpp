@@ -2,6 +2,7 @@
 
 #include "Application.hpp"
 #include "base/SndFileInfo.hpp"
+#include "base/ProcessingRun.hpp"
 #include "workers/DcOffsetWorker.hpp"
 #include "workers/EBUR128Worker.hpp"
 #include "workers/SndFileWorker.hpp"
@@ -17,6 +18,7 @@ enum UIState
 {
     pUIFiles,
     pUIActions,
+    pUITasks,
     pUILog
 };
 
@@ -39,14 +41,15 @@ protected:
 
     void UI_Files();
     void UI_Actions();
+    void UI_Tasks();
     void UI_Log();
 
 private:
     UIState uiState;
 
     SndFileList sndFileList;
-    std::unordered_set<std::string> sndFilePathSet;  // 归一化路径 key，用于 O(1) 重复检测
-    int detectedDuplicateCount = 0;  // 本次添加过程中检测到的重复文件数量
+    std::unordered_set<std::string> sndFilePathSet;  // Normalized path key, used for O(1) duplicate detection
+    int detectedDuplicateCount = 0;  // Number of duplicate files detected during the current addition process. Will RESET after showing the warning to avoid stale warnings on next additions.
     int lastClickedIndex;
     std::mutex sndFileListMutex;
 
@@ -56,7 +59,7 @@ private:
     SingleFileProcessorWorker singleFileProcessorWorker;
 
     AudioPlayer audioPlayer;
-    std::shared_ptr<SndFileInfo> currentPlayingFile;  // 当前正在播放的文件路径
+    std::shared_ptr<SndFileInfo> currentPlayingFile;  // Currently playing file
 
     std::string NFDLastError;   // TODO: Display error message on UI
 
@@ -64,6 +67,9 @@ private:
     std::mutex nodeChainMutex;                      // Protects nodeChain against concurrent access by the worker thread
     std::unordered_map<std::string, std::vector<AudioProcessorParam>> dspNodeParamDefCache;  // Cache for DSP node parameter definitions, key is node name
     std::string outputPath;
+
+    std::vector<std::shared_ptr<ProcessingRun>> processingRuns;  ///< History of all runs (oldest first)
+    uint64_t nextRunId = 1;
 
     // Node Chain drag/drop (DnD) states & procedures
     struct NodeChainDnDState
@@ -81,6 +87,15 @@ private:
     };
     NodeChainDnDState dragDropState;
     void _dragDropIdle(const std::vector<float>& itemTopY, const std::vector<float>& itemBotY);
+
+    // =============================================================
+    // Tasks UI state
+
+    struct TasksUIState
+    {
+        int selectedRunIdx = -1;  ///< Index into processingRuns; -1 = auto-select latest
+    };
+    TasksUIState tasksUI;
 
     // =============================================================
     // Log UI state

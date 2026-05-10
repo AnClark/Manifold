@@ -4,11 +4,34 @@
 
 static constexpr const char* LOG_TAG = "Single File Processor";
 
+void SingleFileProcessorWorker::addFile(std::shared_ptr<SndFileInfo> fileInfo,
+                                        std::shared_ptr<FileRunRecord> record)
+{
+    // Push record BEFORE waking the worker so processItem always finds it.
+    {
+        std::scoped_lock<std::mutex> lock(recordQueueMutex_);
+        recordQueue_.push(std::move(record));
+    }
+    IWorker::addFile(std::move(fileInfo));
+}
+
 void SingleFileProcessorWorker::processItem(std::shared_ptr<SndFileInfo> fileInfoInstance)
 {
+    // Pop the paired FileRunRecord before any early return to keep
+    // recordQueue_ in sync with IWorker::pendingFileList.
+    std::shared_ptr<FileRunRecord> record;
+    {
+        std::scoped_lock<std::mutex> lock(recordQueueMutex_);
+        if (!recordQueue_.empty())
+        {
+            record = std::move(recordQueue_.front());
+            recordQueue_.pop();
+        }
+    }
+
     if (!fileInfoInstance || fileInfoInstance->aboutToBeRemoved || shouldCancelProcessing)
         return;
-    
+
     if (!nodeChain_ || !nodeChainMutex_)
         return;
 
@@ -29,9 +52,15 @@ void SingleFileProcessorWorker::processItem(std::shared_ptr<SndFileInfo> fileInf
         const bool dcPending      = !fileInfoInstance->isDcOffsetCalculatedOK
                                     && fileInfoInstance->errorMsgDcOffset.empty();
         if (parsePending || r128Pending || dcPending) {
-            fileInfoInstance->errorMsgNodeChain =
+            const std::string errMsg =
                 "File analysis is still in progress (LUFS / DC offset not yet computed). "
                 "Please wait for the analysis to finish and try again.";
+            if (record) {
+                std::scoped_lock<std::mutex> rlock(record->progressMutex);
+                record->errorMessage      = errMsg;
+                record->timestampFinished = std::chrono::system_clock::now();
+                record->status.store(FileRunRecord::Status::Error);
+            }
             LOG_ERRORF(LOG_TAG, "File '%s' analysis is still in progress.", fileInfoInstance->filePath.c_str());
             return;
         }
@@ -46,24 +75,29 @@ void SingleFileProcessorWorker::processItem(std::shared_ptr<SndFileInfo> fileInf
     {
         std::scoped_lock lock(*nodeChainMutex_);
         if (nodeChain_->empty())
+        {
+            if (record) {
+                std::scoped_lock<std::mutex> rlock(record->progressMutex);
+                record->errorMessage      = "Node chain is empty.";
+                record->timestampFinished = std::chrono::system_clock::now();
+                record->status.store(FileRunRecord::Status::Error);
+            }
             return;
+        }
         snapshot = *nodeChain_;
     }
 
-    // Set processing state for UI progress reporting
-    {
-        std::scoped_lock<std::mutex> lock(stateMutex);
-        currentState.filePath = fileInfoInstance->filePath;
-        currentState.nodeIndex = 0;
-        currentState.nodeName = "";
-        currentState.currentFileInfoPtr = reinterpret_cast<uintptr_t>(fileInfoInstance.get());
+    if (record) {
+        record->timestampStarted = std::chrono::system_clock::now();
+        record->status.store(FileRunRecord::Status::Processing);
     }
-    isProcessing.store(true);
 
-    // Create a local copy of outputDir in case of unexpected nasty situations
-    bool isLocked = outputDirMutex.try_lock();
-    std::string outputDir_Copied = std::string(this->outputDir_);
-    if (isLocked) outputDirMutex.unlock();
+    // Create a local copy of outputDir under lock
+    std::string outputDir_Copied;
+    {
+        std::scoped_lock<std::mutex> lock(outputDirMutex);
+        outputDir_Copied = outputDir_;
+    }
 
     // Build a non-owning view from the snapshot with sourceNode_ implicitly prepended
     std::vector<Node*> localView;
@@ -75,27 +109,36 @@ void SingleFileProcessorWorker::processItem(std::shared_ptr<SndFileInfo> fileInf
     outputNode_.init({{"format", "wav"}, {"subtype", "pcm16"}});
     localView.push_back(&outputNode_);
 
-    // Remember to clear error message from previous runs
-    fileInfoInstance->errorMsgNodeChain.clear();
-
     // Construct the engine and set up callbacks for progress and error reporting
+    bool hadError = false;
     ChainEngine engine(std::move(localView));
-    engine.setProgressCallback([this](size_t idx, std::string_view name) {
-        std::scoped_lock<std::mutex> lock(stateMutex);
-        currentState.nodeIndex = idx;
-        currentState.nodeName  = name;
-        LOG_TRACEF(LOG_TAG, "Processing file '%s': now at node %zu (%s)", currentState.filePath.c_str(), idx, name.data());
+    engine.setProgressCallback([&](size_t idx, std::string_view name) {
+        const std::string nameStr(name);
+        LOG_TRACEF(LOG_TAG, "Processing file '%s': now at node %zu (%s)",
+                   fileInfoInstance->filePath.c_str(), idx, nameStr.c_str());
+        if (record) {
+            std::scoped_lock<std::mutex> rlock(record->progressMutex);
+            record->currentNodeIndex = idx;
+            record->currentNodeName  = nameStr;
+        }
     });
     engine.setErrorCallback([&](std::string_view msg) {
-        fileInfoInstance->errorMsgNodeChain = msg;
+        hadError = true;
+        if (record) {
+            std::scoped_lock<std::mutex> rlock(record->progressMutex);
+            record->errorMessage = std::string(msg);
+        }
         LOG_ERRORF(LOG_TAG, "File '%s' processing error: %s", fileInfoInstance->filePath.c_str(), msg.data());
     });
 
     // Now everything is set up, let's go!
     engine.processFile(*fileInfoInstance, outputDir_Copied);
 
-    // Remember to reset isProcessing flag after done
-    isProcessing.store(false);
+    if (record) {
+        record->timestampFinished = std::chrono::system_clock::now();
+        record->status.store(hadError ? FileRunRecord::Status::Error
+                                      : FileRunRecord::Status::Done);
+    }
 
     LOG_INFOF(LOG_TAG, "Finished processing file '%s'", fileInfoInstance->filePath.c_str());
 }

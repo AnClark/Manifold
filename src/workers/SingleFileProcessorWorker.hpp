@@ -1,6 +1,7 @@
 #pragma once
 
 #include "base/Worker.hpp"
+#include "base/ProcessingRun.hpp"
 #include "pipeline/Node.hpp"
 #include "pipeline/base_nodes/FileSourceNode.hpp"
 #include "pipeline/base_nodes/OutputSinkNode.hpp"
@@ -14,27 +15,25 @@ public:
         nodeChainMutex_ = &mutex;
     }
 
+    // Overrides IWorker::addFile to keep recordQueue_ in sync.
+    // Submits the file without a run record (legacy / standalone use).
+    void addFile(std::shared_ptr<SndFileInfo> fileInfo)
+    {
+        {
+            std::scoped_lock<std::mutex> lock(recordQueueMutex_);
+            recordQueue_.push(nullptr);  // null = standalone submission
+        }
+        IWorker::addFile(std::move(fileInfo));
+    }
+
+    // Submits a file as part of a ProcessingRun.
+    // The record will be driven through its lifecycle by the worker thread.
+    void addFile(std::shared_ptr<SndFileInfo> fileInfo, std::shared_ptr<FileRunRecord> record);
+
     void setOutputDir(std::string outputDir) 
     {
         std::scoped_lock<std::mutex> lock(outputDirMutex);
         this->outputDir_ = std::move(outputDir);
-    }
-
-    bool queryIfProcessing() {
-        return isProcessing.load();
-    }
-
-    void queryProcessingState(std::string& filePath, size_t& nodeIndex, std::string& nodeName)
-    {
-        std::scoped_lock<std::mutex> lock(stateMutex);
-        filePath = currentState.filePath;
-        nodeIndex = currentState.nodeIndex;
-        nodeName = currentState.nodeName;
-    }
-
-    bool queryIfProcessingFile(std::shared_ptr<SndFileInfo> fileInfo)
-    {
-        return (isProcessing.load() && reinterpret_cast<uintptr_t>(fileInfo.get()) == currentState.currentFileInfoPtr);
     }
 
 protected:
@@ -50,19 +49,8 @@ private:
 
     std::mutex outputDirMutex;
 
-    // ------------------------------------------------------------------------
-    // Processing state for the current file. Only accessed by the worker thread, so no mutex needed.
-
-    struct ProcessingState {
-        std::string filePath;       // Currently processing file
-        size_t      nodeIndex  = 0; // Currently processing node index
-        std::string nodeName;       // Currently processing node name
-        uintptr_t   currentFileInfoPtr; // Pointer of current SndFileInfo which is being processed (for comparing in queryIfProcessingFile())
-    };
-
-    std::atomic<bool> isProcessing{false};
-
-    // Use mutex + struct to protect fine-grained state
-    std::mutex              stateMutex;
-    ProcessingState         currentState;
+    // Paired record queue — one entry per IWorker::pendingFileList entry.
+    // nullptr entries correspond to standalone (non-run) submissions.
+    std::queue<std::shared_ptr<FileRunRecord>> recordQueue_;
+    std::mutex                                 recordQueueMutex_;
 };

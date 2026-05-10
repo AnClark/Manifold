@@ -39,6 +39,8 @@ include_directories (
     deps/miniaudio
     deps/miniaudio-libsndfile
     deps/r8brain
+    deps/ImGuiNotify
+    deps/ImGuiNotify/fonts
 )
 
 # Load pkg-config for finding dependencies, and let it prefer finding static libraries
@@ -63,6 +65,7 @@ add_executable (${PROJECT_NAME} WIN32
     src/utils/AudioPlayer.cpp
     src/UI_Files.cpp
     src/UI_Actions.cpp
+    src/UI_Tasks.cpp
     src/UI_Log.cpp
     src/processors/LoudnessNormalizeProcessor.cpp
     src/processors/TruePeakLimiterProcessor.cpp
