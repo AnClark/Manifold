@@ -2,6 +2,7 @@
 
 #include "imgui.h"
 #include "ImGuiNotify_MOD.hpp"
+#include "utils/TableMinColumnWidth.hpp"
 
 #include <chrono>
 #include <cstdio>
@@ -468,6 +469,11 @@ void ManifoldApp::UI_Tasks()
         }
     }
     ImGui::EndChild(); // Tasks_FileTable
+
+    // HACK: Set minimum column width
+    // Make sure reference text (for example, the tip text in Details view) can be fully shown.
+    constexpr const char* referenceText = "Details will show here when you select a run on the left.";
+    ImGuiHack::SetTableMinColumnWidth(ImGui::CalcTextSize(referenceText).x + ImGui::GetStyle().CellPadding.x * 2.0f);
 
     ImGui::EndTable();
     ImGui::PopStyleVar();

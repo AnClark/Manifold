@@ -3,6 +3,7 @@
 
 #include "imgui.h"
 #include "nfd.hpp"
+#include "utils/TableMinColumnWidth.hpp"
 #include "pipeline/base_nodes/DSPNode.hpp"
 
 #include "../fonts/IconFontAwesome5.h"
@@ -525,6 +526,11 @@ void ManifoldApp::UI_Actions()
                     }
                 }
                 ImGui::EndChild();
+
+                // HACK: Set minimum column width
+                // Make sure reference text (for example, the warning/tip text for "Process All Files" button) can be fully shown.
+                constexpr const char* referenceText = ICON_FA_EXCLAMATION_TRIANGLE " Go to Files, add files to the file list to enable processing.";
+                ImGuiHack::SetTableMinColumnWidth(ImGui::CalcTextSize(referenceText).x + ImGui::GetStyle().CellPadding.x * 2.0f);
 
                 ImGui::EndTable();
             }
