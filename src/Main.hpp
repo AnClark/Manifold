@@ -18,6 +18,7 @@ enum UIState
 {
     pUIFiles,
     pUIActions,
+    pUITasks,
     pUILog
 };
 
@@ -40,6 +41,7 @@ protected:
 
     void UI_Files();
     void UI_Actions();
+    void UI_Tasks();
     void UI_Log();
 
 private:
@@ -85,6 +87,15 @@ private:
     };
     NodeChainDnDState dragDropState;
     void _dragDropIdle(const std::vector<float>& itemTopY, const std::vector<float>& itemBotY);
+
+    // =============================================================
+    // Tasks UI state
+
+    struct TasksUIState
+    {
+        int selectedRunIdx = -1;  ///< Index into processingRuns; -1 = auto-select latest
+    };
+    TasksUIState tasksUI;
 
     // =============================================================
     // Log UI state

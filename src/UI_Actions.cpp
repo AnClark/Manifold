@@ -308,88 +308,133 @@ void ManifoldApp::UI_Actions()
 
                     {
                         ImGui::Spacing();
-                        static int errnumber = -1;
-#if _WIN32
-                        constexpr const char* TEST_OUTPUT_DIR = "R:\\";
-#else
-                        constexpr const char* TEST_OUTPUT_DIR = "/tmp/";
-#endif
-                        if (ImGui::Button("Test rendering the first file in file list"))
+
+                        // ── Process button ───────────────────────────────────
+                        const bool canProcess = !sndFileList.empty()
+                                             && !nodeChain.empty()
+                                             && !outputPath.empty();
+                        ImGui::BeginDisabled(!canProcess);
+                        if (ImGui::Button("Process All Files", ImVec2(-1, 0)))
                         {
-                            singleFileProcessorWorker.setOutputDir(TEST_OUTPUT_DIR);
-                            if (sndFileList.size() > 0 && nodeChain.size() > 0)
+                            // Snapshot node names for the run record
+                            std::vector<std::string> nodeNames;
                             {
-                                singleFileProcessorWorker.addFile(sndFileList[0]);
-                                errnumber = 0;
+                                std::scoped_lock lock(nodeChainMutex);
+                                for (const auto& n : nodeChain)
+                                    nodeNames.push_back(n->name());
                             }
-                            else if (sndFileList.size() <= 0)
+
+                            auto run = std::make_shared<ProcessingRun>(
+                                nextRunId++, outputPath, std::move(nodeNames));
+
+                            singleFileProcessorWorker.setOutputDir(outputPath);
+
                             {
-                                errnumber = 1;
+                                std::scoped_lock lock(sndFileListMutex);
+                                for (auto& fi : sndFileList)
+                                {
+                                    auto record = std::make_shared<FileRunRecord>(fi);
+                                    run->records.push_back(record);
+                                    singleFileProcessorWorker.addFile(fi, std::move(record));
+                                }
                             }
+
+                            processingRuns.push_back(std::move(run));
+                        }
+                        ImGui::EndDisabled();
+
+                        if (!canProcess)
+                        {
+                            ImGui::BeginGroup();
+
+                            const char* hintMsg = nullptr;
+                            if (outputPath.empty())
+                                hintMsg = "Select an output folder above to enable processing.";
+                            else if (sndFileList.empty())
+                                hintMsg = "Go to Files, add files to the file list to enable processing.";
                             else
-                            {
-                                errnumber = 2;
-                            }
+                                hintMsg = "Add at least one action node to enable processing.";
+
+                            // Calculate text widths & gap widths for centralized display
+                            constexpr float gap = 4.0f;
+                            const float hintMsgWidth = ImGui::CalcTextSize(ICON_FA_EXCLAMATION_TRIANGLE).x + gap + ImGui::CalcTextSize(hintMsg).x;
+                            ImGui::SetCursorPosX(ImGui::GetContentRegionAvail().x * 0.5f - hintMsgWidth * 0.5f);
+
+                            ImGui::TextColored(ImVec4(1.0f, 0.8f, 0.2f, 1.0f), "%s", ICON_FA_EXCLAMATION_TRIANGLE);
+                            ImGui::SameLine(0, 4);
+                            ImGui::TextColored(ImVec4(1.0f, 0.85f, 0.5f, 1.0f), "%s", hintMsg);
+
+                            ImGui::EndGroup();
                         }
 
-                        if (ImGui::Button("Test rendering all files in the list"))
-                        {
-                            singleFileProcessorWorker.setOutputDir(TEST_OUTPUT_DIR);
-                            if (sndFileList.size() > 0 && nodeChain.size() > 0)
-                            {
-                                for (auto item : sndFileList)
-                                    singleFileProcessorWorker.addFile(item);
-                                errnumber = 0;
-                            }
-                            else if (sndFileList.size() <= 0)
-                            {
-                                errnumber = 1;
-                            }
-                            else
-                            {
-                                errnumber = 2;
-                            }
-                        }
-
-                        switch (errnumber)
-                        {
-                            case 0:
-                                ImGui::TextDisabled("File(s) added to processor queue");
-                                break;
-                            case 1:
-                                ImGui::TextDisabled("File list is empty");
-                                break;
-                            case 2:
-                                ImGui::TextDisabled("Node chain is empty");
-                                break;
-                        }
-
-                        if (singleFileProcessorWorker.queryIfProcessing())
-                        {
-                            std::string filePath;
-                            size_t nodeIndex;
-                            std::string nodeName;
-                            singleFileProcessorWorker.queryProcessingState(filePath, nodeIndex, nodeName);
-                            ImGui::Text("Processing: %s (Node %zu: %s)", 
-                                filePath.c_str(),
-                                nodeIndex,
-                                nodeName.c_str());
-                        }
-                        else
-                        {
-                            ImGui::TextDisabled("Processor is idle");
-                        }
-
-                        if (sndFileList.size() > 0 && singleFileProcessorWorker.queryIfProcessingFile(sndFileList[0]))
-                        {
-                            ImGui::TextDisabled("INFO: The first file in the list is currently being processed");
-                        }
-
-                        if (sndFileList.size() > 0 && sndFileList[0]->errorMsgNodeChain.size() > 0)
+                        // ── Latest run status ────────────────────────────────
+                        if (!processingRuns.empty())
                         {
                             ImGui::Spacing();
-                            ImGui::TextColored(ImVec4(1.0f, 0.4f, 0.4f, 1.0f), "Error in processing the first file:");
-                            ImGui::TextWrapped("%s", sndFileList[0]->errorMsgNodeChain.c_str());
+                            ImGui::SeparatorText("Latest Run");
+
+                            const auto& run   = processingRuns.back();
+                            const size_t done  = run->countByStatus(FileRunRecord::Status::Done);
+                            const size_t error = run->countByStatus(FileRunRecord::Status::Error);
+                            const size_t total = run->records.size();
+
+                            ImGui::Text("Run #%llu  —  %zu / %zu done, %zu error(s)",
+                                        run->id, done + error, total, error);
+                            ImGui::ProgressBar(run->getProgress(), ImVec2(-1, 6), "");  // Param #3: overlay. Set to empty string to disable percentage display
+
+                            // Per-file rows
+                            ImGui::BeginChild("RunFileList", ImVec2(0, 120),
+                                              ImGuiChildFlags_Borders);
+                            for (const auto& rec : run->records)
+                            {
+                                const auto st = rec->status.load(std::memory_order_relaxed);
+
+                                const char* statusLabel;
+                                ImVec4      statusColor;
+                                switch (st)
+                                {
+                                    case FileRunRecord::Status::Processing:
+                                        statusLabel = " RUN ";
+                                        statusColor = ImVec4(1.0f, 0.8f, 0.2f, 1.0f);
+                                        break;
+                                    case FileRunRecord::Status::Done:
+                                        statusLabel = "  OK ";
+                                        statusColor = ImVec4(0.4f, 1.0f, 0.4f, 1.0f);
+                                        break;
+                                    case FileRunRecord::Status::Error:
+                                        statusLabel = " ERR ";
+                                        statusColor = ImVec4(1.0f, 0.4f, 0.4f, 1.0f);
+                                        break;
+                                    default: // Pending
+                                        statusLabel = " ... ";
+                                        statusColor = ImGui::GetStyle().Colors[ImGuiCol_TextDisabled];
+                                        break;
+                                }
+
+                                ImGui::TextColored(statusColor, "%s", statusLabel);
+                                ImGui::SameLine();
+                                ImGui::TextUnformatted(rec->fileInfo->fileNameBase.c_str());
+
+                                if (st == FileRunRecord::Status::Processing)
+                                {
+                                    std::scoped_lock<std::mutex> rlock(rec->progressMutex);
+                                    if (!rec->currentNodeName.empty())
+                                    {
+                                        ImGui::SameLine();
+                                        ImGui::TextDisabled("[%s]", rec->currentNodeName.c_str());
+                                    }
+                                }
+                                else if (st == FileRunRecord::Status::Error)
+                                {
+                                    if (ImGui::IsItemHovered())
+                                    {
+                                        std::scoped_lock<std::mutex> rlock(rec->progressMutex);
+                                        if (!rec->errorMessage.empty())
+                                            ImGui::SetTooltip("%s", rec->errorMessage.c_str());
+                                    }
+                                }
+                            }
+                            ImGui::EndChild();
                         }
                     }
                 }

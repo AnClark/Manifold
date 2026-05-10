@@ -102,7 +102,8 @@ void ManifoldApp::onImGuiDisplay()
 
             uiSwitchButton("\uf1c7", pUIFiles, "Files");
             uiSwitchButton("\uf0ae", pUIActions, "Actions");
-            uiSwitchButton("\uf1ea", pUILog, "Log");
+            uiSwitchButton("\uf1da", pUITasks,   "Tasks");
+            uiSwitchButton("\uf1ea", pUILog,     "Log");
 
             ImGui::PopStyleColor(2);
 
@@ -120,6 +121,9 @@ void ManifoldApp::onImGuiDisplay()
                 break;
             case pUIActions:
                 UI_Actions();
+                break;
+            case pUITasks:
+                UI_Tasks();
                 break;
             case pUILog:
                 UI_Log();
