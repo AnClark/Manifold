@@ -2,6 +2,7 @@
 
 #include "Application.hpp"
 #include "base/SndFileInfo.hpp"
+#include "base/ProcessingRun.hpp"
 #include "workers/DcOffsetWorker.hpp"
 #include "workers/EBUR128Worker.hpp"
 #include "workers/SndFileWorker.hpp"
@@ -64,6 +65,9 @@ private:
     std::mutex nodeChainMutex;                      // Protects nodeChain against concurrent access by the worker thread
     std::unordered_map<std::string, std::vector<AudioProcessorParam>> dspNodeParamDefCache;  // Cache for DSP node parameter definitions, key is node name
     std::string outputPath;
+
+    std::vector<std::shared_ptr<ProcessingRun>> processingRuns;  ///< History of all runs (oldest first)
+    uint64_t nextRunId = 1;
 
     // Node Chain drag/drop (DnD) states & procedures
     struct NodeChainDnDState
