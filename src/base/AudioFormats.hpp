@@ -48,15 +48,17 @@ enum class ContainerFormat
  *
  * When set to @c Auto the per-container default chosen by
  * @ref subtypeFormat() is used.  Any other value unconditionally
- * overrides that default.
+ * overrides that default (subject to per-container clamping for
+ * formats that do not support all subtypes).
  */
 enum class SubtypeOverride
 {
-    Auto,    ///< Use the per-container default subtype
-    Pcm16,   ///< 16-bit signed integer PCM  (@c SF_FORMAT_PCM_16)
-    Pcm24,   ///< 24-bit signed integer PCM  (@c SF_FORMAT_PCM_24)
-    Pcm32,   ///< 32-bit signed integer PCM  (@c SF_FORMAT_PCM_32)
-    Float32, ///< 32-bit IEEE-754 float       (@c SF_FORMAT_FLOAT)
+    Auto,     ///< Use the per-container default subtype
+    Pcm16,    ///< 16-bit signed integer PCM  (@c SF_FORMAT_PCM_16)
+    Pcm24,    ///< 24-bit signed integer PCM  (@c SF_FORMAT_PCM_24)
+    Pcm32,    ///< 32-bit signed integer PCM  (@c SF_FORMAT_PCM_32)
+    Float32,  ///< 32-bit IEEE-754 float       (@c SF_FORMAT_FLOAT)
+    Double64, ///< 64-bit IEEE-754 double      (@c SF_FORMAT_DOUBLE)
 };
 
 // --------------------------------------------------------------------------
@@ -89,7 +91,7 @@ static ContainerFormat parseFormat(const std::string& s)
  * @brief Parse a lowercase subtype string into a @ref SubtypeOverride.
  *
  * Accepted tokens: @c "" (empty string), @c "auto", @c "pcm16",
- * @c "pcm24", @c "pcm32", @c "float32".
+ * @c "pcm24", @c "pcm32", @c "float32", @c "double64".
  * Both an empty string and @c "auto" map to @ref SubtypeOverride::Auto.
  *
  * @param s  Lowercase subtype identifier (e.g. @c "pcm24"), or an empty
@@ -100,10 +102,11 @@ static ContainerFormat parseFormat(const std::string& s)
 static SubtypeOverride parseSubtype(const std::string& s)
 {
     if (s.empty() || s == "auto") return SubtypeOverride::Auto;
-    if (s == "pcm16")   return SubtypeOverride::Pcm16;
-    if (s == "pcm24")   return SubtypeOverride::Pcm24;
-    if (s == "pcm32")   return SubtypeOverride::Pcm32;
-    if (s == "float32") return SubtypeOverride::Float32;
+    if (s == "pcm16")    return SubtypeOverride::Pcm16;
+    if (s == "pcm24")    return SubtypeOverride::Pcm24;
+    if (s == "pcm32")    return SubtypeOverride::Pcm32;
+    if (s == "float32")  return SubtypeOverride::Float32;
+    if (s == "double64") return SubtypeOverride::Double64;
     throw std::invalid_argument("OutputSinkNode: unknown subtype '" + s + "'");
 }
 
@@ -136,43 +139,55 @@ static int majorFormat(ContainerFormat fmt)
 /**
  * @brief Return the libsndfile subtype constant for a format/subtype pair.
  *
- * When @p subtype is @ref SubtypeOverride::Auto the function selects a
- * sensible per-container default:
- *   - @c Flac / @c Caf  → @c SF_FORMAT_PCM_24
- *   - @c Ogg            → @c SF_FORMAT_VORBIS
- *   - @c Opus           → @c SF_FORMAT_OPUS (when @c SF_FORMAT_OPUS is defined)
+ * Codec-locked formats always return a fixed subtype regardless of @p subtype:
+ *   - @c Ogg  → @c SF_FORMAT_VORBIS  (codec is always Vorbis)
+ *   - @c Opus → @c SF_FORMAT_OPUS    (or @c SF_FORMAT_VORBIS as fallback when
+ *               @c SF_FORMAT_OPUS is not defined by the installed libsndfile)
+ *
+ * FLAC only supports 16- and 24-bit integer PCM; @c Pcm32, @c Float32, and
+ * @c Double64 overrides are silently clamped to @c SF_FORMAT_PCM_24.
+ *
+ * For all remaining formats (WAV, AIFF, CAF, W64) an explicit @p subtype
+ * override takes precedence over the per-container default.  When @p subtype
+ * is @ref SubtypeOverride::Auto the per-container default is used:
+ *   - @c Caf  → @c SF_FORMAT_PCM_24
  *   - @c Wav / @c Aiff / @c W64 → @c SF_FORMAT_PCM_16
  *
- * Any explicit override in @p subtype takes precedence over the defaults
- * above, regardless of the container format.
- *
- * @param fmt      The target container format (used only when
- *                 @p subtype is @ref SubtypeOverride::Auto).
- * @param subtype  The requested PCM subtype, or @ref SubtypeOverride::Auto
+ * @param fmt      The target container format.
+ * @param subtype  The requested subtype, or @ref SubtypeOverride::Auto
  *                 to apply the per-format default.
  * @return         A libsndfile @c SF_FORMAT_* subtype constant.
  */
 static int subtypeFormat(ContainerFormat fmt, SubtypeOverride subtype)
 {
-    // Explicit override takes precedence
-    switch (subtype) {
-        case SubtypeOverride::Pcm16:   return SF_FORMAT_PCM_16;
-        case SubtypeOverride::Pcm24:   return SF_FORMAT_PCM_24;
-        case SubtypeOverride::Pcm32:   return SF_FORMAT_PCM_32;
-        case SubtypeOverride::Float32: return SF_FORMAT_FLOAT;
-        case SubtypeOverride::Auto:    break;
+    // Codec-locked formats: subtype is always determined by the codec;
+    // user overrides are meaningless and must be ignored.
+    if (fmt == ContainerFormat::Ogg)  return SF_FORMAT_VORBIS;
+#ifdef SF_FORMAT_OPUS
+    if (fmt == ContainerFormat::Opus) return SF_FORMAT_OPUS;
+#else
+    if (fmt == ContainerFormat::Opus) return SF_FORMAT_VORBIS;  // libsndfile too old for Opus
+#endif
+
+    // FLAC only supports PCM_16 and PCM_24; clamp anything else to PCM_24.
+    if (fmt == ContainerFormat::Flac) {
+        if (subtype == SubtypeOverride::Pcm16) return SF_FORMAT_PCM_16;
+        return SF_FORMAT_PCM_24;
     }
 
-    // Per-format defaults
-    switch (fmt) {
-        case ContainerFormat::Flac: return SF_FORMAT_PCM_24;
-        case ContainerFormat::Ogg:  return SF_FORMAT_VORBIS;
-#ifdef SF_FORMAT_OPUS
-        case ContainerFormat::Opus: return SF_FORMAT_OPUS;
-#endif
-        case ContainerFormat::Caf:  return SF_FORMAT_PCM_24;
-        default:                    return SF_FORMAT_PCM_16;  // WAV, AIFF, W64 default to 16-bit
+    // WAV, AIFF, CAF, W64: honour explicit override.
+    switch (subtype) {
+        case SubtypeOverride::Pcm16:    return SF_FORMAT_PCM_16;
+        case SubtypeOverride::Pcm24:    return SF_FORMAT_PCM_24;
+        case SubtypeOverride::Pcm32:    return SF_FORMAT_PCM_32;
+        case SubtypeOverride::Float32:  return SF_FORMAT_FLOAT;
+        case SubtypeOverride::Double64: return SF_FORMAT_DOUBLE;
+        case SubtypeOverride::Auto:     break;
     }
+
+    // Per-format Auto defaults.
+    if (fmt == ContainerFormat::Caf) return SF_FORMAT_PCM_24;
+    return SF_FORMAT_PCM_16;  // WAV, AIFF, W64 default to 16-bit
 }
 
 /**
@@ -234,16 +249,17 @@ static std::string formatName(ContainerFormat fmt)
  *
  * @param subtype  The subtype override enumerator.
  * @return         Lowercase subtype name: @c "auto", @c "pcm16",
- *                 @c "pcm24", @c "pcm32", or @c "float32".
+ *                 @c "pcm24", @c "pcm32", @c "float32", or @c "double64".
  */
 static std::string subtypeName(SubtypeOverride subtype)
 {
     switch (subtype) {
-        case SubtypeOverride::Auto:    return "auto";
-        case SubtypeOverride::Pcm16:   return "pcm16";
-        case SubtypeOverride::Pcm24:   return "pcm24";
-        case SubtypeOverride::Pcm32:   return "pcm32";
-        case SubtypeOverride::Float32: return "float32";
+        case SubtypeOverride::Auto:     return "auto";
+        case SubtypeOverride::Pcm16:    return "pcm16";
+        case SubtypeOverride::Pcm24:    return "pcm24";
+        case SubtypeOverride::Pcm32:    return "pcm32";
+        case SubtypeOverride::Float32:  return "float32";
+        case SubtypeOverride::Double64: return "double64";
     }
     return "auto";  // unreachable
 }
