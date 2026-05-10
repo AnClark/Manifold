@@ -314,7 +314,7 @@ void ManifoldApp::UI_Actions()
                                              && !nodeChain.empty()
                                              && !outputPath.empty();
                         ImGui::BeginDisabled(!canProcess);
-                        if (ImGui::Button("Process All Files", ImVec2(-1, 0)))
+                        if (ImGui::Button("Process All Files", ImVec2(-1, 28.0f)))
                         {
                             // Snapshot node names for the run record
                             std::vector<std::string> nodeNames;
