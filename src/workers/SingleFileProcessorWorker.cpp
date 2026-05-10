@@ -106,7 +106,7 @@ void SingleFileProcessorWorker::processItem(std::shared_ptr<SndFileInfo> fileInf
     for (auto& n : snapshot)
         localView.push_back(n.get());
     
-    outputNode_.init({{"format", "wav"}, {"subtype", "pcm16"}});
+    outputNode_.init({{"format", AudioFormats::formatName(this->outputFormat_)}, {"subtype", AudioFormats::subtypeName(outputSubType_)}});
     localView.push_back(&outputNode_);
 
     // Construct the engine and set up callbacks for progress and error reporting

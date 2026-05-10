@@ -2,9 +2,12 @@
 
 #include "base/Worker.hpp"
 #include "base/ProcessingRun.hpp"
+#include "base/AudioFormats.hpp"
 #include "pipeline/Node.hpp"
 #include "pipeline/base_nodes/FileSourceNode.hpp"
 #include "pipeline/base_nodes/OutputSinkNode.hpp"
+
+using namespace AudioFormats;
 
 class SingleFileProcessorWorker : public IWorker
 {
@@ -43,6 +46,9 @@ private:
     std::vector<std::shared_ptr<Node>>* nodeChain_ = nullptr;
     std::mutex*                          nodeChainMutex_ = nullptr;
     std::string outputDir_;
+
+    ContainerFormat    outputFormat_  = ContainerFormat::Wav;
+    SubtypeOverride    outputSubType_ = SubtypeOverride::Pcm16;
 
     FileSourceNode sourceNode_;  ///< Implicitly prepended to the user-supplied chain
     OutputSinkNode outputNode_;  ///< Implicitly prepended to the user-supplied chain as well
