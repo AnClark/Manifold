@@ -99,6 +99,15 @@ void SingleFileProcessorWorker::processItem(std::shared_ptr<SndFileInfo> fileInf
         outputDir_Copied = outputDir_;
     }
 
+    // Also create a local copy of output format variables under lock
+    ContainerFormat outputFormat_Copied;
+    SubtypeOverride outputSubType_Copied;
+    {
+        std::scoped_lock<std::mutex> lock(outputFormatMutex);
+        outputFormat_Copied = outputFormat_;
+        outputSubType_Copied = outputSubType_;
+    }
+
     // Build a non-owning view from the snapshot with sourceNode_ implicitly prepended
     std::vector<Node*> localView;
     localView.reserve(2 + snapshot.size());
@@ -106,7 +115,7 @@ void SingleFileProcessorWorker::processItem(std::shared_ptr<SndFileInfo> fileInf
     for (auto& n : snapshot)
         localView.push_back(n.get());
     
-    outputNode_.init({{"format", "wav"}, {"subtype", "pcm16"}});
+    outputNode_.init({{"format", AudioFormats::formatName(outputFormat_Copied)}, {"subtype", AudioFormats::subtypeName(outputSubType_Copied)}});
     localView.push_back(&outputNode_);
 
     // Construct the engine and set up callbacks for progress and error reporting

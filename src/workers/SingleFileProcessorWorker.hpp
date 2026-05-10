@@ -2,9 +2,12 @@
 
 #include "base/Worker.hpp"
 #include "base/ProcessingRun.hpp"
+#include "base/AudioFormats.hpp"
 #include "pipeline/Node.hpp"
 #include "pipeline/base_nodes/FileSourceNode.hpp"
 #include "pipeline/base_nodes/OutputSinkNode.hpp"
+
+using namespace AudioFormats;
 
 class SingleFileProcessorWorker : public IWorker
 {
@@ -36,6 +39,13 @@ public:
         this->outputDir_ = std::move(outputDir);
     }
 
+    void setOutputFormat(ContainerFormat format, SubtypeOverride subtype)
+    {
+        std::scoped_lock<std::mutex> lock(outputFormatMutex);
+        this->outputFormat_ = format;
+        this->outputSubType_ = subtype;
+    }
+
 protected:
     void processItem(std::shared_ptr<SndFileInfo> fileInfoInstance) override;
 
@@ -44,10 +54,14 @@ private:
     std::mutex*                          nodeChainMutex_ = nullptr;
     std::string outputDir_;
 
+    ContainerFormat    outputFormat_  = ContainerFormat::Wav;
+    SubtypeOverride    outputSubType_ = SubtypeOverride::Pcm16;
+
     FileSourceNode sourceNode_;  ///< Implicitly prepended to the user-supplied chain
     OutputSinkNode outputNode_;  ///< Implicitly prepended to the user-supplied chain as well
 
     std::mutex outputDirMutex;
+    std::mutex outputFormatMutex;
 
     // Paired record queue — one entry per IWorker::pendingFileList entry.
     // nullptr entries correspond to standalone (non-run) submissions.
