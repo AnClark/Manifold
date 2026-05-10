@@ -258,34 +258,9 @@ void ManifoldApp::UI_Actions()
 
                         ImGui::Text("Folder");
                         ImGui::SameLine(0, 30);
-                        
-                        {
-                            // Calculate background color: 30% lighter than window background
-                            const ImVec4 bgColor = ImGui::GetStyle().Colors[ImGuiCol_WindowBg];
-                            const ImVec4 lighterBg = ImVec4(
-                                bgColor.x + (1.0f - bgColor.x) * 0.125f,
-                                bgColor.y + (1.0f - bgColor.y) * 0.125f,
-                                bgColor.z + (1.0f - bgColor.z) * 0.125f,
-                                bgColor.w
-                            );
-                            
-                            // Draw background rectangle for the text area
-                            ImDrawList* drawList = ImGui::GetWindowDrawList();
-                            ImVec2 textPos = ImGui::GetCursorScreenPos();
-                            float textWidth = ImGui::GetContentRegionAvail().x;
-                            float textHeight = ImGui::GetTextLineHeight();
-                            drawList->AddRectFilled(textPos, ImVec2(textPos.x + textWidth, textPos.y + textHeight), 
-                                                    ImGui::ColorConvertFloat4ToU32(lighterBg));
-                            
-                            if (outputPath.empty())
-                                ImGui::TextDisabled("(empty)");
-                            else
-                                ImGui::Text("%s", outputPath.c_str());
-                        }
 
-                        constexpr float selectButtonWidth = 160.0f;
-                        ImGui::SetCursorPosX(ImGui::GetContentRegionAvail().x - selectButtonWidth - 5.0f);
-                        if (ImGui::Button("Select Output Folder...", ImVec2(selectButtonWidth, 0)))
+                        const char* folderButtonLabel = outputPath.empty() ? "(empty)" : outputPath.c_str();
+                        if (ImGui::Button(folderButtonLabel, ImVec2(ImGui::GetContentRegionAvail().x - 5.0f, 0)))
                         {
                             nfdu8char_t* pickedPath = nullptr;
                             if (NFD::PickFolder(pickedPath) == NFD_OKAY)
@@ -293,6 +268,14 @@ void ManifoldApp::UI_Actions()
                                 outputPath = pickedPath;
                                 NFD::FreePath(pickedPath);
                             }
+                        }
+                        if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal | ImGuiHoveredFlags_NoSharedDelay))
+                        {
+                            ImGui::BeginTooltip();
+                            ImGui::Text("Click this button to specify output path.");
+                            ImGui::Separator();
+                            ImGui::BulletText("Current output path: %s", outputPath.empty() ? "Not specified" : outputPath.c_str());
+                            ImGui::EndTooltip();
                         }
 
                         ImGui::EndGroup();    
