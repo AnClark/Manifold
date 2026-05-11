@@ -3,6 +3,14 @@
 
 #include "imgui.h"
 #include "nfd.hpp"
+
+// nfd_glfw3.h provides NFD_GetNativeWindowFromGLFWWindow(), which converts a GLFW window to an NFD parent window handle.
+// GLFW_EXPOSE_NATIVE_WIN32 must be defined before including nfd_glfw3.h (which in turn includes glfw3native.h).
+#ifdef _WIN32
+#define GLFW_EXPOSE_NATIVE_WIN32
+#endif
+#include "nfd_glfw3.h"
+
 #include "utils/TableMinColumnWidth.hpp"
 #include "pipeline/base_nodes/DSPNode.hpp"
 
@@ -263,7 +271,13 @@ void ManifoldApp::UI_Actions()
                         if (ImGui::Button(folderButtonLabel, ImVec2(ImGui::GetContentRegionAvail().x - 5.0f, 0)))
                         {
                             nfdu8char_t* pickedPath = nullptr;
-                            if (NFD::PickFolder(pickedPath) == NFD_OKAY)
+
+                            // Pass in the parent window handle: On Windows, the parent window will be automatically disabled while the file dialog is open,
+                            // preventing users from accidentally interacting with the main interface while the file dialog is open.
+                            nfdwindowhandle_t parentWindow = {};
+                            NFD_GetNativeWindowFromGLFWWindow(getWindow(), &parentWindow);
+
+                            if (NFD::PickFolder(pickedPath, nullptr, parentWindow) == NFD_OKAY)
                             {
                                 outputPath = pickedPath;
                                 NFD::FreePath(pickedPath);
@@ -391,6 +405,8 @@ void ManifoldApp::UI_Actions()
 
                         ImGui::EndGroup();
                     }
+
+                    ImGui::Dummy(ImVec2(0, 4));
 
                     {
                         ImGui::Spacing();

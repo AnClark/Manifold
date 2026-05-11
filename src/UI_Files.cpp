@@ -4,6 +4,13 @@
 #include "nfd.hpp"
 #include "ImGuiNotify_MOD.hpp"
 
+// nfd_glfw3.h provides NFD_GetNativeWindowFromGLFWWindow(), which converts a GLFW window to an NFD parent window handle.
+// GLFW_EXPOSE_NATIVE_WIN32 must be defined before including nfd_glfw3.h (which in turn includes glfw3native.h).
+#ifdef _WIN32
+#define GLFW_EXPOSE_NATIVE_WIN32
+#endif
+#include "nfd_glfw3.h"
+
 #include <algorithm>
 #include <filesystem>
 
@@ -78,7 +85,13 @@ void ManifoldApp::UI_Files()
                     { "Audio Files", "wav,flac,mp3,ogg,aiff" },
                     { "All Files",   "*" }
                 };
-                nfdresult_t result = NFD::OpenDialogMultiple(outPaths, filters, 2);
+
+                // Pass in the parent window handle: On Windows, the parent window will be automatically disabled while the file dialog is open,
+                // preventing users from accidentally interacting with the main interface while the file dialog is open.
+                nfdwindowhandle_t parentWindow = {};
+                NFD_GetNativeWindowFromGLFWWindow(getWindow(), &parentWindow);
+
+                nfdresult_t result = NFD::OpenDialogMultiple(outPaths, filters, 2, nullptr, parentWindow);
                 if (result == NFD_OKAY)
                 {
                     nfdpathsetsize_t count = 0;
