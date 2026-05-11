@@ -58,6 +58,12 @@ void R8BrainBackend::init(double srcRate, double dstRate, int channels)
         impl_->resamplers.push_back(
             std::make_unique<r8b::CDSPResampler24>(srcRate, dstRate, kMaxInLen));
     }
+
+    // Query the filter latency (input frames needed before first output).
+    // flush() must feed at least this many zeros to drain the filter tail.
+    flushFrames_ = impl_->resamplers[0]->getInLenBeforeOutPos(0);
+    if (flushFrames_ < kMaxInLen)
+        flushFrames_ = kMaxInLen;
 }
 
 void R8BrainBackend::processInterleaved(const float* in, size_t inFrames,
@@ -118,9 +124,16 @@ void R8BrainBackend::flush(std::vector<float>& out)
 {
     if (channels_ == 0) return;
 
-    // Feed kMaxInLen zeros to drain the filter's tail
+    // Feed flushFrames_ zeros (>= filter latency) to fully drain the filter tail.
+    // Using only kMaxInLen would truncate the last latency-1024 frames of real
+    // signal, breaking DC preservation for zero-mean signals.
     std::vector<float> zeros(kMaxInLen * channels_, 0.0f);
-    process(zeros.data(), static_cast<size_t>(kMaxInLen), out);
+    int remaining = flushFrames_;
+    while (remaining > 0) {
+        int chunk = std::min(remaining, kMaxInLen);
+        process(zeros.data(), static_cast<size_t>(chunk), out);
+        remaining -= chunk;
+    }
 }
 
 // ============================================================================

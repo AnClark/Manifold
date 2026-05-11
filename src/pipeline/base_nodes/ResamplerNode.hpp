@@ -67,6 +67,7 @@ private:
     double srcRate_  = 44100.0;
     double dstRate_  = 48000.0;
     int    channels_ = 0;
+    int    flushFrames_ = 1024;  ///< Frames of zeros needed to drain the filter tail (= filter latency)
 
     static constexpr int kMaxInLen = 1024;  ///< Must match the value used in init()
 
