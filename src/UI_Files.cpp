@@ -315,7 +315,14 @@ void ManifoldApp::UI_Files()
                         ImGui::PushStyleColor(ImGuiCol_HeaderActive, IM_COL32(0xcc + 64, 0x5f + 64, 0x71 + 64, 127));
                     }
 
-                    if (ImGui::Selectable(sndFileList[i]->fileNameBase.c_str(), sndFileList[i]->selected, selectableFlags))
+                    constexpr size_t MAX_LABEL_SIZE = 256 + 1 + 2;
+                    char fileNameLabel[MAX_LABEL_SIZE];
+                    snprintf(fileNameLabel, MAX_LABEL_SIZE, "%s%s",
+                        currentPlayingFile == sndFileList[i] ? (audioPlayer.checkPlaying() ? ICON_FA_PLAY " " : ICON_FA_PAUSE "  ") : "",
+                        sndFileList[i]->fileNameBase.c_str()
+                    );
+
+                    if (ImGui::Selectable(fileNameLabel, sndFileList[i]->selected, selectableFlags, ImVec2(0, 20.0f)))
                     {
                         // 单选/多选/范围选择逻辑
                         if (ImGui::GetIO().KeyShift && lastClickedIndex != -1)
