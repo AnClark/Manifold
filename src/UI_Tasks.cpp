@@ -375,15 +375,17 @@ void ManifoldApp::UI_Tasks()
             constexpr ImGuiTableFlags tblFlags =
                 ImGuiTableFlags_RowBg              |
                 ImGuiTableFlags_BordersInnerV      |
-                ImGuiTableFlags_SizingStretchProp  |
+                ImGuiTableFlags_SizingFixedFit     |
+                ImGuiTableFlags_Resizable          |
+                ImGuiTableFlags_ScrollX            |
                 ImGuiTableFlags_ScrollY;
 
             if (ImGui::BeginTable("Tasks_Files", 3, tblFlags))
             {
                 ImGui::TableSetupScrollFreeze(0, 1);
-                ImGui::TableSetupColumn("File",         ImGuiTableColumnFlags_WidthStretch);
-                ImGui::TableSetupColumn("Status",       ImGuiTableColumnFlags_WidthFixed, 80.0f);
-                ImGui::TableSetupColumn("Info",         ImGuiTableColumnFlags_WidthStretch);
+                ImGui::TableSetupColumn("File",         ImGuiTableColumnFlags_WidthFixed, 360.0f);
+                ImGui::TableSetupColumn("Status",       ImGuiTableColumnFlags_WidthFixed, 60.0f);
+                ImGui::TableSetupColumn("Info",         ImGuiTableColumnFlags_WidthFixed, 320.0f);
                 ImGui::TableHeadersRow();
 
                 ImGuiListClipper clipper;
