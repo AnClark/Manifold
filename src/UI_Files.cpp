@@ -28,7 +28,7 @@ void ManifoldApp::UI_Files()
         //
         ImGui::BeginGroup();
         {
-            ImGui::BeginDisabled(lastClickedIndex <= -1);
+            ImGui::BeginDisabled(lastClickedIndex <= -1 || !sndFileList[lastClickedIndex]->errorMsg.empty());
             if (ImGui::Button("Play selected file"))
             {
                 if (lastClickedIndex >= 0 && lastClickedIndex < sndFileList.size())
