@@ -3,6 +3,7 @@
 #include "miniaudio.h"
 #include <string>
 #include <array>
+#include <atomic>
 
 class AudioPlayer
 {
@@ -25,13 +26,15 @@ public:
     void stop();
 
     bool checkPlaying() const { return isPlaying; }
+    bool checkEOF() const { return isEOF; }
 
     static void audioDataCallback(ma_device* pDevice, void* pOutput, const void* pInput, ma_uint32 frameCount);
 
 private:
     bool isFileLoaded;
     bool isDeviceInitialized;
-    bool isPlaying;
+    std::atomic<bool> isPlaying;
+    std::atomic<bool> isEOF;    // < Mark if the file plays to the endpoint
 
     ma_result result;
     ma_decoder decoder;

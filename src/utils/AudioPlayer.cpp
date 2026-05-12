@@ -1,5 +1,6 @@
 #include "AudioPlayer.hpp"
 
+#include <cstring>
 #include <filesystem>
 
 #include "miniaudio_libsndfile.h"
@@ -44,7 +45,7 @@ void AudioPlayer::loadAudioFile(const char* filePath)
     deviceConfig.playback.channels = decoder.outputChannels;
     deviceConfig.sampleRate        = decoder.outputSampleRate;
     deviceConfig.dataCallback      = audioDataCallback;
-    deviceConfig.pUserData         = &decoder;
+    deviceConfig.pUserData         = this;
 
     isFileLoaded = true;
 }
@@ -59,6 +60,7 @@ void AudioPlayer::cleanUp()
         ma_device_uninit(&device);
         isPlaying = false;
         isDeviceInitialized = false;
+        isEOF = false;
     }
 
     if (isFileLoaded)
@@ -100,6 +102,7 @@ void AudioPlayer::play()
     }
 
     isPlaying = true;
+    isEOF = false;
 }
 
 void AudioPlayer::pause()
@@ -126,12 +129,23 @@ void AudioPlayer::stop()
 
 void AudioPlayer::audioDataCallback(ma_device* pDevice, void* pOutput, const void* pInput, ma_uint32 frameCount)
 {
-    ma_decoder* pDecoder = (ma_decoder*)pDevice->pUserData;
-    if (pDecoder == NULL) {
+    AudioPlayer* pPlayer = (AudioPlayer*)pDevice->pUserData;
+    if (pPlayer == NULL) {
         return;
     }
 
-    ma_decoder_read_pcm_frames(pDecoder, pOutput, frameCount, NULL);
+    ma_uint64 framesRead = 0;
+    ma_decoder_read_pcm_frames(&pPlayer->decoder, pOutput, frameCount, &framesRead);
+
+    // If the actual number of frames read is less than the requested amount, it indicates that the file has reached the end of playback.
+    if (framesRead < frameCount) {
+        // Zero out the remaining output buffer to avoid noise
+        ma_uint32 bytesPerFrame = ma_get_bytes_per_frame(pPlayer->decoder.outputFormat, pPlayer->decoder.outputChannels);
+        memset((ma_uint8*)pOutput + framesRead * bytesPerFrame, 0, (frameCount - framesRead) * bytesPerFrame);
+
+        pPlayer->isPlaying = false;
+        pPlayer->isEOF = true;
+    }
 
     (void)pInput;
 }
