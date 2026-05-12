@@ -2,14 +2,7 @@
 #include "pipeline/NodeRegistry.hpp"
 
 #include "imgui.h"
-#include "nfd.hpp"
-
-// nfd_glfw3.h provides NFD_GetNativeWindowFromGLFWWindow(), which converts a GLFW window to an NFD parent window handle.
-// GLFW_EXPOSE_NATIVE_WIN32 must be defined before including nfd_glfw3.h (which in turn includes glfw3native.h).
-#ifdef _WIN32
-#define GLFW_EXPOSE_NATIVE_WIN32
-#endif
-#include "nfd_glfw3.h"
+#include "utils/NFDIncludes.h"  // IWYU pragma: keep
 
 #include "utils/TableMinColumnWidth.hpp"
 #include "pipeline/base_nodes/DSPNode.hpp"
