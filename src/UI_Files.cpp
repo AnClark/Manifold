@@ -51,8 +51,8 @@ void ManifoldApp::UI_Files()
             ImGui::SameLine();
 
             // Transport control
-            ImGui::BeginDisabled(!currentPlayingFile);
-            if (ImGui::Button((!currentPlayingFile || audioPlayer.checkPlaying()) ? "Pause" : "Resume", ImVec2(60, 0)))
+            ImGui::BeginDisabled(!currentPlayingFile || audioPlayer.checkEOF());
+            if (ImGui::Button((!currentPlayingFile || audioPlayer.checkPlaying() || audioPlayer.checkEOF()) ? "Pause" : "Resume", ImVec2(60, 0)))
             {
                 if (audioPlayer.checkPlaying())
                     audioPlayer.pause();
@@ -60,6 +60,9 @@ void ManifoldApp::UI_Files()
                     audioPlayer.play();
             }
             ImGui::SameLine();
+            ImGui::EndDisabled();
+
+            ImGui::BeginDisabled(!currentPlayingFile);
             if (ImGui::Button("Stop"))
             {
                 audioPlayer.stop();
@@ -311,7 +314,7 @@ void ManifoldApp::UI_Files()
                     constexpr size_t MAX_LABEL_SIZE = 256 + 1 + 2;
                     char fileNameLabel[MAX_LABEL_SIZE];
                     snprintf(fileNameLabel, MAX_LABEL_SIZE, "%s%s",
-                        currentPlayingFile == sndFileList[i] ? (audioPlayer.checkPlaying() ? ICON_FA_PLAY " " : ICON_FA_PAUSE "  ") : "",
+                        currentPlayingFile == sndFileList[i] ? (audioPlayer.checkPlaying() ? ICON_FA_PLAY " " : (audioPlayer.checkEOF() ? ICON_FA_STOP "  " : ICON_FA_PAUSE "  ")) : "",
                         sndFileList[i]->fileNameBase.c_str()
                     );
 
