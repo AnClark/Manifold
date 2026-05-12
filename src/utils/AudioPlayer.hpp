@@ -19,6 +19,7 @@ public:
 
     const char* getErrorMsg() { return errorMsg.c_str(); }
     bool hasError() { return !errorMsg.empty(); }
+    void clearErrorMsg() { errorMsg.clear(); }
 
     void initDevice();
     void play();

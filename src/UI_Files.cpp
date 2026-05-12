@@ -42,10 +42,17 @@ void ManifoldApp::UI_Files()
 
             }
             ImGui::EndDisabled();
+
             if (audioPlayer.hasError())
             {
-                ImGui::SameLine();
-                ImGui::Text("%s", audioPlayer.getErrorMsg());
+                char errorMsg[512];
+                snprintf(errorMsg, 512, "Failed to play audio.\n%s", audioPlayer.getErrorMsg());
+
+                LOG_ERRORF("Files", errorMsg);
+                ImGui::InsertNotification({ImGuiToastType::Error, 5000, "%s", errorMsg});
+
+                // Now we have reported and logged error message. Remember to clear it.
+                audioPlayer.clearErrorMsg();
             }
 
             ImGui::SameLine();
