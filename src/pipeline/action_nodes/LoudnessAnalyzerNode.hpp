@@ -18,6 +18,7 @@
  */
 class LoudnessAnalyzerNode : public Node, public StreamProcessorNode {
 public:
+    std::string id() const override { return "loudness_analyzer"; }
     std::string name() const override { return "LoudnessAnalyzer"; }
     void init(const std::unordered_map<std::string, std::string>& /*params*/) override {}
 

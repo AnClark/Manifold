@@ -37,6 +37,7 @@ private:
  */
 class FileSourceNode : public Node, public SourceNode {
 public:
+    std::string id() const override { return "file_source"; }
     std::string name() const override { return "FileSource"; }
     void init(const std::unordered_map<std::string, std::string>& /*params*/) override {}
 

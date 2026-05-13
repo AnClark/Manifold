@@ -113,7 +113,7 @@ public:
  */
 class ResamplerNode : public Node, public StreamProcessorNode {
 public:
-    std::string name() const override { return "Resampler"; }
+    NODE_ID_AND_NAME_GETTER_DEFINITION;
     void init(const std::unordered_map<std::string, std::string>& params) override;
 
     PortType primaryInput()  const override { return PortType::AudioStream; }

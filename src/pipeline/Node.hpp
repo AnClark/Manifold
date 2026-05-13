@@ -36,6 +36,18 @@ public:
     virtual ~Node() = default;
 
     /**
+     * @brief Get the ID (unique factory key) of the node.
+     *
+     * Config manager invokes this to get the ID of the node, for handling the Node data in TOML config file.
+     *
+     * @note Must be the same as the `id` entry in NodeRegistry.
+     * For convenience, this can (and should) be configured by REGISTER_NODE macro.
+     *
+     * @see NodeRegistry.hpp
+     */
+    virtual std::string id() const = 0;
+
+    /**
      * @brief Get the name of the node (displayed in the UI).
      *
      * UI invokes this to display the loaded node's name. It should be a human-readable string, e.g. "Loudness Normalize".
@@ -144,3 +156,18 @@ public:
     virtual ~AtomicNode() = default;
     virtual void execute(NodeContext& ctx) = 0;
 };
+
+/**
+ * @brief Helper macro for defining id() and name() getters in Node subclasses.
+ *
+ * Usually these are implemented automatically by the REGISTER_NODE macro.
+ *
+ * @note This is only for convenience and is not strictly required.
+ *       You can implement id() and name() without using this macro if you don't register the node with REGISTER_NODE
+ *       (e.g. for internal nodes that are not user-facing).
+ *
+ * @see REGISTER_NODE
+ */
+#define NODE_ID_AND_NAME_GETTER_DEFINITION \
+    std::string id() const override;       \
+    std::string name() const override;

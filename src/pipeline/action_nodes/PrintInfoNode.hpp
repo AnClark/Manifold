@@ -11,6 +11,7 @@
  */
 class PrintInfoNode : public Node, public AtomicNode {
 public:
+    std::string id() const override { return "print_info"; }
     std::string name() const override { return "PrintInfo"; }
     void init(const std::unordered_map<std::string, std::string>& /*params*/) override {}
 

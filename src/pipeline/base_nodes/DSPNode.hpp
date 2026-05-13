@@ -53,6 +53,7 @@ public:
         return [] { return std::make_unique<T>(); };
     }
 
+    virtual std::string id() const override = 0;
     std::string name() const override { return nodeName_; }
     void init(const std::unordered_map<std::string, std::string>& /*params*/) override {}
 

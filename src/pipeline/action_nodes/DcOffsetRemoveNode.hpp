@@ -19,7 +19,7 @@ class DcOffsetRemoveNode : public DSPNode {
 public:
     DcOffsetRemoveNode();
 
-    std::string name() const override { return "DC Offset Remove"; }
+    NODE_ID_AND_NAME_GETTER_DEFINITION;
 
     void drawUI() override;
     void getUiSize(float& width, float& height) override

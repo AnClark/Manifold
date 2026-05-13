@@ -19,7 +19,7 @@ class LoudnessNormalizeNode : public DSPNode {
 public:
     LoudnessNormalizeNode();
 
-    std::string name() const override { return "LoudnessNormalize"; }
+    NODE_ID_AND_NAME_GETTER_DEFINITION;
 
     void init(const std::unordered_map<std::string, std::string>& params) override;
 
