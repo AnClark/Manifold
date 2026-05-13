@@ -305,6 +305,14 @@ void ResamplerNode::init(const std::unordered_map<std::string, std::string>& par
     }
 }
 
+std::unordered_map<std::string, std::string> ResamplerNode::exportConfig()
+{
+    return {
+        { "rate",    std::to_string(targetRate_) },
+        { "backend", backendId_ },
+    };
+}
+
 void ResamplerNode::drawUI()
 {
     const float labelWidth = ImGui::CalcTextSize("True Peak Ceiling").x + 20.0f;

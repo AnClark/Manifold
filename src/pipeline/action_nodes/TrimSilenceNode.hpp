@@ -29,9 +29,10 @@ class TrimSilenceNode : public Node, public StreamProcessorNode {
 public:
     TrimSilenceNode() = default;
 
-    std::string name() const override { return "Trim Silence"; }
+    NODE_ID_AND_NAME_GETTER_DEFINITION;
 
     void init(const std::unordered_map<std::string, std::string>& params) override;
+    std::unordered_map<std::string, std::string> exportConfig() override;
 
     PortType primaryInput()  const override { return PortType::AudioStream; }
     PortType primaryOutput() const override { return PortType::AudioStream; }

@@ -210,6 +210,17 @@ void FadeNode::init(const std::unordered_map<std::string, std::string>& params)
         fadeOutCurve_ = curveFromString(it->second);
 }
 
+std::unordered_map<std::string, std::string> FadeNode::exportConfig()
+{
+    static constexpr const char* kCurveKeys[] = { "linear", "sine", "exponential" };
+    return {
+        { "fade_in_ms",     std::to_string(fadeInMs_) },
+        { "fade_out_ms",    std::to_string(fadeOutMs_) },
+        { "fade_in_curve",  kCurveKeys[static_cast<int>(fadeInCurve_)] },
+        { "fade_out_curve", kCurveKeys[static_cast<int>(fadeOutCurve_)] },
+    };
+}
+
 std::unique_ptr<AudioStream> FadeNode::wrap(
     std::unique_ptr<AudioStream> upstream,
     NodeContext& ctx)

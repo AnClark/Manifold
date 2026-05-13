@@ -22,6 +22,7 @@ using namespace AudioFormats;
  */
 class OutputSinkNode : public Node, public StreamSinkNode {
 public:
+    std::string id() const override { return "output_sink"; }
     std::string name() const override { return "OutputSink"; }
     void init(const std::unordered_map<std::string, std::string>& params) override;
 

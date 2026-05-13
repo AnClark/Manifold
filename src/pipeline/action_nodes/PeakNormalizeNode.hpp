@@ -19,9 +19,10 @@ class PeakNormalizeNode : public DSPNode {
 public:
     PeakNormalizeNode();
 
-    std::string name() const override { return "Peak Normalize"; }
+    NODE_ID_AND_NAME_GETTER_DEFINITION;
 
     void init(const std::unordered_map<std::string, std::string>& params) override;
+    std::unordered_map<std::string, std::string> exportConfig() override;
 
     void drawUI() override;
     void getUiSize(float& width, float& height) override

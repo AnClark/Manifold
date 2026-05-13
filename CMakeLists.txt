@@ -41,6 +41,7 @@ include_directories (
     deps/r8brain
     deps/ImGuiNotify
     deps/ImGuiNotify/fonts
+    deps/toml
 )
 
 # Load pkg-config for finding dependencies, and let it prefer finding static libraries
@@ -63,6 +64,7 @@ add_executable (${PROJECT_NAME} WIN32
     src/workers/DcOffsetWorker.cpp
     src/workers/SingleFileProcessorWorker.cpp
     src/utils/AudioPlayer.cpp
+    src/config/Config.cpp
     src/UI_Files.cpp
     src/UI_Actions.cpp
     src/UI_Tasks.cpp

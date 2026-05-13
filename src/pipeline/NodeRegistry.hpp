@@ -131,4 +131,6 @@ struct AutoRegisterNode {
  */
 #define REGISTER_NODE(ClassType, Id, DisplayName, Description, Category, Role)   \
     static AutoRegisterNode<ClassType> autoRegisterNode##ClassType(              \
-        NodeDescriptor{Id, DisplayName, Description, Category, Role});
+        NodeDescriptor{Id, DisplayName, Description, Category, Role});           \
+    std::string ClassType::id() const { return Id; }                                \
+    std::string ClassType::name() const { return DisplayName; }
