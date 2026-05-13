@@ -11,6 +11,7 @@
 #include "utils/LogManager.hpp"
 #include "pipeline/Node.hpp"
 #include "base/IAudioProcessor.hpp"
+#include "config/Preferences.hpp"
 
 #include <unordered_set>
 
@@ -114,4 +115,9 @@ private:
         int                   minLevelIdx   = 1; // 0=Trace … 5=Fatal
     };
     LogUIState logUI;
+
+    // ==============================================================
+    // Preferences storage
+
+    PreferencesManager preferences;
 };

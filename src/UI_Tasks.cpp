@@ -105,8 +105,13 @@ void ManifoldApp::UI_Tasks()
         return;
     }
 
-    ImGui::TableSetupColumn("##run_list",  ImGuiTableColumnFlags_WidthStretch, 1.0f);
-    ImGui::TableSetupColumn("##file_table", ImGuiTableColumnFlags_WidthStretch, 2.0f);
+    ImGui::TableSetupColumn("##run_list",  ImGuiTableColumnFlags_WidthStretch, preferences.uiPref.tasksLeftPanelWeight);
+    ImGui::TableSetupColumn("##file_table", ImGuiTableColumnFlags_WidthStretch, preferences.uiPref.tasksRightPanelWeight);
+
+    // Save current column width weights to preferences storage
+    const float tableWidth = ImGui::GetCurrentTable()->ColumnsAutoFitWidth;
+    preferences.uiPref.tasksLeftPanelWeight = ImGui::GetCurrentTable()->Columns[0].WidthGiven / tableWidth;
+    preferences.uiPref.tasksRightPanelWeight = ImGui::GetCurrentTable()->Columns[1].WidthGiven / tableWidth;
 
     ImGui::TableNextRow();
 

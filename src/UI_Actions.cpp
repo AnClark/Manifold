@@ -6,6 +6,7 @@
 
 #include "utils/TableMinColumnWidth.hpp"
 #include "pipeline/base_nodes/DSPNode.hpp"
+#include "config/Config.hpp"
 
 #include "../fonts/IconFontAwesome5.h"
 
@@ -60,6 +61,13 @@ void ManifoldApp::UI_Actions()
 
             if (ImGui::BeginTable("Actions_Window_Main", 2, flags, ImGui::GetContentRegionAvail()))
             {
+                ImGui::TableSetupColumn("##Action_List", 0, preferences.uiPref.actionLeftPanelWeight);
+                ImGui::TableSetupColumn("##Node_Chain", 0, (1 - preferences.uiPref.actionLeftPanelWeight));
+                
+                // Save current column width weight to preferences storage
+                const float tableWidth = ImGui::GetCurrentTable()->ColumnsAutoFitWidth;
+                preferences.uiPref.actionLeftPanelWeight = ImGui::GetCurrentTable()->Columns[0].WidthGiven / tableWidth;
+
                 ImGui::TableNextRow();
 
                 //
