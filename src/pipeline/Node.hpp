@@ -78,6 +78,15 @@ public:
      */
     virtual void init(const std::unordered_map<std::string, std::string>& params) = 0;
 
+    /**
+     * @brief Export current node's config to a string-string parameter map.
+     *
+     * The default implementation returns an empty map, suitable for nodes
+     * that have no configurable parameters (e.g. FileSourceNode).
+     * Override this when the node has parameters set via init().
+     */
+    virtual std::unordered_map<std::string, std::string> exportConfig() { return {}; }
+
     virtual PortType primaryInput()  const = 0;
     virtual PortType primaryOutput() const = 0;
 

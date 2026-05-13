@@ -185,6 +185,21 @@ void ChannelMixNode::init(const std::unordered_map<std::string, std::string>& pa
         passThroughOnInputChannelMismatch_ = (pt->second == "true" || pt->second == "1");
 }
 
+std::unordered_map<std::string, std::string> ChannelMixNode::exportConfig()
+{
+    static constexpr const char* kModeKeys[] = {
+        "stereo_to_mono",
+        "mono_to_stereo",
+        "surround_to_stereo",
+        "to_mono",
+    };
+
+    return {
+        { "mode",                        kModeKeys[static_cast<int>(mode_)] },
+        { "pass_through_on_mismatch",    passThroughOnInputChannelMismatch_ ? "true" : "false" },
+    };
+}
+
 std::unique_ptr<AudioStream> ChannelMixNode::wrap(
     std::unique_ptr<AudioStream> upstream,
     NodeContext& /*ctx*/)

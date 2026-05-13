@@ -3,6 +3,7 @@
 #include "pipeline/NodeRegistry.hpp"
 
 #include <imgui.h>
+#include <string>
 
 REGISTER_NODE(
     PeakNormalizeNode,
@@ -22,6 +23,13 @@ void PeakNormalizeNode::init(const std::unordered_map<std::string, std::string>&
     if (it != params.end()) {
         try { targetDbfs_ = std::stof(it->second); } catch (...) {}
     }
+}
+
+std::unordered_map<std::string, std::string> PeakNormalizeNode::exportConfig()
+{
+    return {
+        { "target_dbfs", std::to_string(targetDbfs_) },
+    };
 }
 
 void PeakNormalizeNode::configureProcessorFromNodeContext(IAudioProcessor& proc, NodeContext& ctx)

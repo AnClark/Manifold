@@ -179,6 +179,14 @@ std::unique_ptr<AudioStream> TrimSilenceNode::wrap(
         ctx.sourcePath);
 }
 
+std::unordered_map<std::string, std::string> TrimSilenceNode::exportConfig()
+{
+    return {
+        { "threshold_dbfs", std::to_string(thresholdDbfs_) },
+        { "padding_ms",     std::to_string(paddingMs_)     },
+    };
+}
+
 void TrimSilenceNode::drawUI()
 {
     const float labelWidth = ImGui::CalcTextSize("Silence Threshold").x + 20.0f;

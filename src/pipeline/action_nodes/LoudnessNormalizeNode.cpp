@@ -3,6 +3,7 @@
 #include "pipeline/NodeRegistry.hpp"
 
 #include <imgui.h>
+#include <string>
 
 REGISTER_NODE(
     LoudnessNormalizeNode,
@@ -26,6 +27,14 @@ void LoudnessNormalizeNode::init(const std::unordered_map<std::string, std::stri
     if (it != params.end()) {
         try { tpCeiling_ = std::stof(it->second); } catch (...) {}
     }
+}
+
+std::unordered_map<std::string, std::string> LoudnessNormalizeNode::exportConfig()
+{
+    return {
+        { "target_lufs", std::to_string(targetLufs_) },
+        { "tp_ceiling",  std::to_string(tpCeiling_)  },
+    };
 }
 
 void LoudnessNormalizeNode::configureProcessorFromNodeContext(IAudioProcessor& proc, NodeContext& ctx)

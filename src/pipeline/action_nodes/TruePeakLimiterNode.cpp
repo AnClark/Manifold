@@ -112,6 +112,13 @@ std::unique_ptr<AudioStream> TruePeakLimiterNode::wrap(
     return std::make_unique<TruePeakLimiterStream>(std::move(upstream), tpCeiling_);
 }
 
+std::unordered_map<std::string, std::string> TruePeakLimiterNode::exportConfig()
+{
+    return {
+        { "tp_ceiling", std::to_string(tpCeiling_) },
+    };
+}
+
 void TruePeakLimiterNode::drawUI()
 {
     ImGui::Spacing();

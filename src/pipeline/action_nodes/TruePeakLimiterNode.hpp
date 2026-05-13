@@ -25,6 +25,7 @@ public:
     NODE_ID_AND_NAME_GETTER_DEFINITION;
 
     void init(const std::unordered_map<std::string, std::string>& params) override;
+    std::unordered_map<std::string, std::string> exportConfig() override;
 
     std::unique_ptr<AudioStream> wrap(
         std::unique_ptr<AudioStream> upstream,
