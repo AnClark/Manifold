@@ -25,6 +25,9 @@
 
 #include <toml.hpp>
 
+#include "base/AudioFormats.hpp"
+using namespace AudioFormats;
+
 // --------------------------------------------------------------------------
 // uiPref — UI layout preferences
 // --------------------------------------------------------------------------
@@ -100,6 +103,36 @@ struct uiPref
     }
 };
 
+struct OutputConfigPref
+{
+    std::string     outputPath;
+    ContainerFormat outputFormat  = ContainerFormat::Wav;
+    SubtypeOverride outputSubtype = SubtypeOverride::Auto;
+    bool            nullOutput    = false;
+
+    toml::table getTable() const
+    {
+        toml::table table;
+        table.insert_or_assign("path", outputPath);
+        table.insert_or_assign("format", outputFormat);
+        table.insert_or_assign("subtype", outputSubtype);
+        table.insert_or_assign("enable_null_output", static_cast<int>(nullOutput));
+        return table;
+    }
+
+    void fromTable(const toml::table& table)
+    {
+        if (auto v = table["path"].value<std::string>())
+            outputPath = std::move(*v);
+        if (auto v = table["format"].value<int64_t>())
+            outputFormat = static_cast<ContainerFormat>(*v);
+        if (auto v = table["subtype"].value<int64_t>())
+            outputSubtype = static_cast<SubtypeOverride>(*v);
+        if (auto v = table["enable_null_output"].value<bool>())
+            nullOutput = static_cast<bool>(*v);
+    }
+};
+
 // --------------------------------------------------------------------------
 // PreferencesManager
 // --------------------------------------------------------------------------
@@ -157,4 +190,7 @@ public:
 
     /// UI layout preferences (panel splitter weights).
     uiPref uiPref;
+
+    /// Output config preferences
+    OutputConfigPref outputConfigPref;
 };
