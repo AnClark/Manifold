@@ -79,7 +79,7 @@ add_executable (${PROJECT_NAME} WIN32
     src/pipeline/base_nodes/FileSourceNode.cpp
     src/pipeline/base_nodes/OutputSinkNode.cpp
     src/pipeline/base_nodes/DSPNode.cpp
-    src/pipeline/base_nodes/ResamplerNode.cpp    
+    src/pipeline/base_nodes/ResamplerNode.cpp
     src/pipeline/base_nodes/NullSinkNode.cpp
     src/pipeline/action_nodes/LoudnessNormalizeNode.cpp
     src/pipeline/action_nodes/TruePeakLimiterNode.cpp
@@ -89,6 +89,7 @@ add_executable (${PROJECT_NAME} WIN32
     src/pipeline/action_nodes/ChannelMixNode.cpp
     src/pipeline/action_nodes/TrimSilenceNode.cpp
     src/pipeline/action_nodes/FadeNode.cpp
+    src/pipeline/action_nodes/LoudnessComplianceNode.cpp
 )
 
 #
