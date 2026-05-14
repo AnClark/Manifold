@@ -388,10 +388,10 @@ void ManifoldApp::UI_Tasks()
             if (ImGui::BeginTable("Tasks_Files", 4, tblFlags))
             {
                 ImGui::TableSetupScrollFreeze(0, 1);
-                ImGui::TableSetupColumn("File",         ImGuiTableColumnFlags_WidthFixed, 360.0f);
-                ImGui::TableSetupColumn("Status",       ImGuiTableColumnFlags_WidthFixed,  60.0f);
-                ImGui::TableSetupColumn("Info",         ImGuiTableColumnFlags_WidthFixed, 320.0f);
-                ImGui::TableSetupColumn("Reports",      ImGuiTableColumnFlags_WidthFixed, 160.0f);
+                ImGui::TableSetupColumn("File",         ImGuiTableColumnFlags_WidthFixed, preferences.uiPref.tasksFilesColumnWidths[0]);
+                ImGui::TableSetupColumn("Status",       ImGuiTableColumnFlags_WidthFixed, preferences.uiPref.tasksFilesColumnWidths[1]);
+                ImGui::TableSetupColumn("Info",         ImGuiTableColumnFlags_WidthFixed, preferences.uiPref.tasksFilesColumnWidths[2]);
+                ImGui::TableSetupColumn("Reports",      ImGuiTableColumnFlags_WidthFixed, preferences.uiPref.tasksFilesColumnWidths[3]);
                 ImGui::TableHeadersRow();
 
                 ImGuiListClipper clipper;
@@ -517,6 +517,10 @@ void ManifoldApp::UI_Tasks()
                     }
                 }
                 clipper.End();
+
+                // Save custom column widths
+                for (uint8_t i = 0; i < 4; i++)
+                    preferences.uiPref.tasksFilesColumnWidths[i] = ImGui::GetCurrentTable()->Columns[i].WidthGiven;
 
                 ImGui::EndTable();
             }

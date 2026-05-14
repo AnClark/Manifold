@@ -49,6 +49,9 @@ struct uiPref
     /// Relative width weight of the right panel in the Tasks view splitter.
     float tasksRightPanelWeight = 2.0f;
 
+    /// Absolute widths of Tasks view's Details table columns.
+    float tasksFilesColumnWidths[4] = { 300.0f, 60.0f, 180.0f, 160.0f };
+
     /**
      * @brief Serialises all fields into a `toml::table`.
      *
@@ -66,6 +69,10 @@ struct uiPref
                                static_cast<double>(tasksLeftPanelWeight));
         table.insert_or_assign("tasks_right_panel_weight",
                                static_cast<double>(tasksRightPanelWeight));
+        toml::array tasksFilesColWidths;
+        for (int i = 0; i < 4; ++i)
+            tasksFilesColWidths.push_back(static_cast<double>(tasksFilesColumnWidths[i]));
+        table.insert_or_assign("tasks_files_column_width", std::move(tasksFilesColWidths));
         return table;
     }
 
@@ -86,6 +93,10 @@ struct uiPref
             tasksLeftPanelWeight = static_cast<float>(*v);
         if (auto v = table["tasks_right_panel_weight"].value<double>())
             tasksRightPanelWeight = static_cast<float>(*v);
+        if (auto* arr = table["tasks_files_column_width"].as_array())
+            for (int i = 0; i < 4 && i < static_cast<int>(arr->size()); ++i)
+                if (auto v = arr->get(i)->value<double>())
+                    tasksFilesColumnWidths[i] = static_cast<float>(*v);
     }
 };
 
