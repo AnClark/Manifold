@@ -6,8 +6,15 @@
 #include "pipeline/Node.hpp"
 #include "pipeline/base_nodes/FileSourceNode.hpp"
 #include "pipeline/base_nodes/OutputSinkNode.hpp"
+#include "pipeline/base_nodes/NullSinkNode.hpp"
 
 using namespace AudioFormats;
+
+/** @brief Controls what happens at the end of the audio pipeline. */
+enum class SinkMode {
+    WriteFile,  ///< Encode and write to outputDir (default)
+    Null,       ///< Drain stream and discard — no file written
+};
 
 class SingleFileProcessorWorker : public IWorker
 {
@@ -46,6 +53,12 @@ public:
         this->outputSubType_ = subtype;
     }
 
+    void setSinkMode(SinkMode mode)
+    {
+        std::scoped_lock<std::mutex> lock(outputFormatMutex);
+        sinkMode_ = mode;
+    }
+
 protected:
     void processItem(std::shared_ptr<SndFileInfo> fileInfoInstance) override;
 
@@ -56,9 +69,11 @@ private:
 
     ContainerFormat    outputFormat_  = ContainerFormat::Wav;
     SubtypeOverride    outputSubType_ = SubtypeOverride::Pcm16;
+    SinkMode           sinkMode_      = SinkMode::WriteFile;
 
-    FileSourceNode sourceNode_;  ///< Implicitly prepended to the user-supplied chain
-    OutputSinkNode outputNode_;  ///< Implicitly prepended to the user-supplied chain as well
+    FileSourceNode sourceNode_;   ///< Implicitly prepended to the user-supplied chain
+    OutputSinkNode outputNode_;   ///< Used when sinkMode_ == WriteFile
+    NullSinkNode   nullSinkNode_; ///< Used when sinkMode_ == Null
 
     std::mutex outputDirMutex;
     std::mutex outputFormatMutex;
