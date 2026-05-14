@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Node.hpp"
+#include "../base/Report.hpp"
 #include "../base/SndFileInfo.hpp"
 
 #include <filesystem>
@@ -68,6 +69,10 @@ public:
         onError = std::move(callback);
     }
 
+    void setReportCallback(std::function<void(std::shared_ptr<Report>)> callback) {
+        onReport = std::move(callback);
+    }
+
 private:
     std::vector<Node*> nodes_;
 
@@ -86,4 +91,7 @@ private:
 
     /** @brief Callback for reporting errors back to the UI (optional, set by Worker before processing) */
     std::function<void(std::string_view errorMsg)>                 onError;
+
+    /** @brief Callback for forwarding node-produced reports to the active FileRunRecord. */
+    std::function<void(std::shared_ptr<Report>)>                   onReport;
 };

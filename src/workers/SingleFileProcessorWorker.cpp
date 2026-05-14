@@ -139,6 +139,12 @@ void SingleFileProcessorWorker::processItem(std::shared_ptr<SndFileInfo> fileInf
         }
         LOG_ERRORF(LOG_TAG, "File '%s' processing error: %s", fileInfoInstance->filePath.c_str(), msg.data());
     });
+    engine.setReportCallback([&](std::shared_ptr<Report> r) {
+        if (record) {
+            LOG_DEBUGF(LOG_TAG, "Node %s produced a report: %s", r->nodeId().c_str(), r->summary().c_str());
+            record->addReport(std::move(r));
+        }
+    });
 
     // Now everything is set up, let's go!
     engine.processFile(*fileInfoInstance, outputDir_Copied);

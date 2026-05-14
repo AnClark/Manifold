@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Report.hpp"
 #include "SndFileInfo.hpp"
 
 #include <atomic>
@@ -37,7 +38,13 @@ struct FileRunRecord
     size_t      currentNodeIndex { 0 };
     std::string currentNodeName;
     std::string errorMessage;   ///< Non-empty only when status == Error
+    std::vector<std::shared_ptr<Report>> reports;  ///< Collected during processing; guarded by progressMutex
     mutable std::mutex progressMutex;
+
+    void addReport(std::shared_ptr<Report> r) {
+        std::lock_guard<std::mutex> lock(progressMutex);
+        reports.push_back(std::move(r));
+    }
 
     RunTimePoint timestampStarted;
     RunTimePoint timestampFinished;
