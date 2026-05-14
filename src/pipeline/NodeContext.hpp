@@ -1,9 +1,12 @@
 #pragma once
 
 #include "AudioStream.hpp"
+#include "base/Report.hpp"
 
 #include <any>
 #include <filesystem>
+#include <functional>
+#include <memory>
 #include <optional>
 #include <string>
 #include <unordered_map>
@@ -47,6 +50,9 @@ public:
     // Sideband data (typed key-value store for cross-node communication)
 
     std::unordered_map<std::string, std::any> sideband;
+
+    /** @brief Optional callback for publishing reports to the active FileRunRecord. */
+    std::function<void(std::shared_ptr<Report>)> onReport;
 
     template<typename T>
     void setSideband(const std::string& key, T value) {

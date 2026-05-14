@@ -70,6 +70,7 @@ private:
     std::string outputPath;
     ContainerFormat outputFormat  = ContainerFormat::Wav;
     SubtypeOverride outputSubtype = SubtypeOverride::Auto;
+    bool            nullOutput    = false;  ///< When true, audio is processed but not written to disk
 
     std::vector<std::shared_ptr<ProcessingRun>> processingRuns;  ///< History of all runs (oldest first)
     uint64_t nextRunId = 1;

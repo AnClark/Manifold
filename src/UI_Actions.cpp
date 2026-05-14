@@ -407,6 +407,22 @@ void ManifoldApp::UI_Actions()
                         ImGui::EndGroup();
                     }
 
+                    // ── Null output toggle ───────────────────────────────
+                    ImGui::Checkbox("Null Output", &nullOutput);
+                    if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal | ImGuiHoveredFlags_NoSharedDelay))
+                    {
+                        if (ImGui::BeginTooltip())
+                        {
+                            ImGui::Text("Process audio without writing output files.");
+                            ImGui::Separator();
+                            ImGui::Text("If you only analyze audio files (e.g. via Loudness Compliance), but not need to produce any artifacts,\n"
+                            "this mode would be useful.");
+                            ImGui::EndTooltip();
+                        }
+                    }
+                    ImGui::SameLine();
+                    ImGui::TextDisabled("(Useful for analysis-only pipelines)");
+
                     ImGui::Dummy(ImVec2(0, 4));
 
                     {
@@ -415,7 +431,7 @@ void ManifoldApp::UI_Actions()
                         // ── Process button ───────────────────────────────────
                         const bool canProcess = !sndFileList.empty()
                                              && !nodeChain.empty()
-                                             && !outputPath.empty();
+                                             && (nullOutput || !outputPath.empty());
                         ImGui::BeginDisabled(!canProcess);
                         if (ImGui::Button("Process All Files", ImVec2(-1, 28.0f)))
                         {
@@ -432,6 +448,7 @@ void ManifoldApp::UI_Actions()
 
                             singleFileProcessorWorker.setOutputDir(outputPath);
                             singleFileProcessorWorker.setOutputFormat(outputFormat, outputSubtype);
+                            singleFileProcessorWorker.setSinkMode(nullOutput ? SinkMode::Null : SinkMode::WriteFile);
 
                             {
                                 std::scoped_lock lock(sndFileListMutex);

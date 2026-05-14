@@ -102,10 +102,12 @@ void SingleFileProcessorWorker::processItem(std::shared_ptr<SndFileInfo> fileInf
     // Also create a local copy of output format variables under lock
     ContainerFormat outputFormat_Copied;
     SubtypeOverride outputSubType_Copied;
+    SinkMode        sinkMode_Copied;
     {
         std::scoped_lock<std::mutex> lock(outputFormatMutex);
-        outputFormat_Copied = outputFormat_;
+        outputFormat_Copied  = outputFormat_;
         outputSubType_Copied = outputSubType_;
+        sinkMode_Copied      = sinkMode_;
     }
 
     // Build a non-owning view from the snapshot with sourceNode_ implicitly prepended
@@ -114,9 +116,13 @@ void SingleFileProcessorWorker::processItem(std::shared_ptr<SndFileInfo> fileInf
     localView.push_back(&sourceNode_);
     for (auto& n : snapshot)
         localView.push_back(n.get());
-    
-    outputNode_.init({{"format", AudioFormats::formatName(outputFormat_Copied)}, {"subtype", AudioFormats::subtypeName(outputSubType_Copied)}});
-    localView.push_back(&outputNode_);
+
+    if (sinkMode_Copied == SinkMode::WriteFile) {
+        outputNode_.init({{"format", AudioFormats::formatName(outputFormat_Copied)}, {"subtype", AudioFormats::subtypeName(outputSubType_Copied)}});
+        localView.push_back(&outputNode_);
+    } else {
+        localView.push_back(&nullSinkNode_);
+    }
 
     // Construct the engine and set up callbacks for progress and error reporting
     bool hadError = false;
@@ -138,6 +144,12 @@ void SingleFileProcessorWorker::processItem(std::shared_ptr<SndFileInfo> fileInf
             record->errorMessage = std::string(msg);
         }
         LOG_ERRORF(LOG_TAG, "File '%s' processing error: %s", fileInfoInstance->filePath.c_str(), msg.data());
+    });
+    engine.setReportCallback([&](std::shared_ptr<Report> r) {
+        if (record) {
+            LOG_DEBUGF(LOG_TAG, "Node %s produced a report: %s", r->nodeId().c_str(), r->summary().c_str());
+            record->addReport(std::move(r));
+        }
     });
 
     // Now everything is set up, let's go!

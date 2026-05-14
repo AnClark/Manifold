@@ -40,6 +40,8 @@ void ChainEngine::validateChain() const
 
 void ChainEngine::executeFor(NodeContext& ctx)
 {
+    ctx.onReport = onReport;  // inject report callback so AtomicNodes can publish reports
+
     // FIXME: updateProgess() does not show the real progress, because the real processing happens in StreamSinkNode::consume(),
     //        which is called at the end of the segment.
     //        To show real progress, we may need to do more jobs.

@@ -385,12 +385,13 @@ void ManifoldApp::UI_Tasks()
                 ImGuiTableFlags_ScrollX            |
                 ImGuiTableFlags_ScrollY;
 
-            if (ImGui::BeginTable("Tasks_Files", 3, tblFlags))
+            if (ImGui::BeginTable("Tasks_Files", 4, tblFlags))
             {
                 ImGui::TableSetupScrollFreeze(0, 1);
                 ImGui::TableSetupColumn("File",         ImGuiTableColumnFlags_WidthFixed, 360.0f);
-                ImGui::TableSetupColumn("Status",       ImGuiTableColumnFlags_WidthFixed, 60.0f);
+                ImGui::TableSetupColumn("Status",       ImGuiTableColumnFlags_WidthFixed,  60.0f);
                 ImGui::TableSetupColumn("Info",         ImGuiTableColumnFlags_WidthFixed, 320.0f);
+                ImGui::TableSetupColumn("Reports",      ImGuiTableColumnFlags_WidthFixed, 160.0f);
                 ImGui::TableHeadersRow();
 
                 ImGuiListClipper clipper;
@@ -464,6 +465,52 @@ void ManifoldApp::UI_Tasks()
                             const std::string elapsed =
                                 fmtElapsed(rec->timestampStarted, rec->timestampFinished);
                             ImGui::TextDisabled("%s", elapsed.c_str());
+                        }
+
+                        // Col 3 — Report badges
+                        ImGui::TableSetColumnIndex(3);
+                        {
+                            std::scoped_lock<std::mutex> rlock(rec->progressMutex);
+                            if (rec->reports.empty())
+                            {
+                                ImGui::TextDisabled("\xe2\x80\x94"); // em dash
+                            }
+                            else
+                            {
+                                for (size_t bi = 0; bi < rec->reports.size(); ++bi)
+                                {
+                                    const auto& rpt = rec->reports[bi];
+                                    const bool  ok  = rpt->passed();
+
+                                    ImGui::PushID(static_cast<int>(bi));
+
+                                    // Coloured badge: green dot + PASS / red dot + FAIL
+                                    if (ok)
+                                        ImGui::TextColored({0.40f, 1.00f, 0.40f, 1.0f}, "\xe2\x97\x8f PASS");
+                                    else
+                                        ImGui::TextColored({1.00f, 0.40f, 0.40f, 1.0f}, "\xe2\x97\x8f FAIL");
+
+                                    // Tooltip: full summary()
+                                    if (ImGui::IsItemHovered(
+                                            ImGuiHoveredFlags_DelayShort |
+                                            ImGuiHoveredFlags_NoSharedDelay))
+                                    {
+                                        ImGui::BeginTooltip();
+                                        ImGui::TextDisabled("%s", rpt->nodeId().c_str());
+                                        ImGui::Separator();
+                                        ImGui::PushTextWrapPos(480.0f);
+                                        ImGui::TextUnformatted(rpt->summary().c_str());
+                                        ImGui::PopTextWrapPos();
+                                        ImGui::EndTooltip();
+                                    }
+
+                                    // Horizontal gap between badges
+                                    if (bi + 1 < rec->reports.size())
+                                        ImGui::SameLine(0.0f, 8.0f);
+
+                                    ImGui::PopID();
+                                }
+                            }
                         }
 
                         ImGui::PopID();
