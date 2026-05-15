@@ -3,12 +3,13 @@
 
 #include "imgui.h"
 #include "utils/NFDIncludes.h"  // IWYU pragma: keep
+#include "ImGuiNotify_MOD.hpp"
 
 #include "utils/TableMinColumnWidth.hpp"
 #include "pipeline/base_nodes/DSPNode.hpp"
 #include "config/Config.hpp"
 
-#include "../fonts/IconFontAwesome5.h"
+#include "../fonts/IconFontAwesome5_Unique.h"
 
 namespace ImGuiExt
 {
