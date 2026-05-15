@@ -133,6 +133,24 @@ struct OutputConfigPref
     }
 };
 
+struct ActionUIPref
+{
+    bool exportNodeChainWithOutputConfig = true;
+
+    toml::table getTable() const
+    {
+        toml::table table;
+        table.insert_or_assign("export_node_chain_with_output_config", exportNodeChainWithOutputConfig);
+        return table;
+    }
+
+    void fromTable(const toml::table& table)
+    {
+        if (auto v = table["export_node_chain_with_output_config"].value<bool>())
+            exportNodeChainWithOutputConfig = static_cast<bool>(*v);
+    }
+};
+
 // --------------------------------------------------------------------------
 // PreferencesManager
 // --------------------------------------------------------------------------
@@ -193,4 +211,7 @@ public:
 
     /// Output config preferences
     OutputConfigPref outputConfigPref;
+
+    /// Action UI preferences
+    ActionUIPref actionUIPref;
 };

@@ -31,6 +31,8 @@ void PreferencesManager::loadPreferences()
             uiPref.fromTable(*ui);
         if (const auto* outputConfig = result["output_config"].as_table())
             outputConfigPref.fromTable(*outputConfig);
+        if (const auto* actionUI = result["action_ui"].as_table())
+            actionUIPref.fromTable(*actionUI);
 
         LOG_DEBUGF("Config", "Loaded preferences from config file: %s", prefPath.string().c_str());
     }
@@ -52,6 +54,7 @@ void PreferencesManager::savePreferences()
     toml::table root;
     root.insert_or_assign("ui", uiPref.getTable());
     root.insert_or_assign("output_config", outputConfigPref.getTable());
+    root.insert_or_assign("action_ui", actionUIPref.getTable());
 
     std::ofstream file(prefPath);
     if (file.is_open())

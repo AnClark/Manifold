@@ -125,4 +125,9 @@ private:
     ContainerFormat &outputFormat  = preferences.outputConfigPref.outputFormat;
     SubtypeOverride &outputSubtype = preferences.outputConfigPref.outputSubtype;
     bool            &nullOutput    = preferences.outputConfigPref.nullOutput;  ///< When true, audio is processed but not written to disk
+
+    // ==============================================================
+    // Action UI configs
+
+    bool            &exportNodeChainWithOutputConfig = preferences.actionUIPref.exportNodeChainWithOutputConfig;
 };
