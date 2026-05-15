@@ -139,8 +139,11 @@ void ManifoldApp::UI_Files()
                 }
                 else if (result == NFD_ERROR)
                 {
-                    // TODO: Use message box to show errors
                     NFDLastError = NFD::GetError();
+
+                    const char* errMsgTemplate = "Failed when loading file dialog: %s";
+                    LOG_ERRORF("Files", errMsgTemplate, NFDLastError.c_str());
+                    ImGui::InsertNotification({ImGuiToastType::Error, 5000, errMsgTemplate, NFDLastError.c_str()});
                 }
             }
             ImGui::SameLine();
