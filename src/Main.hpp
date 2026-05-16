@@ -130,4 +130,6 @@ private:
     // Action UI configs
 
     bool            &exportNodeChainWithOutputConfig = preferences.actionUIPref.exportNodeChainWithOutputConfig;
+    bool            &importNodeChainWithOutputConfig = preferences.actionUIPref.importNodeChainWithOutputConfig;
+    bool            &rememberRecentOutputConfigPref  = preferences.actionUIPref.rememberRecentOutputConfigPref;
 };

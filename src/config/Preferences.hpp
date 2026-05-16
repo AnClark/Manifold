@@ -136,11 +136,15 @@ struct OutputConfigPref
 struct ActionUIPref
 {
     bool exportNodeChainWithOutputConfig = true;
+    bool importNodeChainWithOutputConfig = true;
+    bool rememberRecentOutputConfigPref = true;
 
     toml::table getTable() const
     {
         toml::table table;
         table.insert_or_assign("export_node_chain_with_output_config", exportNodeChainWithOutputConfig);
+        table.insert_or_assign("import_node_chain_with_output_config", importNodeChainWithOutputConfig);
+        table.insert_or_assign("remember_recent_output_config_pref", rememberRecentOutputConfigPref);
         return table;
     }
 
@@ -148,6 +152,10 @@ struct ActionUIPref
     {
         if (auto v = table["export_node_chain_with_output_config"].value<bool>())
             exportNodeChainWithOutputConfig = static_cast<bool>(*v);
+        if (auto v = table["import_node_chain_with_output_config"].value<bool>())
+            importNodeChainWithOutputConfig = static_cast<bool>(*v);
+        if (auto v = table["remember_recent_output_config_pref"].value<bool>())
+            rememberRecentOutputConfigPref = static_cast<bool>(*v);
     }
 };
 

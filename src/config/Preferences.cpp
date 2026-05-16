@@ -43,10 +43,11 @@ void PreferencesManager::loadPreferences()
 
         if (const auto* ui = result["ui"].as_table())
             uiPref.fromTable(*ui);
-        if (const auto* outputConfig = result["output_config"].as_table())
-            outputConfigPref.fromTable(*outputConfig);
         if (const auto* actionUI = result["action_ui"].as_table())
             actionUIPref.fromTable(*actionUI);
+        if (const auto* outputConfig = result["output_config"].as_table())
+            if (actionUIPref.rememberRecentOutputConfigPref)
+                outputConfigPref.fromTable(*outputConfig);
 
         LOG_DEBUGF("Config", "Loaded preferences from config file: %s", prefPath.u8string().c_str());
     }
