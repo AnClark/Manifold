@@ -58,6 +58,7 @@
 
 #include <string>
 #include <vector>
+#include <mutex>
 
 // --------------------------------------------------------------------------
 // Config-type discriminator constants
@@ -100,16 +101,18 @@ namespace NodeConfig
  * array-of-tables entry containing at minimum an `id` key (the NodeRegistry
  * factory key used to reconstruct the node) followed by all exported params.
  *
- * @param nodeChain     The ordered list of nodes to serialise.
- * @param outputConfig  Optional output-format table produced by
- *                      buildOutputConfig().  When non-empty it is embedded
- *                      under the `[output]` key.  Defaults to an empty table
- *                      (no `[output]` section emitted).
- * @param name          Optional human-readable preset name written as the
- *                      top-level `name` key.  Omitted when empty.
+ * @param nodeChain       The ordered list of nodes to serialise.
+ * @param nodeChainMutex  Mutex guarding @p targetNodeChain.
+ * @param outputConfig    Optional output-format table produced by
+ *                        buildOutputConfig().  When non-empty it is embedded
+ *                        under the `[output]` key.  Defaults to an empty table
+ *                        (no `[output]` section emitted).
+ * @param name            Optional human-readable preset name written as the
+ *                        top-level `name` key.  Omitted when empty.
  * @return A UTF-8 TOML document as a `std::string`.
  */
 std::string saveNodeChain(std::vector<std::shared_ptr<Node>>& nodeChain,
+                          std::mutex& nodeChainMutex,
                           toml::table outputConfig = {},
                           std::string name = "");
 

@@ -3,7 +3,7 @@
 #include <sstream>
 #include <filesystem>
 
-std::string NodeConfig::saveNodeChain(std::vector<std::shared_ptr<Node>> &nodeChain, toml::table outputConfig, std::string name)
+std::string NodeConfig::saveNodeChain(std::vector<std::shared_ptr<Node>> &nodeChain, std::mutex& nodeChainMutex, toml::table outputConfig, std::string name)
 {
     // 1. Create root table
     toml::table root;
@@ -16,17 +16,22 @@ std::string NodeConfig::saveNodeChain(std::vector<std::shared_ptr<Node>> &nodeCh
 
     // 3. Export all configs from the member of nodeChain
     toml::array chain;  // Create a TOML array for our node chain
-    for (auto node : nodeChain)
     {
-        toml::table nodeTable;
-        nodeTable.insert("id", node->id());  // Store the node's ID (unique factory key) for reconstruction
+        // Protected Node Chain by mutex (passed from application side)
+        std::scoped_lock<std::mutex> nodeChainLock(nodeChainMutex);
 
-        auto config = node->exportConfig();
-        for (const auto& pair : config)
+        for (auto node : nodeChain)
         {
-            nodeTable.insert_or_assign(pair.first, pair.second);
+            toml::table nodeTable;
+            nodeTable.insert("id", node->id());  // Store the node's ID (unique factory key) for reconstruction
+
+            auto config = node->exportConfig();
+            for (const auto& pair : config)
+            {
+                nodeTable.insert_or_assign(pair.first, pair.second);
+            }
+            chain.push_back(nodeTable);
         }
-        chain.push_back(nodeTable);
     }
     root.insert_or_assign("chain", chain);
 
