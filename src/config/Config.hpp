@@ -53,6 +53,7 @@
 
 #include "pipeline/Node.hpp"
 #include "base/SndFileInfo.hpp"
+#include "Preferences.hpp"  // for targetOutputPref
 
 #include <toml.hpp>
 
@@ -115,6 +116,37 @@ std::string saveNodeChain(std::vector<std::shared_ptr<Node>>& nodeChain,
                           std::mutex& nodeChainMutex,
                           toml::table outputConfig = {},
                           std::string name = "");
+
+/**
+ * @brief Deserialises a node-chain preset from a TOML file and rebuilds the
+ *        node chain in place.
+ *
+ * Parses the file at @p configFilePath, validates that its `config_type` is
+ * `"node_chain"`, then iterates over every `[[chain]]` entry.  For each entry
+ * the `id` key is looked up in the NodeRegistry to instantiate the node; the
+ * remaining key/value pairs are forwarded to Node::importConfig() so that the
+ * node can restore its own parameters.
+ *
+ * The existing contents of @p targetNodeChain are replaced atomically under
+ * @p nodeChainMutex: the mutex is held only for the final swap so that node
+ * construction (which may be expensive) happens outside the critical section.
+ *
+ * When @p targetOutputPref is non-null and the TOML document contains an
+ * `[output]` section, the output folder, format and subtype fields are written
+ * back into @p *targetOutputPref.  If the section is absent the struct is left
+ * unchanged.
+ *
+ * @param configFilePath    Path to the `.toml` preset file to load.
+ * @param targetNodeChain   Node chain to replace with the loaded nodes.
+ * @param nodeChainMutex    Mutex guarding @p targetNodeChain.
+ * @param targetOutputPref  Optional pointer to an output-format preference
+ *                          struct that receives the `[output]` section values.
+ *                          Pass `nullptr` to ignore output settings.
+ */
+void loadNodeChain(std::string_view configFilePath,
+                   std::vector<std::shared_ptr<Node>>& targetNodeChain,
+                   std::mutex& nodeChainMutex,
+                   OutputConfigPref* targetOutputPref = nullptr);
 
 /**
  * @brief Builds a `toml::table` describing the output format settings.
