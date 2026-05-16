@@ -28,7 +28,18 @@ void PreferencesManager::loadPreferences()
     // TODO: surface a warning through LogManager once it is accessible here.
     try
     {
-        auto result = toml::parse_file(prefPath.string());
+        // Open via ifstream(filesystem::path): on Windows this calls the wide-char
+        // (_wfopen) API internally, correctly handling UTF-8 / CJK paths.
+        // toml::parse_file(string) uses fopen(char*) which treats the path as
+        // ANSI on Windows, silently failing for non-ASCII paths.
+        std::ifstream ifs(prefPath, std::ios::in);
+        if (!ifs.is_open())
+        {
+            LOG_ERRORF("Config", "Cannot load preference file. Will fallback to default preferences.");
+            return; // File unreadable — keep all defaults silently.
+        }
+
+        auto result = toml::parse(ifs, prefPath.u8string());
 
         if (const auto* ui = result["ui"].as_table())
             uiPref.fromTable(*ui);
@@ -37,7 +48,7 @@ void PreferencesManager::loadPreferences()
         if (const auto* actionUI = result["action_ui"].as_table())
             actionUIPref.fromTable(*actionUI);
 
-        LOG_DEBUGF("Config", "Loaded preferences from config file: %s", prefPath.string().c_str());
+        LOG_DEBUGF("Config", "Loaded preferences from config file: %s", prefPath.u8string().c_str());
     }
     catch (const toml::parse_error& err)
     {
