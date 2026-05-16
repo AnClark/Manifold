@@ -19,7 +19,10 @@ void PreferencesManager::loadPreferences()
 
     // No file yet — keep all defaults silently.
     if (!std::filesystem::exists(prefPath))
+    {
+        LOG_DEBUGF("Config", "Preference file not created yet. Will load default preferences.");
         return;
+    }
 
     // Malformed file — keep all defaults silently.
     // TODO: surface a warning through LogManager once it is accessible here.
