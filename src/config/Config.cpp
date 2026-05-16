@@ -149,15 +149,9 @@ void NodeConfig::loadNodeChain(std::string_view configFilePath, std::vector<std:
     }
 }
 
-toml::table NodeConfig::buildOutputConfig(std::string folder, std::string formatName, std::string subTypeName)
+toml::table NodeConfig::buildOutputConfig(OutputConfigPref &pref)
 {
-    toml::table outputConfig;
-
-    outputConfig.insert("folder", folder);
-    outputConfig.insert("format", formatName);
-    outputConfig.insert("subtype", subTypeName);
-
-    return std::move(outputConfig);
+    return std::move(pref.getTable());
 }
 
 std::string FileConfig::saveFileList(SndFileList &fileList)

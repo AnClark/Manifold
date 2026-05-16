@@ -160,14 +160,10 @@ void loadNodeChain(std::string_view configFilePath,
  * | `format`  | `"flac"`       | Container format name            |
  * | `subtype` | `"pcm24"`      | PCM sub-format / codec name      |
  *
- * @param folder       Absolute path to the output directory.
- * @param formatName   Container format string (e.g. `"wav"`, `"flac"`).
- * @param subTypeName  Sub-format string (e.g. `"pcm16"`, `"float32"`).
+ * @param pref     An instance of output config preference storage.
  * @return A `toml::table` ready for embedding in a larger TOML document.
  */
-toml::table buildOutputConfig(std::string folder,
-                              std::string formatName,
-                              std::string subTypeName);
+toml::table buildOutputConfig(OutputConfigPref &pref);
 
 }  // namespace NodeConfig
 
