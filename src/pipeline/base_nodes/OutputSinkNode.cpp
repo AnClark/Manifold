@@ -4,6 +4,8 @@
 #include <algorithm>
 #include <cctype>
 #include <filesystem>
+#include <iomanip>
+#include <sstream>
 #include <stdexcept>
 #include <string>
 #include <vector>
@@ -33,19 +35,56 @@ void OutputSinkNode::consume(std::unique_ptr<AudioStream> stream, NodeContext& c
 {
     const AudioFormat& fmt = stream->format();
 
-    int sfMajor   = majorFormat(format_);
-    int sfSubtype = subtypeFormat(format_, subtype_);
-    std::string ext = extension(format_);
+    // NOTE: AudioFormat and AudioFormats are different symbols with different usages.
+    //       See: src/base/AudioFormats.hpp
+    const int sfMajor     = AudioFormats::majorFormat(format_);
+    const int sfSubtype   = AudioFormats::subtypeFormat(format_, subtype_);
+    const std::string ext = AudioFormats::extension(format_);
 
-    // Build output path: <outputDir>/<stem>_out.<ext>
-    // TODO: Allow applying user's own wildcard
-    // u8string() ensures the stem is returned as UTF-8 on all platforms
-    // (path::string() would return the current ANSI code page on Windows).
-    std::string outPath =
-        ctx.outputDir + "/" + (std::filesystem::u8path(ctx.sourcePath).stem().u8string() + "_out." + ext);
+    // Determine the output stem: use ctx.outputStem when the caller has pre-resolved
+    // a template, otherwise fall back to the source file's stem (no "_out" suffix).
+    std::string stem;
+    if (!ctx.outputStem.empty())
+        stem = ctx.outputStem;
+    else
+        // Default: original stem without any added suffix
+        stem = std::filesystem::u8path(ctx.sourcePath).stem().u8string();
 
-    // Ensure output directory exists
+    // Ensure output directory exists before resolving conflicts / opening the file.
     std::filesystem::create_directories(std::filesystem::u8path(ctx.outputDir));
+
+    // Compute tentative output path and handle conflicts.
+    auto makeOutPath = [&](const std::string& s) {
+        return ctx.outputDir + "/" + s + "." + ext;
+    };
+
+    std::string outPath = makeOutPath(stem);
+
+    switch (ctx.outputConflictPolicy)
+    {
+        case NodeContext::OutputConflictPolicy::Skip:
+            if (std::filesystem::exists(std::filesystem::u8path(outPath)))
+            {
+                ctx.currentFilePath = outPath;  // record path as-is; nothing written
+                return;
+            }
+            break;
+
+        case NodeContext::OutputConflictPolicy::Overwrite:
+            break;  // proceed, sf_open will truncate the existing file
+
+        case NodeContext::OutputConflictPolicy::AutoRename:
+        {
+            int suffix = 1;
+            while (std::filesystem::exists(std::filesystem::u8path(outPath)))
+            {
+                std::ostringstream oss;
+                oss << stem << "_" << std::setw(2) << std::setfill('0') << suffix++;
+                outPath = makeOutPath(oss.str());
+            }
+            break;
+        }
+    }
 
     SF_INFO outInfo   = {};
     outInfo.samplerate = static_cast<int>(fmt.sampleRate);

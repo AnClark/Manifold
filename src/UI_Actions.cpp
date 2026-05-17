@@ -8,12 +8,14 @@
 #include "utils/TableMinColumnWidth.hpp"
 #include "pipeline/base_nodes/DSPNode.hpp"
 #include "config/Config.hpp"
+#include "config/FilenameConfig.hpp"
+#include "base/AudioFormats.hpp"
 
 #include "../fonts/IconFontAwesome5_Unique.h"
 
 #include <algorithm>
-#include <fstream>
 #include <filesystem>
+#include <fstream>
 
 namespace ImGuiExt
 {
@@ -516,9 +518,61 @@ void ManifoldApp::UI_Actions()
                     }
 
                     {
-                        ImGui::BeginGroup();
+                        // ── File Name ─────────────────────────────────────────
+                        // State for the filename config popup (persists while the modal is open).
+                        FilenameTemplate& s_editTemplate     = this->fileNameEditorState.editTemplate;
+                        int&              s_selectedTokenIdx = this->fileNameEditorState.selectedTokenIdx;
 
+                        ImGui::BeginGroup();
+                        ImGui::AlignTextToFramePadding();
                         ImGui::Text("File Name");
+                        ImGui::SameLine();
+
+                        // Build a compact summary of the current template for the button label.
+                        std::string fnSummary;
+                        {
+                            const auto& segs = outputFilenameTemplate.segments;
+                            if (segs.empty())
+                            {
+                                fnSummary = "(not configured)";
+                            }
+                            else
+                            {
+                                for (size_t si = 0; si < segs.size(); ++si)
+                                {
+                                    const auto& tok = segs[si].token;
+                                    switch (tok.type)
+                                    {
+                                        case FilenameToken::Type::OriginalName: fnSummary += "Name";    break;
+                                        case FilenameToken::Type::LiteralText:  fnSummary += "\"" + tok.literalText + "\""; break;
+                                        case FilenameToken::Type::Counter:
+                                        {
+                                            char buf[32];
+                                            snprintf(buf, sizeof(buf), "Counter(%0*d)",
+                                                     tok.counterPad, tok.counterStart);
+                                            fnSummary += buf;
+                                            break;
+                                        }
+                                    }
+                                    if (!segs[si].separator.empty())
+                                        fnSummary += " + \"" + segs[si].separator + "\" + ";
+                                    else if (si + 1 < segs.size())
+                                        fnSummary += " + ";
+                                }
+                            }
+                        }
+
+                        if (ImGui::Button(fnSummary.c_str(),
+                                          ImVec2(ImGui::GetContentRegionAvail().x - 5.0f, 0)))
+                        {
+                            s_editTemplate     = outputFilenameTemplate;
+                            s_selectedTokenIdx = -1;
+                            ImGui::OpenPopup("Output File Name Rule##FilenameConfigModal");
+                        }
+                        if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal))
+                            ImGui::SetTooltip("Click to configure output file naming rules");
+
+                        uiActions.popup_OutputFileNameRule(s_editTemplate, s_selectedTokenIdx);
 
                         ImGui::EndGroup();
                     }
@@ -668,12 +722,20 @@ void ManifoldApp::UI_Actions()
                             singleFileProcessorWorker.setOutputDir(outputPath);
                             singleFileProcessorWorker.setOutputFormat(outputFormat, outputSubtype);
                             singleFileProcessorWorker.setSinkMode(nullOutput ? SinkMode::Null : SinkMode::WriteFile);
+                            singleFileProcessorWorker.setConflictPolicy(outputFilenameTemplate.conflictPolicy);
 
                             {
                                 std::scoped_lock lock(sndFileListMutex);
+                                int fileCounter = 0;
                                 for (auto& fi : sndFileList)
                                 {
+                                    ++fileCounter;
+                                    const std::string sourceStem =
+                                        std::filesystem::path(fi->filePath).stem().u8string();
+
                                     auto record = std::make_shared<FileRunRecord>(fi);
+                                    record->resolvedOutputStem =
+                                        outputFilenameTemplate.resolve(sourceStem, fileCounter);
                                     run->records.push_back(record);
                                     singleFileProcessorWorker.addFile(fi, std::move(record));
                                 }

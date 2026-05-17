@@ -1,4 +1,5 @@
 #include "Main.hpp"
+#include "config/Config.hpp"
 
 #include "imgui.h"
 #include "utils/NFDIncludes.h"  // IWYU pragma: keep
@@ -200,6 +201,18 @@ void ManifoldApp::UI_Files()
 
                 ImGui::EndPopup();
             }
+
+            ImGui::SameLine();
+
+            ImGui::BeginDisabled(sndFileList.empty());
+            if (ImGui::Button("Export file list"))
+            {
+                std::string outputTOML = FileConfig::saveFileList(this->sndFileList);
+
+                // TODO: Log content will be truncated. Remove this logger.
+                LOG_DEBUGF("Files", "File List TOML export:\n```\n%s\n```", outputTOML.c_str());                
+            }
+            ImGui::EndDisabled();
         }
         ImGui::EndGroup();
 

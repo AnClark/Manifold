@@ -26,6 +26,7 @@
 #include <toml.hpp>
 
 #include "base/AudioFormats.hpp"
+#include "config/FilenameConfig.hpp"
 using namespace AudioFormats;
 
 // --------------------------------------------------------------------------
@@ -121,6 +122,8 @@ struct OutputConfigPref
     SubtypeOverride outputSubtype = SubtypeOverride::Auto;
     bool            nullOutput    = false;
 
+    FilenameTemplate filenameTemplate = FilenameTemplate::makeDefault();
+
     toml::table getTable() const
     {
         toml::table table;
@@ -128,6 +131,7 @@ struct OutputConfigPref
         table.insert_or_assign("format", outputFormat);
         table.insert_or_assign("subtype", outputSubtype);
         table.insert_or_assign("enable_null_output", static_cast<int>(nullOutput));
+        table.insert_or_assign("filename", filenameTemplate.toToml());
         return table;
     }
 
@@ -141,6 +145,8 @@ struct OutputConfigPref
             outputSubtype = static_cast<SubtypeOverride>(*v);
         if (auto v = table["enable_null_output"].value<bool>())
             nullOutput = static_cast<bool>(*v);
+        if (const auto* fnTable = table["filename"].as_table())
+            filenameTemplate = FilenameTemplate::fromToml(*fnTable);
     }
 };
 

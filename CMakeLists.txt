@@ -66,6 +66,7 @@ add_executable (${PROJECT_NAME} WIN32
     src/utils/AudioPlayer.cpp
     src/config/Config.cpp
     src/config/Preferences.cpp
+    src/config/FilenameConfig.cpp
     src/UI_Files.cpp
     src/UI_Actions.cpp
     src/UI_Tasks.cpp
@@ -90,6 +91,7 @@ add_executable (${PROJECT_NAME} WIN32
     src/pipeline/action_nodes/TrimSilenceNode.cpp
     src/pipeline/action_nodes/FadeNode.cpp
     src/pipeline/action_nodes/LoudnessComplianceNode.cpp
+    src/ui_components/Actions.cpp
 )
 
 #

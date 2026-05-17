@@ -3,6 +3,7 @@
 #include "Node.hpp"
 #include "../base/Report.hpp"
 #include "../base/SndFileInfo.hpp"
+#include "../config/FilenameConfig.hpp"
 
 #include <filesystem>
 #include <memory>
@@ -40,6 +41,19 @@ public:
     /** @brief Overload: resolve path from SndFileInfo::filePath. */
     void processFile(const SndFileInfo& info,
                      const std::string& outputDir);
+
+    /**
+     * @brief Overload: resolve path from SndFileInfo, using a pre-resolved output stem.
+     *
+     * When @p outputStem is non-empty it is written into NodeContext::outputStem so that
+     * OutputSinkNode uses it instead of deriving a name from the source path.
+     *
+     * @param conflictPolicy  Controls how the sink behaves when the target path already exists.
+     */
+    void processFile(const SndFileInfo& info,
+                     const std::string& outputDir,
+                     const std::string& outputStem,
+                     FilenameTemplate::ConflictPolicy conflictPolicy);
 
     /**
      * @brief Converts an owning unique_ptr chain to a non-owning raw-pointer view.

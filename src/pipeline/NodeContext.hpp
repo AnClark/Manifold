@@ -31,6 +31,21 @@ public:
     std::string outputDir;        ///< Requested output directory
     std::string currentFilePath;  ///< Set by Sink/Atomic nodes; read by downstream
 
+    /**
+     * @brief Pre-resolved output filename stem (no extension, no directory).
+     *
+     * When non-empty, OutputSinkNode uses this as the output file stem instead
+     * of deriving one from the source path.  Set by SingleFileProcessorWorker
+     * when a FilenameTemplate is active.
+     */
+    std::string outputStem;
+
+    /**
+     * @brief How to handle an existing file at the computed output path.
+     */
+    enum class OutputConflictPolicy { Skip, Overwrite, AutoRename };
+    OutputConflictPolicy outputConflictPolicy = OutputConflictPolicy::AutoRename;
+
     // --------------------------------------------------------------------------
     // Audio format metadata
 
