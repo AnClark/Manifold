@@ -46,6 +46,9 @@ struct uiPref
     /// Relative width weight of the left panel in the Actions view splitter.
     float actionLeftPanelWeight = 0.5f;
 
+    float actionFooterPaneHeight    = 220.0f;
+    bool  actionFooterPaneCollapsed = false;
+
     /// Relative width weight of the left panel in the Tasks view splitter.
     float tasksLeftPanelWeight = 1.0f;
 
@@ -68,6 +71,10 @@ struct uiPref
         toml::table table;
         table.insert_or_assign("action_left_panel_width_weight",
                                static_cast<double>(actionLeftPanelWeight));
+        table.insert_or_assign("action_footer_pane_height",
+                               static_cast<double>(actionFooterPaneHeight));
+        table.insert_or_assign("action_footer_pane_collapsed",
+                               static_cast<bool>(actionFooterPaneCollapsed));                               
         table.insert_or_assign("tasks_left_panel_weight",
                                static_cast<double>(tasksLeftPanelWeight));
         table.insert_or_assign("tasks_right_panel_weight",
@@ -92,6 +99,10 @@ struct uiPref
     {
         if (auto v = table["action_left_panel_width_weight"].value<double>())
             actionLeftPanelWeight = static_cast<float>(*v);
+        if (auto v = table["action_footer_pane_height"].value<double>())
+            actionFooterPaneHeight = static_cast<float>(*v);
+        if (auto v = table["action_footer_pane_collapsed"].value<bool>())
+            actionFooterPaneCollapsed = static_cast<bool>(*v);        
         if (auto v = table["tasks_left_panel_weight"].value<double>())
             tasksLeftPanelWeight = static_cast<float>(*v);
         if (auto v = table["tasks_right_panel_weight"].value<double>())

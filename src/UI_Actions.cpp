@@ -11,6 +11,7 @@
 
 #include "../fonts/IconFontAwesome5_Unique.h"
 
+#include <algorithm>
 #include <fstream>
 #include <filesystem>
 
@@ -138,7 +139,7 @@ void ManifoldApp::UI_Actions()
                 //
                 ImGui::TableSetColumnIndex(1);
 
-                if (ImGui::BeginChild("Actions_Editor", ImVec2(0, 0), ImGuiWindowFlags_AlwaysAutoResize))
+                if (ImGui::BeginChild("Actions_Editor", ImVec2(0, 0), ImGuiWindowFlags_AlwaysAutoResize, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse))
                 {
                     {
                         ImGui::BeginGroup();
@@ -291,6 +292,33 @@ void ManifoldApp::UI_Actions()
                     }
                     ImGui::Separator();
 
+                    // ── Footer pane state (static: persists across frames) ────────────────
+                    float& footerPaneHeight    = preferences.uiPref.actionFooterPaneHeight;
+                    bool&  footerPaneCollapsed = preferences.uiPref.actionFooterPaneCollapsed;
+                    constexpr float kFooterMinH = 80.0f;
+                    constexpr float kFooterMaxH = 600.0f;
+
+                    // [Top node-list child] occupies all space above the footer pane
+                    //
+                    // Height accounting: each child/widget followed by a cursor advance of (height + ItemSpacing.y).
+                    //   Total = (topChildH + IS) + (splitterH + IS) + (footerH + IS)  [when footer visible]
+                    //         = (topChildH + IS) + (splitterH + IS)                   [when footer collapsed]
+                    // To keep total == availH we absorb the extra trailing IS into splitterRowH.
+                    {
+                        constexpr float kTopMinH = 40.0f;
+                        const float availH       = ImGui::GetContentRegionAvail().y;
+                        const float IS           = ImGui::GetStyle().ItemSpacing.y;
+                        // When footer is visible there is one extra trailing IS (after Actions_Footer) to absorb.
+                        const float splitterRowH = ImGui::GetFrameHeight() + IS * (footerPaneCollapsed ? 2.0f : 3.0f);
+                        // Clamp footer height so the node list always has at least kTopMinH.
+                        if (!footerPaneCollapsed)
+                            footerPaneHeight = std::clamp(footerPaneHeight, kFooterMinH,
+                                                          std::max(kFooterMinH, availH - splitterRowH - kTopMinH));
+                        const float footerH   = footerPaneCollapsed ? 0.0f : footerPaneHeight;
+                        const float topChildH = availH - splitterRowH - footerH;
+                        ImGui::BeginChild("Actions_NodeList", ImVec2(0, std::max(topChildH, kTopMinH)));
+                    }
+
                     // ── Drag-and-drop reorder state (persists across frames) ─────────────
                     int&  s_dragSourceIdx = this->dragDropState.dragSourceIdx;   // index of item being dragged (-1 = none)
                     int&  s_dropTargetIdx = this->dragDropState.dropTargetIdx;   // insertion point (0..N)
@@ -408,12 +436,51 @@ void ManifoldApp::UI_Actions()
                     // ── Drag-and-drop logic (runs every frame after the list loop) ────────
                     _dragDropIdle(itemTopY, itemBotY);
 
-                    //
-                    // FOOTER: Output settings
-                    //
-                    ImGuiExt::MakeFooter(200.0f);
-                    ImGui::Separator();
-                    
+                    ImGui::EndChild(); // [Top node-list child] end
+
+                    // ── Footer pane splitter bar ──────────────────────────────────────────
+                    {
+                        const float frameH = ImGui::GetFrameHeight();
+
+                        // Collapse / expand toggle button
+                        if (ImGui::ArrowButton("##footer_toggle",
+                                               footerPaneCollapsed ? ImGuiDir_Up : ImGuiDir_Down))
+                            footerPaneCollapsed = !footerPaneCollapsed;
+                        if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal))
+                            ImGui::SetTooltip(footerPaneCollapsed
+                                              ? "Expand output settings"
+                                              : "Collapse output settings");
+
+                        ImGui::SameLine(0, 4);
+                        ImGui::AlignTextToFramePadding();
+                        ImGui::TextDisabled("Output Settings");
+                        ImGui::SameLine(0, 8);
+
+                        // Drag handle: fills the remaining row; dragging adjusts footer height
+                        const float  dragW   = std::max(ImGui::GetContentRegionAvail().x, 4.0f);
+                        const ImVec2 dragMin = ImGui::GetCursorScreenPos();
+                        ImGui::InvisibleButton("##footer_splitter", ImVec2(dragW, frameH));
+                        if (ImGui::IsItemActive() && !footerPaneCollapsed)
+                        {
+                            footerPaneHeight -= ImGui::GetIO().MouseDelta.y;
+                            footerPaneHeight  = std::clamp(footerPaneHeight, kFooterMinH, kFooterMaxH);
+                        }
+                        if ((ImGui::IsItemHovered() || ImGui::IsItemActive()) && !footerPaneCollapsed)
+                            ImGui::SetMouseCursor(ImGuiMouseCursor_ResizeNS);
+
+                        // Draw a subtle separator line through the drag area
+                        const float lineY = dragMin.y + frameH * 0.5f;
+                        ImGui::GetWindowDrawList()->AddLine(
+                            ImVec2(dragMin.x,          lineY),
+                            ImVec2(dragMin.x + dragW,  lineY),
+                            ImGui::GetColorU32(ImGuiCol_Separator), 1.0f);
+                    }
+
+                    // ── Footer pane: Output settings ──────────────────────────────────────
+                    if (!footerPaneCollapsed)
+                    {
+                    ImGui::BeginChild("Actions_Footer", ImVec2(0, footerPaneHeight), ImGuiChildFlags_Borders);
+
                     {
                         ImGui::BeginGroup();
 
@@ -710,6 +777,8 @@ void ManifoldApp::UI_Actions()
                             ImGui::EndChild();
                         }
                     }
+                    ImGui::EndChild(); // end Actions_Footer
+                    } // end if (!footerPaneCollapsed)
                 }
                 ImGui::EndChild();
 
