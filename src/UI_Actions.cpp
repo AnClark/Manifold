@@ -229,6 +229,22 @@ void ManifoldApp::UI_Actions()
                                         // Reset drag-and-drop state since the node chain structure has changed.
                                         dragDropState.reset();
 
+                                        // Validate the imported filename template if output config was applied.
+                                        if (importNodeChainWithOutputConfig)
+                                        {
+                                            if (auto err = preferences.outputConfigPref.filenameTemplate.validate())
+                                            {
+                                                const std::string errMsg = *err;
+                                                LOG_WARNF("Actions",
+                                                          "Imported filename template is invalid (%s) — reset to default",
+                                                          errMsg.c_str());
+                                                preferences.outputConfigPref.filenameTemplate = FilenameTemplate::makeDefault();
+                                                ImGui::InsertNotification({ImGuiToastType::Warning, 8000,
+                                                    "Imported filename template is invalid:\n%s\nReset to default.",
+                                                    errMsg.c_str()});
+                                            }
+                                        }
+
                                         LOG_INFOF("Actions", "Imported Node Chain from file: %s", openPath.get());
                                         ImGui::InsertNotification({ImGuiToastType::Success, 5000, "Successfully imported Node Chain."});
                                     }

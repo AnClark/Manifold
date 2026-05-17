@@ -223,6 +223,12 @@ public:
      */
     void loadPreferences();
 
+    /// Set to true by loadPreferences() when the saved filename template was
+    /// invalid and has been silently reset to the built-in default.
+    /// The UI should check this on the first rendered frame, show a warning
+    /// notification, then clear the flag.
+    bool filenameTemplateWasResetOnLoad = false;
+
     /**
      * @brief Writes current preferences to `<userDataDir>/preferences.toml`.
      *

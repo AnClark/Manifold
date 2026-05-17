@@ -46,8 +46,20 @@ void PreferencesManager::loadPreferences()
         if (const auto* actionUI = result["action_ui"].as_table())
             actionUIPref.fromTable(*actionUI);
         if (const auto* outputConfig = result["output_config"].as_table())
+        {
             if (actionUIPref.rememberRecentOutputConfigPref)
+            {
                 outputConfigPref.fromTable(*outputConfig);
+                if (auto err = outputConfigPref.filenameTemplate.validate())
+                {
+                    LOG_WARNF("Config",
+                              "Preferences: invalid filename template (%s) — reset to default",
+                              err->c_str());
+                    outputConfigPref.filenameTemplate = FilenameTemplate::makeDefault();
+                    filenameTemplateWasResetOnLoad = true;
+                }
+            }
+        }
 
         LOG_DEBUGF("Config", "Loaded preferences from config file: %s", prefPath.u8string().c_str());
     }

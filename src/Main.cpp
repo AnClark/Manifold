@@ -135,6 +135,16 @@ void ManifoldApp::onImGuiDisplay()
     }
     ImGui::End();
 
+    // Fire a deferred startup warning if loadPreferences() silently reset
+    // the saved filename template (ImGuiNotify isn't available before the
+    // first rendered frame, so the warning is stored as a flag).
+    if (preferences.filenameTemplateWasResetOnLoad)
+    {
+        preferences.filenameTemplateWasResetOnLoad = false;
+        LOG_WARNF("Config", "Startup: filename template in preferences was invalid — reset to default");
+        ImGui::InsertNotification({ImGuiToastType::Warning, 8000,
+            "Saved filename template was invalid and has been reset to default."});
+    }
 
     // Render ImGuiNotify notifications
     // NOTICE: Even though in ImGui namespace, ImGuiNotify is a third-party library!
