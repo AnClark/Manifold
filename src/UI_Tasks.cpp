@@ -531,7 +531,13 @@ void ManifoldApp::UI_Tasks()
     // HACK: Set minimum column width
     // Make sure reference text (for example, the tip text in Details view) can be fully shown.
     constexpr const char* referenceText = "Details will show here when you select a run on the left.";
-    ImGuiHack::SetTableMinColumnWidth(ImGui::CalcTextSize(referenceText).x + ImGui::GetStyle().CellPadding.x * 2.0f);
+    const float referenceTextWidth = ImGui::CalcTextSize(referenceText).x;
+    ImGuiHack::SetTableMinColumnWidth(referenceTextWidth + ImGui::GetStyle().CellPadding.x * 2.0f);
+
+    // Apply minimum column width to avoid the panel getting too narrow when resizing window
+    // (To test, maximize the window, dragging it to the minimum width, then restore the window)
+    if (ImGui::GetCurrentTable()->Columns[0].WidthGiven < referenceTextWidth)
+        ImGui::TableSetColumnWidth(0, referenceTextWidth);
 
     ImGui::EndTable();
     ImGui::PopStyleVar();

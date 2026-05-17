@@ -66,12 +66,13 @@ void ManifoldApp::UI_Actions()
 
             if (ImGui::BeginTable("Actions_Window_Main", 2, flags, ImGui::GetContentRegionAvail()))
             {
-                ImGui::TableSetupColumn("##Action_List", 0, preferences.uiPref.actionLeftPanelWeight);
-                ImGui::TableSetupColumn("##Node_Chain", 0, (1 - preferences.uiPref.actionLeftPanelWeight));
+                ImGui::TableSetupColumn("##Action_List", ImGuiTableColumnFlags_WidthStretch, preferences.uiPref.actionLeftPanelWeight);
+                ImGui::TableSetupColumn("##Node_Chain", ImGuiTableColumnFlags_WidthStretch, preferences.uiPref.actionRightPanelWeight);
                 
                 // Save current column width weight to preferences storage
                 const float tableWidth = ImGui::GetCurrentTable()->ColumnsAutoFitWidth;
                 preferences.uiPref.actionLeftPanelWeight = ImGui::GetCurrentTable()->Columns[0].WidthGiven / tableWidth;
+                preferences.uiPref.actionRightPanelWeight = ImGui::GetCurrentTable()->Columns[1].WidthGiven / tableWidth;
 
                 ImGui::TableNextRow();
 
@@ -785,7 +786,13 @@ void ManifoldApp::UI_Actions()
                 // HACK: Set minimum column width
                 // Make sure reference text (for example, the warning/tip text for "Process All Files" button) can be fully shown.
                 constexpr const char* referenceText = ICON_FA_EXCLAMATION_TRIANGLE " Go to Files, add files to the file list to enable processing.";
-                ImGuiHack::SetTableMinColumnWidth(ImGui::CalcTextSize(referenceText).x + ImGui::GetStyle().CellPadding.x * 2.0f);
+                const float referenceTextWidth = ImGui::CalcTextSize(referenceText).x;
+                ImGuiHack::SetTableMinColumnWidth(referenceTextWidth + ImGui::GetStyle().CellPadding.x * 2.0f);
+
+                // Apply minimum column width to avoid the panel getting too narrow when resizing window
+                // (To test, maximize the window, dragging it to the minimum width, then restore the window)
+                if (ImGui::GetCurrentTable()->Columns[0].WidthGiven < referenceTextWidth)
+                    ImGui::TableSetColumnWidth(0, referenceTextWidth);
 
                 ImGui::EndTable();
             }
