@@ -338,122 +338,7 @@ void ManifoldApp::UI_Actions()
                         ImGui::BeginChild("Actions_NodeList", ImVec2(0, std::max(topChildH, kTopMinH)));
                     }
 
-                    // ── Drag-and-drop reorder state (persists across frames) ─────────────
-                    int&  s_dragSourceIdx = this->dragDropState.dragSourceIdx;   // index of item being dragged (-1 = none)
-                    int&  s_dropTargetIdx = this->dragDropState.dropTargetIdx;   // insertion point (0..N)
-                    bool& s_isDragging    = this->dragDropState.isDragging;     // true once mouse moved past threshold
-
-                    // Per-frame bounding data for each item (screen Y coords)
-                    const size_t chainSize = nodeChain.size();
-                    std::vector<float> itemTopY(chainSize, 0.0f);
-                    std::vector<float> itemBotY(chainSize, 0.0f);
-
-                    // FontAwesome font is at Fonts[1] (loaded separately in Main.cpp)
-                    ImFont* faFont = (ImGui::GetIO().Fonts->Fonts.Size > 1)
-                                     ? ImGui::GetIO().Fonts->Fonts[1] : nullptr;
-
-                    for (size_t i = 0; i < chainSize; i++)
-                    {
-                        {
-                            const auto& currentNode = nodeChain[i].get();
-                            constexpr auto actionEditorFlags = 0;//ImGuiWindowFlags_MenuBar;
-
-                            ImGui::PushStyleVar(ImGuiStyleVar_ChildRounding, 5.0f);
-                            ImGui::PushID(reinterpret_cast<uintptr_t>(currentNode));
-
-                            float uiWidth, uiHeight;
-                            currentNode->getUiSize(uiWidth, uiHeight);
-
-                            // Record top Y of this item (screen coords) before drawing
-                            itemTopY[i] = ImGui::GetCursorScreenPos().y;
-
-                            // Dim the item currently being dragged so position is visually clear
-                            const bool isBeingDragged = s_isDragging && (s_dragSourceIdx == (int)i);
-                            if (isBeingDragged)
-                                ImGui::PushStyleVar(ImGuiStyleVar_Alpha, ImGui::GetStyle().Alpha * 0.45f);
-
-                            if (ImGui::BeginChild("SingleActionEditor", ImVec2(uiWidth, uiHeight), ImGuiChildFlags_Borders, actionEditorFlags))
-                            {
-                                // Topbar
-                                ImGui::BeginGroup();
-                                {
-                                    // ── Drag handle ──────────────────────────────────────
-                                    {
-                                        if (faFont) ImGui::PushFont(faFont, 14.0f);
-                                        ImGui::TextUnformatted(ICON_FA_GRIP_VERTICAL);
-                                        if (faFont) ImGui::PopFont();
-
-                                        if (ImGui::IsItemHovered())
-                                            ImGui::SetMouseCursor(ImGuiMouseCursor_ResizeAll);
-
-                                        if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal))
-                                            ImGui::SetTooltip("Drag to reorder node chain");
-
-                                        // Initiate drag when grip is pressed
-                                        if (ImGui::IsItemHovered()
-                                            && ImGui::IsMouseDown(ImGuiMouseButton_Left)
-                                            && s_dragSourceIdx == -1)
-                                            s_dragSourceIdx = (int)i;
-                                    }
-                                    ImGui::SameLine(0, 10);
-                                    // ─────────────────────────────────────────────────────
-
-                                    ImGui::Text("[%02llu] %s", i, currentNode->name().c_str());
-                                    ImGui::SameLine();
-
-                                    constexpr float toolButtonWidth = 25.0f;
-                                    ImGui::SetCursorPosX(ImGui::GetCursorPosX() + ImGui::GetContentRegionAvail().x - toolButtonWidth);
-                                    if (faFont) ImGui::PushFont(faFont, 14.0f);
-                                    if (ImGui::Button(ICON_FA_BACKSPACE, ImVec2(toolButtonWidth, 0)))
-                                    {
-                                        // Reset drag state on remove
-                                        dragDropState.reset();
-
-                                        {
-                                            std::scoped_lock lock(nodeChainMutex);
-                                            nodeChain.erase(nodeChain.begin() + i);
-                                        }
-
-                                        // IMPORTANT:
-                                        // After erasing the node, the current ImGui group for this item becomes invalid (since the underlying node object is destroyed),
-                                        // so we must give end to the rest of the code in this block with a break statement to avoid messing up the ImGui state.
-                                        if (faFont) ImGui::PopFont();
-                                        ImGui::EndGroup();
-                                        ImGui::EndChild();
-                                        if (isBeingDragged) ImGui::PopStyleVar(); // pop Alpha
-                                        ImGui::PopID();
-                                        ImGui::PopStyleVar();                      // pop ChildRounding
-                                        break;  // IMPORTANT: break here to avoid accessing invalid memory after erase
-                                    }
-                                    if (faFont) ImGui::PopFont();
-                                    if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal))
-                                        ImGui::SetTooltip("Remove current node");
-
-                                    ImGui::Separator();
-                                    ImGui::EndGroup();
-                                }
-
-                                // Node-specific UI
-                                currentNode->drawUI();       
-                            }
-                            ImGui::EndChild(); 
-
-                            if (isBeingDragged)
-                                ImGui::PopStyleVar(); // pop Alpha
-
-                            // Record bottom Y after child ends
-                            itemBotY[i] = ImGui::GetCursorScreenPos().y;
-
-                            ImGui::PopID();
-                            ImGui::PopStyleVar();
-
-                            // Add a neat margin
-                            ImGui::Dummy(ImVec2(0, 8));
-                        }
-                    }
-
-                    // ── Drag-and-drop logic (runs every frame after the list loop) ────────
-                    _dragDropIdle(itemTopY, itemBotY);
+                    uiActions.subUI_NodeChainView();
 
                     ImGui::EndChild(); // [Top node-list child] end
 
@@ -500,202 +385,64 @@ void ManifoldApp::UI_Actions()
                     {
                     ImGui::BeginChild("Actions_Footer", ImVec2(0, footerPaneHeight), ImGuiChildFlags_Borders);
 
+                    constexpr float kLabelW = 120.0f;   // Label width
+
                     {
                         ImGui::BeginGroup();
-
+                        ImGui::AlignTextToFramePadding();
                         ImGui::Text("Folder");
-                        ImGui::SameLine(0, 30);
+                        ImGui::SameLine(kLabelW, 0);
 
-                        const char* folderButtonLabel = outputPath.empty() ? "(empty)" : outputPath.c_str();
-                        if (ImGui::Button(folderButtonLabel, ImVec2(ImGui::GetContentRegionAvail().x - 5.0f, 0)))
-                        {
-                            nfdu8char_t* pickedPath = nullptr;
-
-                            // Pass in the parent window handle: On Windows, the parent window will be automatically disabled while the file dialog is open,
-                            // preventing users from accidentally interacting with the main interface while the file dialog is open.
-                            nfdwindowhandle_t parentWindow = {};
-                            NFD_GetNativeWindowFromGLFWWindow(getWindow(), &parentWindow);
-
-                            if (NFD::PickFolder(pickedPath, nullptr, parentWindow) == NFD_OKAY)
-                            {
-                                outputPath = pickedPath;
-                                NFD::FreePath(pickedPath);
-                            }
-                        }
-                        if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal | ImGuiHoveredFlags_NoSharedDelay))
-                        {
-                            ImGui::BeginTooltip();
-                            ImGui::Text("Click this button to specify output path.");
-                            ImGui::Separator();
-                            ImGui::BulletText("Current output path: %s", outputPath.empty() ? "Not specified" : outputPath.c_str());
-                            ImGui::EndTooltip();
-                        }
+                        uiActions.button_SelectOutputFolder();
 
                         ImGui::EndGroup();    
                     }
 
+                    ImGui::Spacing();
+
                     {
                         // ── File Name ─────────────────────────────────────────
-                        // State for the filename config popup (persists while the modal is open).
-                        FilenameTemplate& s_editTemplate     = this->fileNameEditorState.editTemplate;
-                        int&              s_selectedTokenIdx = this->fileNameEditorState.selectedTokenIdx;
 
                         ImGui::BeginGroup();
                         ImGui::AlignTextToFramePadding();
                         ImGui::Text("File Name");
-                        ImGui::SameLine();
+                        ImGui::SameLine(kLabelW, 0);
 
-                        // Build a compact summary of the current template for the button label.
-                        std::string fnSummary;
-                        {
-                            const auto& segs = outputFilenameTemplate.segments;
-                            if (segs.empty())
-                            {
-                                fnSummary = "(not configured)";
-                            }
-                            else
-                            {
-                                for (size_t si = 0; si < segs.size(); ++si)
-                                {
-                                    const auto& tok = segs[si].token;
-                                    switch (tok.type)
-                                    {
-                                        case FilenameToken::Type::OriginalName: fnSummary += "Name";    break;
-                                        case FilenameToken::Type::LiteralText:  fnSummary += "\"" + tok.literalText + "\""; break;
-                                        case FilenameToken::Type::Counter:
-                                        {
-                                            char buf[32];
-                                            snprintf(buf, sizeof(buf), "Counter(%0*d)",
-                                                     tok.counterPad, tok.counterStart);
-                                            fnSummary += buf;
-                                            break;
-                                        }
-                                    }
-                                    if (!segs[si].separator.empty())
-                                        fnSummary += " + \"" + segs[si].separator + "\" + ";
-                                    else if (si + 1 < segs.size())
-                                        fnSummary += " + ";
-                                }
-                            }
-                        }
-
-                        if (ImGui::Button(fnSummary.c_str(),
-                                          ImVec2(ImGui::GetContentRegionAvail().x - 5.0f, 0)))
-                        {
-                            s_editTemplate     = outputFilenameTemplate;
-                            s_selectedTokenIdx = -1;
-                            ImGui::OpenPopup("Output File Name Rule##FilenameConfigModal");
-                        }
-                        if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal))
-                            ImGui::SetTooltip("Click to configure output file naming rules");
-
-                        uiActions.popup_OutputFileNameRule(s_editTemplate, s_selectedTokenIdx);
+                        uiActions.button_FileName();
 
                         ImGui::EndGroup();
                     }
+
+                    ImGui::Spacing();
 
                     // Output format selector
                     {
                         ImGui::BeginGroup();
 
-                        constexpr float kLabelW = 60.0f;
-
                         // ── Container format ──────────────────────────────
                         {
-                            struct FmtEntry { ContainerFormat fmt; const char* label; };
-                            static constexpr FmtEntry kFormats[] = {
-                                { ContainerFormat::Wav,  "WAV (.wav)"        },
-                                { ContainerFormat::Flac, "FLAC (.flac)"      },
-                                { ContainerFormat::Ogg,  "OGG Vorbis (.ogg)" },
-                                { ContainerFormat::Opus, "Opus (.ogg)"       },
-                                { ContainerFormat::Aiff, "AIFF (.aiff)"      },
-                                { ContainerFormat::Caf,  "CAF (.caf)"        },
-                                { ContainerFormat::W64,  "Wave64 (.w64)"     },
-                            };
-
-                            const char* fmtPreview = "?";
-                            for (const auto& e : kFormats)
-                                if (e.fmt == outputFormat) { fmtPreview = e.label; break; }
-
                             ImGui::AlignTextToFramePadding();
                             ImGui::Text("Format");
-                            ImGui::SameLine(kLabelW);
-                            ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x - 5.0f);
-                            if (ImGui::BeginCombo("##out_fmt", fmtPreview))
-                            {
-                                for (const auto& e : kFormats)
-                                {
-                                    const bool sel = (e.fmt == outputFormat);
-                                    if (ImGui::Selectable(e.label, sel))
-                                        outputFormat = e.fmt;
-                                    if (sel) ImGui::SetItemDefaultFocus();
-                                }
-                                ImGui::EndCombo();
-                            }
+                            ImGui::SameLine(kLabelW, 0);
+                            
+                            uiActions.combo_SelectContainerFormat();
                         }
 
                         ImGui::Spacing();
 
                         // ── Sample subtype ────────────────────────────────
                         {
-                            const bool codecLocked = (outputFormat == ContainerFormat::Ogg ||
-                                                      outputFormat == ContainerFormat::Opus);
-                            const bool isFlac      = (outputFormat == ContainerFormat::Flac);
-
-                            struct SubEntry { SubtypeOverride sub; const char* label; bool flacOk; };
-                            static constexpr SubEntry kSubtypes[] = {
-                                { SubtypeOverride::Auto,     "Auto (format default)", true  },
-                                { SubtypeOverride::Pcm16,    "PCM 16-bit",            true  },
-                                { SubtypeOverride::Pcm24,    "PCM 24-bit",            true  },
-                                { SubtypeOverride::Pcm32,    "PCM 32-bit",            false },
-                                { SubtypeOverride::Float32,  "Float 32-bit",          false },
-                                { SubtypeOverride::Double64, "Double 64-bit",         false },
-                            };
-
-                            // Compute preview label, accounting for clamping
-                            const char* subPreview;
-                            if (codecLocked)
-                            {
-                                subPreview = (outputFormat == ContainerFormat::Opus)
-                                             ? "Opus (fixed)" : "Vorbis (fixed)";
-                            }
-                            else if (isFlac
-                                     && outputSubtype != SubtypeOverride::Auto
-                                     && outputSubtype != SubtypeOverride::Pcm16)
-                            {
-                                subPreview = "PCM 24-bit (clamped)";
-                            }
-                            else
-                            {
-                                subPreview = "?";
-                                for (const auto& e : kSubtypes)
-                                    if (e.sub == outputSubtype) { subPreview = e.label; break; }
-                            }
-
                             ImGui::AlignTextToFramePadding();
                             ImGui::Text("Subtype");
                             ImGui::SameLine(kLabelW);
-                            ImGui::BeginDisabled(codecLocked);
-                            ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x - 5.0f);
-                            if (ImGui::BeginCombo("##out_sub", subPreview))
-                            {
-                                for (const auto& e : kSubtypes)
-                                {
-                                    const bool unsupported = isFlac && !e.flacOk;
-                                    if (unsupported) ImGui::BeginDisabled(true);
-                                    const bool sel = (e.sub == outputSubtype);
-                                    if (ImGui::Selectable(e.label, sel) && !unsupported)
-                                        outputSubtype = e.sub;
-                                    if (sel && !unsupported) ImGui::SetItemDefaultFocus();
-                                    if (unsupported) ImGui::EndDisabled();
-                                }
-                                ImGui::EndCombo();
-                            }
-                            ImGui::EndDisabled();
+                            
+                            uiActions.combo_SelectSampleSubtype();
                         }
 
                         ImGui::EndGroup();
                     }
+
+                    ImGui::Spacing();
 
                     // ── Null output toggle ───────────────────────────────
                     ImGui::Checkbox("Null Output", &nullOutput);
@@ -719,142 +466,18 @@ void ManifoldApp::UI_Actions()
                         ImGui::Spacing();
 
                         // ── Process button ───────────────────────────────────
-                        const bool canProcess = !sndFileList.empty()
-                                             && !nodeChain.empty()
-                                             && (nullOutput || !outputPath.empty());
+                        const bool canProcess = uiActions.query_CanProcess();
                         ImGui::BeginDisabled(!canProcess);
                         if (ImGui::Button("Process All Files", ImVec2(-1, 28.0f)))
                         {
-                            // Snapshot node names for the run record
-                            std::vector<std::string> nodeNames;
-                            {
-                                std::scoped_lock lock(nodeChainMutex);
-                                for (const auto& n : nodeChain)
-                                    nodeNames.push_back(n->name());
-                            }
-
-                            auto run = std::make_shared<ProcessingRun>(
-                                nextRunId++, outputPath, std::move(nodeNames));
-
-                            singleFileProcessorWorker.setOutputDir(outputPath);
-                            singleFileProcessorWorker.setOutputFormat(outputFormat, outputSubtype);
-                            singleFileProcessorWorker.setSinkMode(nullOutput ? SinkMode::Null : SinkMode::WriteFile);
-                            singleFileProcessorWorker.setConflictPolicy(outputFilenameTemplate.conflictPolicy);
-
-                            {
-                                std::scoped_lock lock(sndFileListMutex);
-                                int fileCounter = 0;
-                                for (auto& fi : sndFileList)
-                                {
-                                    ++fileCounter;
-                                    const std::string sourceStem =
-                                        std::filesystem::path(fi->filePath).stem().u8string();
-
-                                    auto record = std::make_shared<FileRunRecord>(fi);
-                                    record->resolvedOutputStem =
-                                        outputFilenameTemplate.resolve(sourceStem, fileCounter);
-                                    run->records.push_back(record);
-                                    singleFileProcessorWorker.addFile(fi, std::move(record));
-                                }
-                            }
-
-                            processingRuns.push_back(std::move(run));
+                            uiActions.command_StartProcessingAllFiles();
                         }
                         ImGui::EndDisabled();
 
-                        if (!canProcess)
-                        {
-                            ImGui::BeginGroup();
-
-                            const char* hintMsg = nullptr;
-                            if (outputPath.empty())
-                                hintMsg = "Select an output folder above to enable processing.";
-                            else if (sndFileList.empty())
-                                hintMsg = "Go to Files, add files to the file list to enable processing.";
-                            else
-                                hintMsg = "Add at least one action node to enable processing.";
-
-                            // Calculate text widths & gap widths for centralized display
-                            constexpr float gap = 4.0f;
-                            const float hintMsgWidth = ImGui::CalcTextSize(ICON_FA_EXCLAMATION_TRIANGLE).x + gap + ImGui::CalcTextSize(hintMsg).x;
-                            ImGui::SetCursorPosX(ImGui::GetContentRegionAvail().x * 0.5f - hintMsgWidth * 0.5f);
-
-                            ImGui::TextColored(ImVec4(1.0f, 0.8f, 0.2f, 1.0f), "%s", ICON_FA_EXCLAMATION_TRIANGLE);
-                            ImGui::SameLine(0, 4);
-                            ImGui::TextColored(ImVec4(1.0f, 0.85f, 0.5f, 1.0f), "%s", hintMsg);
-
-                            ImGui::EndGroup();
-                        }
+                        uiActions.info_ShowProcessingHints();
 
                         // ── Latest run status ────────────────────────────────
-                        if (!processingRuns.empty())
-                        {
-                            ImGui::Spacing();
-                            ImGui::SeparatorText("Latest Run");
-
-                            const auto& run   = processingRuns.back();
-                            const size_t done  = run->countByStatus(FileRunRecord::Status::Done);
-                            const size_t error = run->countByStatus(FileRunRecord::Status::Error);
-                            const size_t total = run->records.size();
-
-                            ImGui::Text("Run #%llu  —  %zu / %zu done, %zu error(s)",
-                                        run->id, done + error, total, error);
-                            ImGui::ProgressBar(run->getProgress(), ImVec2(-1, 6), "");  // Param #3: overlay. Set to empty string to disable percentage display
-
-                            // Per-file rows
-                            ImGui::BeginChild("RunFileList", ImVec2(0, 120),
-                                              ImGuiChildFlags_Borders);
-                            for (const auto& rec : run->records)
-                            {
-                                const auto st = rec->status.load(std::memory_order_relaxed);
-
-                                const char* statusLabel;
-                                ImVec4      statusColor;
-                                switch (st)
-                                {
-                                    case FileRunRecord::Status::Processing:
-                                        statusLabel = " RUN ";
-                                        statusColor = ImVec4(1.0f, 0.8f, 0.2f, 1.0f);
-                                        break;
-                                    case FileRunRecord::Status::Done:
-                                        statusLabel = "  OK ";
-                                        statusColor = ImVec4(0.4f, 1.0f, 0.4f, 1.0f);
-                                        break;
-                                    case FileRunRecord::Status::Error:
-                                        statusLabel = " ERR ";
-                                        statusColor = ImVec4(1.0f, 0.4f, 0.4f, 1.0f);
-                                        break;
-                                    default: // Pending
-                                        statusLabel = " ... ";
-                                        statusColor = ImGui::GetStyle().Colors[ImGuiCol_TextDisabled];
-                                        break;
-                                }
-
-                                ImGui::TextColored(statusColor, "%s", statusLabel);
-                                ImGui::SameLine();
-                                ImGui::TextUnformatted(rec->fileInfo->fileNameBase.c_str());
-
-                                if (st == FileRunRecord::Status::Processing)
-                                {
-                                    std::scoped_lock<std::mutex> rlock(rec->progressMutex);
-                                    if (!rec->currentNodeName.empty())
-                                    {
-                                        ImGui::SameLine();
-                                        ImGui::TextDisabled("[%s]", rec->currentNodeName.c_str());
-                                    }
-                                }
-                                else if (st == FileRunRecord::Status::Error)
-                                {
-                                    if (ImGui::IsItemHovered())
-                                    {
-                                        std::scoped_lock<std::mutex> rlock(rec->progressMutex);
-                                        if (!rec->errorMessage.empty())
-                                            ImGui::SetTooltip("%s", rec->errorMessage.c_str());
-                                    }
-                                }
-                            }
-                            ImGui::EndChild();
-                        }
+                        uiActions.subUI_ShowLatestRunStatus();
                     }
                     ImGui::EndChild(); // end Actions_Footer
                     } // end if (!footerPaneCollapsed)
