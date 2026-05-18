@@ -693,3 +693,33 @@ void UIComponents_Actions::subUI_ShowLatestRunStatus()
         ImGui::EndChild();
     }
 }
+
+void UIComponents_Actions::toggle_EnableNullOutput()
+{
+    ImGui::Checkbox("Null Output", &app->nullOutput);
+    if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal | ImGuiHoveredFlags_NoSharedDelay))
+    {
+        if (ImGui::BeginTooltip())
+        {
+            ImGui::Text("Process audio without writing output files.");
+            ImGui::Separator();
+            ImGui::Text("If you only analyze audio files (e.g. via Loudness Compliance), but not need to produce any artifacts,\n"
+            "this mode would be useful.");
+            ImGui::EndTooltip();
+        }
+    }
+    ImGui::SameLine();
+    ImGui::TextDisabled("(Useful for analysis-only pipelines)");
+}
+
+void UIComponents_Actions::button_ProcessAllFiles()
+{
+    // ── Process button ───────────────────────────────────
+    const bool canProcess = query_CanProcess();
+    ImGui::BeginDisabled(!canProcess);
+    if (ImGui::Button("Process All Files", ImVec2(-1, 28.0f)))
+    {
+        command_StartProcessingAllFiles();
+    }
+    ImGui::EndDisabled();
+}

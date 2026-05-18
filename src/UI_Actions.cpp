@@ -291,40 +291,20 @@ void ManifoldApp::UI_Actions()
                     ImGui::Spacing();
 
                     // ── Null output toggle ───────────────────────────────
-                    ImGui::Checkbox("Null Output", &nullOutput);
-                    if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal | ImGuiHoveredFlags_NoSharedDelay))
-                    {
-                        if (ImGui::BeginTooltip())
-                        {
-                            ImGui::Text("Process audio without writing output files.");
-                            ImGui::Separator();
-                            ImGui::Text("If you only analyze audio files (e.g. via Loudness Compliance), but not need to produce any artifacts,\n"
-                            "this mode would be useful.");
-                            ImGui::EndTooltip();
-                        }
-                    }
-                    ImGui::SameLine();
-                    ImGui::TextDisabled("(Useful for analysis-only pipelines)");
+                    uiActions.toggle_EnableNullOutput();
 
                     ImGui::Dummy(ImVec2(0, 4));
 
                     {
                         ImGui::Spacing();
 
-                        // ── Process button ───────────────────────────────────
-                        const bool canProcess = uiActions.query_CanProcess();
-                        ImGui::BeginDisabled(!canProcess);
-                        if (ImGui::Button("Process All Files", ImVec2(-1, 28.0f)))
-                        {
-                            uiActions.command_StartProcessingAllFiles();
-                        }
-                        ImGui::EndDisabled();
-
+                        uiActions.button_ProcessAllFiles();
                         uiActions.info_ShowProcessingHints();
 
                         // ── Latest run status ────────────────────────────────
                         uiActions.subUI_ShowLatestRunStatus();
                     }
+
                     ImGui::EndChild(); // end Actions_Footer
                     } // end if (!footerPaneCollapsed)
                 }

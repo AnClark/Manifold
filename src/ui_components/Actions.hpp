@@ -29,6 +29,8 @@ public:
 
     void combo_SelectContainerFormat();
     void combo_SelectSampleSubtype();
+    void toggle_EnableNullOutput();
+    void button_ProcessAllFiles();
 
     bool query_CanProcess() const;
     const char* query_ProcessingHints() const;
