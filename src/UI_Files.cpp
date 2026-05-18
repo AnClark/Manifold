@@ -86,7 +86,7 @@ void ManifoldApp::UI_Files()
 
                 NFD::UniquePathSet outPaths;
                 nfdu8filteritem_t filters[] = {
-                    { "Audio Files", "wav,flac,mp3,ogg,aiff" },
+                    { "Audio Files", "wav,flac,mp3,ogg,aiff,caf" },
                     { "All Files",   "*" }
                 };
 
