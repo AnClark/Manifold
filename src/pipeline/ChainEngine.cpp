@@ -120,9 +120,29 @@ void ChainEngine::processFile(const std::string& input,
 void ChainEngine::processFile(const SndFileInfo& info,
                                const std::string& outputDir)
 {
+    processFile(info, outputDir, {}, FilenameTemplate::ConflictPolicy::AutoRename);
+}
+
+void ChainEngine::processFile(const SndFileInfo& info,
+                               const std::string& outputDir,
+                               const std::string& outputStem,
+                               FilenameTemplate::ConflictPolicy conflictPolicy)
+{
     NodeContext ctx;
     ctx.sourcePath = info.filePath;
     ctx.outputDir  = outputDir;
+    ctx.outputStem = outputStem;
+
+    // Map FilenameTemplate::ConflictPolicy → NodeContext::OutputConflictPolicy
+    switch (conflictPolicy)
+    {
+        case FilenameTemplate::ConflictPolicy::Skip:
+            ctx.outputConflictPolicy = NodeContext::OutputConflictPolicy::Skip;      break;
+        case FilenameTemplate::ConflictPolicy::Overwrite:
+            ctx.outputConflictPolicy = NodeContext::OutputConflictPolicy::Overwrite; break;
+        case FilenameTemplate::ConflictPolicy::AutoRename:
+            ctx.outputConflictPolicy = NodeContext::OutputConflictPolicy::AutoRename; break;
+    }
 
     // Inject Worker-analysed loudness data into sideband so that
     // LoudnessNormalizeNode can use it directly without re-measuring.

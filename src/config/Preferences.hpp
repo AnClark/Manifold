@@ -26,6 +26,7 @@
 #include <toml.hpp>
 
 #include "base/AudioFormats.hpp"
+#include "config/FilenameConfig.hpp"
 using namespace AudioFormats;
 
 // --------------------------------------------------------------------------
@@ -128,6 +129,8 @@ struct OutputConfigPref
     SubtypeOverride outputSubtype = SubtypeOverride::Auto;
     bool            nullOutput    = false;
 
+    FilenameTemplate filenameTemplate = FilenameTemplate::makeDefault();
+
     toml::table getTable() const
     {
         toml::table table;
@@ -135,6 +138,7 @@ struct OutputConfigPref
         table.insert_or_assign("format", outputFormat);
         table.insert_or_assign("subtype", outputSubtype);
         table.insert_or_assign("enable_null_output", static_cast<int>(nullOutput));
+        table.insert_or_assign("filename", filenameTemplate.toToml());
         return table;
     }
 
@@ -148,6 +152,8 @@ struct OutputConfigPref
             outputSubtype = static_cast<SubtypeOverride>(*v);
         if (auto v = table["enable_null_output"].value<bool>())
             nullOutput = static_cast<bool>(*v);
+        if (const auto* fnTable = table["filename"].as_table())
+            filenameTemplate = FilenameTemplate::fromToml(*fnTable);
     }
 };
 
@@ -223,6 +229,12 @@ public:
      * parsed.
      */
     void loadPreferences();
+
+    /// Set to true by loadPreferences() when the saved filename template was
+    /// invalid and has been silently reset to the built-in default.
+    /// The UI should check this on the first rendered frame, show a warning
+    /// notification, then clear the flag.
+    bool filenameTemplateWasResetOnLoad = false;
 
     /**
      * @brief Writes current preferences to `<userDataDir>/preferences.toml`.

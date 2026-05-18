@@ -3,6 +3,7 @@
 #include "base/Worker.hpp"
 #include "base/ProcessingRun.hpp"
 #include "base/AudioFormats.hpp"
+#include "config/FilenameConfig.hpp"
 #include "pipeline/Node.hpp"
 #include "pipeline/base_nodes/FileSourceNode.hpp"
 #include "pipeline/base_nodes/OutputSinkNode.hpp"
@@ -59,6 +60,19 @@ public:
         sinkMode_ = mode;
     }
 
+    /**
+     * @brief Set the conflict policy used when an output file already exists.
+     *
+     * Called once per run (UI thread) before the first addFile of that run.
+     * The per-file output stem is pre-resolved by the UI thread and stored in
+     * FileRunRecord::resolvedOutputStem; the worker reads it directly.
+     */
+    void setConflictPolicy(FilenameTemplate::ConflictPolicy policy)
+    {
+        std::scoped_lock<std::mutex> lock(conflictPolicyMutex_);
+        conflictPolicy_ = policy;
+    }
+
 protected:
     void processItem(std::shared_ptr<SndFileInfo> fileInfoInstance) override;
 
@@ -82,4 +96,8 @@ private:
     // nullptr entries correspond to standalone (non-run) submissions.
     std::queue<std::shared_ptr<FileRunRecord>> recordQueue_;
     std::mutex                                 recordQueueMutex_;
+
+    // Conflict policy for output filename collisions (set once per run by UI thread)
+    FilenameTemplate::ConflictPolicy conflictPolicy_ = FilenameTemplate::ConflictPolicy::AutoRename;
+    std::mutex                       conflictPolicyMutex_;
 };

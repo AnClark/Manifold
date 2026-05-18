@@ -2,6 +2,8 @@
 #include "pipeline/ChainEngine.hpp"
 #include "utils/LogManager.hpp"
 
+#include <filesystem>
+
 static constexpr const char* LOG_TAG = "Single File Processor";
 
 void SingleFileProcessorWorker::addFile(std::shared_ptr<SndFileInfo> fileInfo,
@@ -92,6 +94,19 @@ void SingleFileProcessorWorker::processItem(std::shared_ptr<SndFileInfo> fileInf
         record->status.store(FileRunRecord::Status::Processing);
     }
 
+    // Use pre-resolved stem from the run record (set by the UI thread at run creation).
+    // Fall back to the source file's own stem for standalone (non-run) submissions.
+    const std::string resolvedStem =
+        (record && !record->resolvedOutputStem.empty())
+            ? record->resolvedOutputStem
+            : std::filesystem::path(fileInfoInstance->filePath).stem().u8string();
+
+    FilenameTemplate::ConflictPolicy conflictPolicy;
+    {
+        std::scoped_lock<std::mutex> lock(conflictPolicyMutex_);
+        conflictPolicy = conflictPolicy_;
+    }
+
     // Create a local copy of outputDir under lock
     std::string outputDir_Copied;
     {
@@ -153,7 +168,7 @@ void SingleFileProcessorWorker::processItem(std::shared_ptr<SndFileInfo> fileInf
     });
 
     // Now everything is set up, let's go!
-    engine.processFile(*fileInfoInstance, outputDir_Copied);
+    engine.processFile(*fileInfoInstance, outputDir_Copied, resolvedStem, conflictPolicy);
 
     if (record) {
         record->timestampFinished = std::chrono::system_clock::now();

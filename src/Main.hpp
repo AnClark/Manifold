@@ -3,6 +3,7 @@
 #include "Application.hpp"
 #include "base/SndFileInfo.hpp"
 #include "base/ProcessingRun.hpp"
+#include "ui_components/Actions.hpp"
 #include "workers/DcOffsetWorker.hpp"
 #include "workers/EBUR128Worker.hpp"
 #include "workers/SndFileWorker.hpp"
@@ -71,6 +72,10 @@ private:
     std::vector<std::shared_ptr<ProcessingRun>> processingRuns;  ///< History of all runs (oldest first)
     uint64_t nextRunId = 1;
 
+    // UI Components
+    UIComponents_Actions uiActions {this};
+    friend class UIComponents_Actions;
+
     // Node Chain drag/drop (DnD) states & procedures
     struct NodeChainDnDState
     {
@@ -114,6 +119,16 @@ private:
     LogUIState logUI;
 
     // ==============================================================
+    // File name editor UI state
+
+    struct FileNameEditorState
+    {
+        FilenameTemplate editTemplate;
+        int              selectedTokenIdx = -1;
+    };
+    FileNameEditorState fileNameEditorState;
+
+    // ==============================================================
     // Preferences storage
 
     PreferencesManager preferences;
@@ -121,10 +136,11 @@ private:
     // ==============================================================
     // Output configs - Stored in preference storage for convenience
 
-    std::string     &outputPath    = preferences.outputConfigPref.outputPath;
-    ContainerFormat &outputFormat  = preferences.outputConfigPref.outputFormat;
-    SubtypeOverride &outputSubtype = preferences.outputConfigPref.outputSubtype;
-    bool            &nullOutput    = preferences.outputConfigPref.nullOutput;  ///< When true, audio is processed but not written to disk
+    std::string     &outputPath             = preferences.outputConfigPref.outputPath;
+    ContainerFormat &outputFormat           = preferences.outputConfigPref.outputFormat;
+    SubtypeOverride &outputSubtype          = preferences.outputConfigPref.outputSubtype;
+    bool            &nullOutput             = preferences.outputConfigPref.nullOutput;  ///< When true, audio is processed but not written to disk
+    FilenameTemplate &outputFilenameTemplate = preferences.outputConfigPref.filenameTemplate;
 
     // ==============================================================
     // Action UI configs

@@ -34,6 +34,11 @@ struct FileRunRecord
 
     std::atomic<Status> status { Status::Pending };
 
+    /// Pre-resolved output filename stem (without extension).
+    /// Set by the UI thread at run creation from the active FilenameTemplate.
+    /// Empty string = fall back to the source file's own stem.
+    std::string resolvedOutputStem;
+
     // Protected by progressMutex — written by worker, read by UI
     size_t      currentNodeIndex { 0 };
     std::string currentNodeName;
