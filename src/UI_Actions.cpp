@@ -103,16 +103,6 @@ void ManifoldApp::UI_Actions()
                                             std::scoped_lock lock(nodeChainMutex);
                                             nodeChain.emplace_back(std::move(node));
                                         }
-
-                                        if (nodeChain.back()->nodeHint() == "DSP")
-                                        {
-                                            // If it's a DSP node, fetch its parameter definitions and cache them for later use in UI
-                                            // (e.g. To load default values)
-                                            std::vector<AudioProcessorParam> paramDefs;
-                                            dynamic_cast<DSPNode*>(nodeChain.back().get())->fetchProcessorParamList(paramDefs);
-                                            const auto name = nodeChain.back()->name();
-                                            dspNodeParamDefCache[name] = std::move(paramDefs);
-                                        }
                                     }
                                     catch (const std::exception& e)
                                     {

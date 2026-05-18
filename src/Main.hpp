@@ -67,7 +67,6 @@ private:
 
     std::vector<std::shared_ptr<Node>> nodeChain;  // Store the current node chain for UI display and management
     std::mutex nodeChainMutex;                      // Protects nodeChain against concurrent access by the worker thread
-    std::unordered_map<std::string, std::vector<AudioProcessorParam>> dspNodeParamDefCache;  // Cache for DSP node parameter definitions, key is node name
 
     std::vector<std::shared_ptr<ProcessingRun>> processingRuns;  ///< History of all runs (oldest first)
     uint64_t nextRunId = 1;
