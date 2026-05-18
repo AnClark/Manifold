@@ -6,16 +6,10 @@
 #include "ImGuiNotify_MOD.hpp"
 
 #include "utils/TableMinColumnWidth.hpp"
-#include "pipeline/base_nodes/DSPNode.hpp"
-#include "config/Config.hpp"
-#include "config/FilenameConfig.hpp"
-#include "base/AudioFormats.hpp"
 
 #include "../fonts/IconFontAwesome5_Unique.h"
 
 #include <algorithm>
-#include <filesystem>
-#include <fstream>
 
 namespace ImGuiExt
 {
