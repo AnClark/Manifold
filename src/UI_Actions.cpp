@@ -574,10 +574,12 @@ void ManifoldApp::_dragDropIdle(const std::vector<float>& itemTopY, const std::v
 
     // Draw Windows-Explorer-style drop indicator:
     // a horizontal line with filled circle caps
+    // NOTE: I've done a hack to avoid the indicator being overlapped by scrollbar.
     const ImU32 lineColor = IM_COL32(30, 144, 255, 230);
     ImDrawList* drawList  = ImGui::GetWindowDrawList();
     const float x0        = ImGui::GetWindowPos().x + 8.0f;
-    const float x1        = ImGui::GetWindowPos().x + ImGui::GetWindowWidth() - 8.0f;
+    const float x1        = ImGui::GetWindowPos().x + ImGui::GetWindowWidth() 
+                            - (ImGui::GetWindowScrollbarID(ImGui::GetCurrentWindow(), ImGuiAxis_Y) ? ImGui::GetStyle().ScrollbarSize + 12.0f : 8.0f);
 
     drawList->AddLine(
         ImVec2(x0 + 8.0f, indicatorY),
