@@ -106,7 +106,8 @@ void ManifoldApp::UI_Actions()
                                     }
                                     catch (const std::exception& e)
                                     {
-                                        // TODO: Handle error by showing a message box or notification on UI. To be implemented.
+                                        LOG_ERRORF("Actions", "%s", e.what());
+                                        ImGui::InsertNotification({ImGuiToastType::Error, 5000, "Failed to add Action Node:\n%s", e.what()});
                                     }
                                 }
                                 if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal | ImGuiHoveredFlags_NoSharedDelay)
