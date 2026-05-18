@@ -1,8 +1,11 @@
 #include "Actions.hpp"
 
 #include "Main.hpp"
+#include "config/Config.hpp"
 
 #include <imgui.h>
+#include "utils/NFDIncludes.h"  // IWYU pragma: keep
+#include "ImGuiNotify_MOD.hpp"
 
 #include "../fonts/IconFontAwesome5_Unique.h"
 #include "IconsFontAwesome6.h"  // For icon fonts. Actually suitable for both FA5 and FA6
@@ -129,4 +132,157 @@ void UIComponents_Actions::subUI_NodeChainView()
 
     // ── Drag-and-drop logic (runs every frame after the list loop) ────────
     app->_dragDropIdle(itemTopY, itemBotY);
+}
+
+static constexpr ImVec2 toolButtonSize = { UIComponents_Actions::toolChainBtnWidth, UIComponents_Actions::toolChainBtnHeight };
+
+void UIComponents_Actions::button_ExportNodeChainToFile()
+{
+    ImGui::PushFont(NULL, 12.0f);
+    if (ImGui::Button(ICON_FA_FILE_EXPORT, toolButtonSize))
+    {
+        toml::table outputConfig = app->exportNodeChainWithOutputConfig
+                                    ? NodeConfig::buildOutputConfig(app->preferences.outputConfigPref)
+                                    : toml::table();
+        std::string outputTOML = NodeConfig::saveNodeChain(app->nodeChain, app->nodeChainMutex, std::move(outputConfig));
+
+        // Open a Save dialog so the user can specify the destination TOML file.
+        nfdu8filteritem_t tomlFilter[] = { { "TOML Config", "toml" } };
+        nfdwindowhandle_t parentWindow = {};
+        NFD_GetNativeWindowFromGLFWWindow(app->getWindow(), &parentWindow);
+        NFD::UniquePath savePath;
+
+        nfdresult_t result = NFD::SaveDialog(savePath, tomlFilter, 1, nullptr, u8"node_chain.toml", parentWindow);
+        if (result == NFD_OKAY)
+        {
+            // Write the serialized TOML string to the selected file.
+            try {
+                // Use u8path() to convert the UTF-8 path from NFD to a filesystem::path,
+                // which on Windows internally holds a UTF-16 path — allowing ofstream to
+                // correctly open files with non-ASCII (e.g. CJK) characters in the path.
+                std::ofstream ofs(std::filesystem::u8path(savePath.get()), std::ios::out | std::ios::trunc);
+                if (ofs)
+                    ofs << outputTOML;
+
+                LOG_ERRORF("Actions", "Exported Node Chain to file: %s", savePath.get());
+                ImGui::InsertNotification({ImGuiToastType::Success, 5000, "Successfully exported Node Chain."});
+            } catch (std::exception &e) {
+                constexpr const char* errMsgTemplate = "Failed to export node chain:\n %s";
+                LOG_ERRORF("Actions", errMsgTemplate, e.what());
+                ImGui::InsertNotification({ImGuiToastType::Error, 5000, errMsgTemplate, e.what()});
+            }
+        }
+        else if (result == NFD_ERROR)
+        {
+            auto NFDError = NFD::GetError();
+            constexpr const char* errMsgTemplate = "Failed to open file dialog:\n %s";
+            LOG_ERRORF("Actions", errMsgTemplate, NFDError);
+            ImGui::InsertNotification({ImGuiToastType::Error, 5000, errMsgTemplate, NFDError});
+        }
+    }
+    ImGui::PopFont();
+    if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal))
+        ImGui::SetTooltip("Export current Node Chain");    
+}
+
+void UIComponents_Actions::button_ImportNodeChainFromFile()
+{
+    ImGui::PushFont(NULL, 12.0f);
+    if (ImGui::Button(ICON_FA_FILE_IMPORT, toolButtonSize))
+    {
+        // Open a file dialog to select a TOML node chain config file.
+        nfdu8filteritem_t tomlFilter[] = { { "TOML Config", "toml" } };
+        nfdwindowhandle_t parentWindow = {};
+        NFD_GetNativeWindowFromGLFWWindow(app->getWindow(), &parentWindow);
+        NFD::UniquePath openPath;
+
+        nfdresult_t result = NFD::OpenDialog(openPath, tomlFilter, 1, nullptr, parentWindow);
+        if (result == NFD_OKAY)
+        {
+            try {
+                // Pass &preferences.outputConfigPref directly: if the file contains an [output]
+                // section, it is applied in-place to the app's output settings (folder, format,
+                // subtype, null-output). If absent, the existing settings are left unchanged.
+                NodeConfig::loadNodeChain(openPath.get(), app->nodeChain, app->nodeChainMutex,
+                                            app->importNodeChainWithOutputConfig ? &app->preferences.outputConfigPref : nullptr);
+
+                // Reset drag-and-drop state since the node chain structure has changed.
+                app->dragDropState.reset();
+
+                // Validate the imported filename template if output config was applied.
+                if (app->importNodeChainWithOutputConfig)
+                {
+                    if (auto err = app->preferences.outputConfigPref.filenameTemplate.validate())
+                    {
+                        const std::string errMsg = *err;
+                        LOG_WARNF("Actions",
+                                    "Imported filename template is invalid (%s) — reset to default",
+                                    errMsg.c_str());
+                        app->preferences.outputConfigPref.filenameTemplate = FilenameTemplate::makeDefault();
+                        ImGui::InsertNotification({ImGuiToastType::Warning, 8000,
+                            "Imported filename template is invalid:\n%s\nReset to default.",
+                            errMsg.c_str()});
+                    }
+                }
+
+                LOG_INFOF("Actions", "Imported Node Chain from file: %s", openPath.get());
+                ImGui::InsertNotification({ImGuiToastType::Success, 5000, "Successfully imported Node Chain."});
+            }
+            catch (const char* err) {
+                constexpr const char* errMsgTemplate = "Failed to import node chain:\n %s";
+                LOG_ERRORF("Actions", errMsgTemplate, err);
+                ImGui::InsertNotification({ImGuiToastType::Error, 5000, errMsgTemplate, err});
+            }
+            catch (const std::exception& e) {
+                constexpr const char* errMsgTemplate = "Failed to import node chain:\n %s";
+                LOG_ERRORF("Actions", errMsgTemplate, e.what());
+                ImGui::InsertNotification({ImGuiToastType::Error, 5000, errMsgTemplate, e.what()});
+            }
+        }
+        else if (result == NFD_ERROR)
+        {
+            auto NFDError = NFD::GetError();
+            constexpr const char* errMsgTemplate = "Failed to open file dialog:\n %s";
+            LOG_ERRORF("Actions", errMsgTemplate, NFDError);
+            ImGui::InsertNotification({ImGuiToastType::Error, 5000, errMsgTemplate, NFDError});
+        }
+    }
+    ImGui::PopFont();
+}
+
+void UIComponents_Actions::button_OpenNodeChainMenu()
+{
+    ImGui::PushFont(NULL, 12.0f);
+    if (ImGui::Button(ICON_FA_BARS, toolButtonSize))
+    {
+        ImGui::OpenPopup("##Options_of_Node_Chain_View");
+    }
+    ImGui::PopFont();
+    if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal))
+        ImGui::SetTooltip("Options");
+}
+
+void UIComponents_Actions::popup_NodeChainMenu()
+{
+    if (ImGui::BeginPopup("##Options_of_Node_Chain_View"))
+    {
+        ImGui::SeparatorText("Options");
+
+        ImGui::Checkbox("Save Output Config with Node Chain", &app->exportNodeChainWithOutputConfig);
+        ImGui::SameLine();
+        ImGui::TextDisabled("(output folder, format, etc.)");
+
+        ImGui::Checkbox("Import Output Config when importing Node Chain", &app->importNodeChainWithOutputConfig);
+        ImGui::SameLine();
+        ImGui::TextDisabled("(will overwrite current config)");
+
+        ImGui::Checkbox("Remember recent Output Config", &app->rememberRecentOutputConfigPref);
+
+        ImGui::Spacing();
+        ImGui::SetCursorPosX(ImGui::GetCursorPosX() + ImGui::GetContentRegionAvail().x - 80.0f);
+        if (ImGui::Button("Close", ImVec2(80, 0)))
+            ImGui::CloseCurrentPopup();
+
+        ImGui::EndPopup();
+    }                            
 }

@@ -13,6 +13,13 @@ public:
 
     void subUI_NodeChainView();
 
+    static constexpr float toolChainBtnWidth  = 25.0f + 4.0f;
+    static constexpr float toolChainBtnHeight = 25.0f;
+    void button_ExportNodeChainToFile();
+    void button_ImportNodeChainFromFile();
+    void button_OpenNodeChainMenu();
+    void popup_NodeChainMenu();
+
     void command_StartProcessingAllFiles();
 
     void button_SelectOutputFolder();
