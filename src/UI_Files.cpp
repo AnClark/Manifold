@@ -8,18 +8,6 @@
 #include <algorithm>
 #include <filesystem>
 
-// 返回用于重复检测的路径关键字：解析路径并在 Windows 上转为小写（路径不区分大小写）
-static std::string makePathKey(const char* rawPath)
-{
-    // weakly_canonical: 处理 .. / . 和多余分隔符，不要求文件完全可访问
-    std::string key = std::filesystem::weakly_canonical(rawPath).string();
-#ifdef _WIN32
-    std::transform(key.begin(), key.end(), key.begin(),
-        [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
-#endif
-    return key;
-}
-
 void ManifoldApp::UI_Files()
 {
     if (ImGui::BeginChild("Files"))
@@ -29,124 +17,24 @@ void ManifoldApp::UI_Files()
         //
         ImGui::BeginGroup();
         {
-            ImGui::BeginDisabled(lastClickedIndex <= -1 || !sndFileList[lastClickedIndex]->errorMsg.empty());
-            if (ImGui::Button("Play selected file"))
+            // Playback controls
             {
-                if (lastClickedIndex >= 0 && lastClickedIndex < sndFileList.size())
-                {
-                    currentPlayingFile = sndFileList[lastClickedIndex];
+                uiFiles.button_PlaySelectedFile();
+                uiFiles.subroutine_ReportOnAudioPlayerError();
 
-                    audioPlayer.loadAudioFile(currentPlayingFile->filePath.c_str());
-                    audioPlayer.initDevice();
-                    audioPlayer.play();
-                }
+                ImGui::SameLine();
 
-            }
-            ImGui::EndDisabled();
+                uiFiles.button_PauseOrResume();
 
-            if (audioPlayer.hasError())
-            {
-                char errorMsg[512];
-                snprintf(errorMsg, 512, "Failed to play audio.\n%s", audioPlayer.getErrorMsg());
+                ImGui::SameLine();
 
-                LOG_ERRORF("Files", errorMsg);
-                ImGui::InsertNotification({ImGuiToastType::Error, 5000, "%s", errorMsg});
-
-                // Now we have reported and logged error message. Remember to clear it.
-                audioPlayer.clearErrorMsg();
+                uiFiles.button_StopPlaying();                
             }
 
-            ImGui::SameLine();
+            ImGui::SameLine(0, 16.0f);
 
-            // Transport control
-            ImGui::BeginDisabled(!currentPlayingFile || audioPlayer.checkEOF());
-            if (ImGui::Button((!currentPlayingFile || audioPlayer.checkPlaying() || audioPlayer.checkEOF()) ? "Pause" : "Resume", ImVec2(60, 0)))
-            {
-                if (audioPlayer.checkPlaying())
-                    audioPlayer.pause();
-                else
-                    audioPlayer.play();
-            }
-            ImGui::SameLine();
-            ImGui::EndDisabled();
+            uiFiles.button_AddMultipleFiles();
 
-            ImGui::BeginDisabled(!currentPlayingFile);
-            if (ImGui::Button("Stop"))
-            {
-                audioPlayer.stop();
-                currentPlayingFile.reset(); // reset currentPlayingFile to nullptr after stopping playback to avoid dangling pointer
-            }
-            ImGui::EndDisabled();
-
-            ImGui::SameLine();
-
-            if (ImGui::Button("Add Multiple Files..."))
-            {
-                detectedDuplicateCount = 0;
-
-                NFD::UniquePathSet outPaths;
-                nfdu8filteritem_t filters[] = {
-                    { "Audio Files", "wav,flac,mp3,ogg,aiff,caf" },
-                    { "All Files",   "*" }
-                };
-
-                // Pass in the parent window handle: On Windows, the parent window will be automatically disabled while the file dialog is open,
-                // preventing users from accidentally interacting with the main interface while the file dialog is open.
-                nfdwindowhandle_t parentWindow = {};
-                NFD_GetNativeWindowFromGLFWWindow(getWindow(), &parentWindow);
-
-                nfdresult_t result = NFD::OpenDialogMultiple(outPaths, filters, 2, nullptr, parentWindow);
-                if (result == NFD_OKAY)
-                {
-                    nfdpathsetsize_t count = 0;
-                    NFD::PathSet::Count(outPaths, count);
-
-                    // NOTICE:
-                    // Pre-expand the vector to prevent push_back from triggering a memory reallocation,
-                    // which would cause the pointers already stored in the worker queue to become invalid (dangling pointers).
-                    {
-                        std::scoped_lock<std::mutex> sndFileListGuard(sndFileListMutex);
-                        sndFileList.reserve(sndFileList.size() + count);
-                    }
-
-                    for (nfdpathsetsize_t i = 0; i < count; ++i)
-                    {
-                        NFD::UniquePathSetPathU8 path;
-                        NFD::PathSet::GetPath(outPaths, i, path);
-
-                        std::string pathKey = makePathKey(path.get());
-
-                        {
-                            std::scoped_lock<std::mutex> sndFileListGuard(sndFileListMutex);
-
-                            // O(1) 重复检测：路径已存在则跳过
-                            if (sndFilePathSet.count(pathKey))
-                            {
-                                detectedDuplicateCount++;
-                                continue;
-                            }
-
-                            auto newFilePtr = std::make_shared<SndFileInfo>();
-                            newFilePtr->updateFilePath(path.get());
-                            sndFileList.push_back(newFilePtr);
-                            sndFilePathSet.insert(std::move(pathKey));
-
-                            sndFileWorker.addFile(newFilePtr);
-                            ebur128Worker.addFile(newFilePtr);
-                            dcOffsetWorker.addFile(newFilePtr);
-                        }
-                    }
-                    NFDLastError.clear();
-                }
-                else if (result == NFD_ERROR)
-                {
-                    NFDLastError = NFD::GetError();
-
-                    const char* errMsgTemplate = "Failed when loading file dialog: %s";
-                    LOG_ERRORF("Files", errMsgTemplate, NFDLastError.c_str());
-                    ImGui::InsertNotification({ImGuiToastType::Error, 5000, errMsgTemplate, NFDLastError.c_str()});
-                }
-            }
             ImGui::SameLine();
 
             // 统计已选中数量（selected 仅由主线程修改，无需加锁）
@@ -154,53 +42,8 @@ void ManifoldApp::UI_Files()
             for (const auto& f : sndFileList)
                 if (f->selected) selectedCount++;
 
-            ImGui::BeginDisabled(selectedCount == 0);
-            if (ImGui::Button("Remove selected file(s)"))
-                ImGui::OpenPopup("##remove_confirm");
-            ImGui::EndDisabled();
-
-
-            // 确认对话框
-            if (ImGui::BeginPopupModal("##remove_confirm", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
-            {
-                ImGui::Text("Remove %d selected file(s) from the list?", selectedCount);
-                ImGui::Separator();
-
-                if (ImGui::Button("Remove", ImVec2(120, 0)))
-                {
-                    std::scoped_lock<std::mutex> guard(sndFileListMutex);
-
-                    // 若正在播放的音频是被删除的文件之一，则停止播放
-                    if (currentPlayingFile && currentPlayingFile->selected)
-                    {
-                        audioPlayer.cleanUp();
-                        currentPlayingFile.reset(); // reset currentPlayingFile to nullptr after stopping playback to avoid dangling pointer
-                    }
-
-                    // 标记删除，并从路径集合中删除对应 key
-                    for (const auto& f : sndFileList)
-                        if (f->selected)
-                        {
-                            f->aboutToBeRemoved = true;
-                            sndFilePathSet.erase(makePathKey(f->filePath.c_str()));
-                        }
-
-                    // 从列表中移除已选中项（shared_ptr 析构后对象由 worker 决定何时真正释放）
-                    sndFileList.erase(
-                        std::remove_if(sndFileList.begin(), sndFileList.end(),
-                            [](const std::shared_ptr<SndFileInfo>& f) { return f->selected; }),
-                        sndFileList.end()
-                    );
-
-                    lastClickedIndex = -1;
-                    ImGui::CloseCurrentPopup();
-                }
-                ImGui::SameLine();
-                if (ImGui::Button("Cancel", ImVec2(120, 0)))
-                    ImGui::CloseCurrentPopup();
-
-                ImGui::EndPopup();
-            }
+            uiFiles.button_RemoveSelectedFiles(selectedCount);
+            uiFiles.popup_ConfirmRemoveSelectedFiles(selectedCount);
 
             ImGui::SameLine();
 

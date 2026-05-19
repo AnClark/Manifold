@@ -91,6 +91,8 @@ add_executable (${PROJECT_NAME} WIN32
     src/pipeline/action_nodes/TrimSilenceNode.cpp
     src/pipeline/action_nodes/FadeNode.cpp
     src/pipeline/action_nodes/LoudnessComplianceNode.cpp
+    src/ui_components/Files_MediaPlayer.cpp
+    src/ui_components/Files_FileOperations.cpp
     src/ui_components/Actions_Output.cpp
     src/ui_components/Actions_NodeChain.cpp
 )

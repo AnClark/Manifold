@@ -3,6 +3,7 @@
 #include "Application.hpp"
 #include "base/SndFileInfo.hpp"
 #include "base/ProcessingRun.hpp"
+#include "ui_components/Files.hpp"
 #include "ui_components/Actions.hpp"
 #include "workers/DcOffsetWorker.hpp"
 #include "workers/EBUR128Worker.hpp"
@@ -72,7 +73,9 @@ private:
     uint64_t nextRunId = 1;
 
     // UI Components
+    UIComponents_Files uiFiles {this};
     UIComponents_Actions uiActions {this};
+    friend class UIComponents_Files;
     friend class UIComponents_Actions;
 
     // Node Chain drag/drop (DnD) states & procedures
