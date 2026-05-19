@@ -6,6 +6,7 @@
 #include "ImGuiNotify_MOD.hpp"
 
 #include <algorithm>
+#include <unordered_set>
 
 // Returns a normalized path key for duplicate detection: resolves the path and lowercases it on Windows (paths are case-insensitive)
 static std::string makePathKey(const char* rawPath)
@@ -17,6 +18,38 @@ static std::string makePathKey(const char* rawPath)
         [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
 #endif
     return key;
+}
+
+// Ingests a batch of raw file paths: deduplication, SndFileInfo creation, and worker submission.
+void UIComponents_Files::_ingestPaths(const std::vector<std::string>& paths)
+{
+    std::scoped_lock<std::mutex> guard(app->sndFileListMutex);
+
+    // NOTE:
+    // Pre-expand the vector to prevent push_back from triggering a memory reallocation,
+    // which would cause the pointers already stored in the worker queue to become invalid (dangling pointers).
+    app->sndFileList.reserve(app->sndFileList.size() + paths.size());
+
+    for (const auto& rawPath : paths)
+    {
+        std::string pathKey = makePathKey(rawPath.c_str());
+
+        // O(1) duplicate detection: skip if path already exists
+        if (app->sndFilePathSet.count(pathKey))
+        {
+            app->detectedDuplicateCount++;
+            continue;
+        }
+
+        auto newFilePtr = std::make_shared<SndFileInfo>();
+        newFilePtr->updateFilePath(rawPath.c_str());
+        app->sndFileList.push_back(newFilePtr);
+        app->sndFilePathSet.insert(std::move(pathKey));
+
+        app->sndFileWorker.addFile(newFilePtr);
+        app->ebur128Worker.addFile(newFilePtr);
+        app->dcOffsetWorker.addFile(newFilePtr);
+    }
 }
 
 void UIComponents_Files::button_AddMultipleFiles()
@@ -42,41 +75,17 @@ void UIComponents_Files::button_AddMultipleFiles()
             nfdpathsetsize_t count = 0;
             NFD::PathSet::Count(outPaths, count);
 
-            // NOTE:
-            // Pre-expand the vector to prevent push_back from triggering a memory reallocation,
-            // which would cause the pointers already stored in the worker queue to become invalid (dangling pointers).
-            {
-                std::scoped_lock<std::mutex> sndFileListGuard(app->sndFileListMutex);
-                app->sndFileList.reserve(app->sndFileList.size() + count);
-            }
-
+            std::vector<std::string> paths;
+            paths.reserve(count);
             for (nfdpathsetsize_t i = 0; i < count; ++i)
             {
                 NFD::UniquePathSetPathU8 path;
                 NFD::PathSet::GetPath(outPaths, i, path);
-
-                std::string pathKey = makePathKey(path.get());
-
-                {
-                    std::scoped_lock<std::mutex> sndFileListGuard(app->sndFileListMutex);
-
-                    // O(1) duplicate detection: skip if path already exists
-                    if (app->sndFilePathSet.count(pathKey))
-                    {
-                        app->detectedDuplicateCount++;
-                        continue;
-                    }
-
-                    auto newFilePtr = std::make_shared<SndFileInfo>();
-                    newFilePtr->updateFilePath(path.get());
-                    app->sndFileList.push_back(newFilePtr);
-                    app->sndFilePathSet.insert(std::move(pathKey));
-
-                    app->sndFileWorker.addFile(newFilePtr);
-                    app->ebur128Worker.addFile(newFilePtr);
-                    app->dcOffsetWorker.addFile(newFilePtr);
-                }
+                paths.emplace_back(path.get());
             }
+
+            _ingestPaths(paths);
+
             app->NFDLastError.clear();
         }
         else if (result == NFD_ERROR)
@@ -104,7 +113,6 @@ void UIComponents_Files::button_AddFolder()
         nfdresult_t result = NFD::PickFolder(pickedPath, nullptr, parentWindow);
         if (result == NFD_OKAY)
         {
-            // Collect all matching files first so we can reserve vector capacity atomically
             static const std::unordered_set<std::string> supportedExts = {
                 ".wav", ".flac", ".mp3", ".ogg", ".aiff", ".caf"
             };
@@ -124,30 +132,8 @@ void UIComponents_Files::button_AddFolder()
             }
             NFD::FreePath(pickedPath);
 
-            {
-                std::scoped_lock<std::mutex> sndFileListGuard(app->sndFileListMutex);
-                app->sndFileList.reserve(app->sndFileList.size() + foundPaths.size());
+            _ingestPaths(foundPaths);
 
-                for (const auto& rawPath : foundPaths)
-                {
-                    std::string pathKey = makePathKey(rawPath.c_str());
-
-                    if (app->sndFilePathSet.count(pathKey))
-                    {
-                        app->detectedDuplicateCount++;
-                        continue;
-                    }
-
-                    auto newFilePtr = std::make_shared<SndFileInfo>();
-                    newFilePtr->updateFilePath(rawPath.c_str());
-                    app->sndFileList.push_back(newFilePtr);
-                    app->sndFilePathSet.insert(std::move(pathKey));
-
-                    app->sndFileWorker.addFile(newFilePtr);
-                    app->ebur128Worker.addFile(newFilePtr);
-                    app->dcOffsetWorker.addFile(newFilePtr);
-                }
-            }
             app->NFDLastError.clear();
         }
         else if (result == NFD_ERROR)

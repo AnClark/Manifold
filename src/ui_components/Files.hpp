@@ -1,5 +1,8 @@
 #pragma once
 
+#include <string>
+#include <vector>
+
 // Forward decls.
 class ManifoldApp;
 
@@ -21,4 +24,8 @@ public:
 
 private:
     ManifoldApp* app;
+
+    // Ingests a batch of raw file paths: deduplication, SndFileInfo creation, and worker submission.
+    // Must be called WITHOUT holding sndFileListMutex.
+    void _ingestPaths(const std::vector<std::string>& paths);
 };
