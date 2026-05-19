@@ -612,7 +612,8 @@ void UIComponents_Actions::info_ShowProcessingHints()
         // Calculate text widths & gap widths for centralized display
         constexpr float gap = 4.0f;
         const float hintMsgWidth = ImGui::CalcTextSize(ICON_FA_EXCLAMATION_TRIANGLE).x + gap + ImGui::CalcTextSize(hintMsg).x;
-        ImGui::SetCursorPosX(ImGui::GetContentRegionAvail().x * 0.5f - hintMsgWidth * 0.5f);
+        const float fixupOffset = ImGui::GetStyle().WindowPadding.x;    // Add a fix-up compensation to left margin, to make sure the text is centralized
+        ImGui::SetCursorPosX(ImGui::GetContentRegionAvail().x * 0.5f - hintMsgWidth * 0.5f + fixupOffset);
 
         ImGui::TextColored(ImVec4(1.0f, 0.8f, 0.2f, 1.0f), "%s", ICON_FA_EXCLAMATION_TRIANGLE);
         ImGui::SameLine(0, 4);
