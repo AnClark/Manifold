@@ -86,6 +86,8 @@ void ManifoldApp::UI_Files()
 
             if (ImGui::BeginTable("FileDetailsTable", 9, flags))
             {
+                // Freeze the first row (header row)
+                ImGui::TableSetupScrollFreeze(0, 1);
                 // 设置列
                 ImGui::TableSetupColumn("File Name", ImGuiTableColumnFlags_DefaultSort | ImGuiTableColumnFlags_WidthStretch);
                 ImGui::TableSetupColumn("Bit Depth", ImGuiTableColumnFlags_WidthFixed, 80.0f);
