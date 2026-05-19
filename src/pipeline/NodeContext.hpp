@@ -4,6 +4,7 @@
 #include "base/Report.hpp"
 
 #include <any>
+#include <atomic>
 #include <filesystem>
 #include <functional>
 #include <memory>
@@ -68,6 +69,19 @@ public:
 
     /** @brief Optional callback for publishing reports to the active FileRunRecord. */
     std::function<void(std::shared_ptr<Report>)> onReport;
+
+    // --------------------------------------------------------------------------
+    // Cancellation
+
+    /// Set by ChainEngine from the run's cancel token before processing starts.
+    /// Sink nodes poll this in their pull loop to support mid-file cancellation.
+    const std::atomic<bool>* cancelToken = nullptr;
+
+    /// Returns true if the run has been cancelled.
+    bool isCancelled() const
+    {
+        return cancelToken && cancelToken->load(std::memory_order_relaxed);
+    }
 
     template<typename T>
     void setSideband(const std::string& key, T value) {

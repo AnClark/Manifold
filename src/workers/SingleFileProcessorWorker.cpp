@@ -34,6 +34,17 @@ void SingleFileProcessorWorker::processItem(std::shared_ptr<SndFileInfo> fileInf
     if (!fileInfoInstance || fileInfoInstance->aboutToBeRemoved || shouldCancelProcessing)
         return;
 
+    // If the owning run has been cancelled, mark this record and skip processing.
+    if (record && record->runCancelToken && record->runCancelToken->load(std::memory_order_relaxed))
+    {
+        if (record) {
+            record->timestampFinished = std::chrono::system_clock::now();
+            record->status.store(FileRunRecord::Status::Cancelled);
+        }
+        LOG_INFOF(LOG_TAG, "File '%s' skipped: run was cancelled.", fileInfoInstance->filePath.c_str());
+        return;
+    }
+
     if (!nodeChain_ || !nodeChainMutex_)
         return;
 
@@ -142,6 +153,7 @@ void SingleFileProcessorWorker::processItem(std::shared_ptr<SndFileInfo> fileInf
     // Construct the engine and set up callbacks for progress and error reporting
     bool hadError = false;
     ChainEngine engine(std::move(localView));
+    engine.setCancelToken(record ? record->runCancelToken : nullptr);
     engine.setProgressCallback([&](size_t idx, std::string_view name) {
         const std::string nameStr(name);
         LOG_TRACEF(LOG_TAG, "Processing file '%s': now at node %zu (%s)",
@@ -172,8 +184,15 @@ void SingleFileProcessorWorker::processItem(std::shared_ptr<SndFileInfo> fileInf
 
     if (record) {
         record->timestampFinished = std::chrono::system_clock::now();
-        record->status.store(hadError ? FileRunRecord::Status::Error
-                                      : FileRunRecord::Status::Done);
+
+        // Check for mid-stream cancellation (token fired during engine.processFile())
+        const bool wasCancelled = record->runCancelToken
+                                  && record->runCancelToken->load(std::memory_order_relaxed);
+        if (wasCancelled)
+            record->status.store(FileRunRecord::Status::Cancelled);
+        else
+            record->status.store(hadError ? FileRunRecord::Status::Error
+                                          : FileRunRecord::Status::Done);
     }
 
     LOG_INFOF(LOG_TAG, "Finished processing file '%s'", fileInfoInstance->filePath.c_str());

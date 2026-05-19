@@ -57,6 +57,7 @@ static ImVec4 statusColor(FileRunRecord::Status st)
         case FileRunRecord::Status::Processing: return {1.00f, 0.80f, 0.20f, 1.0f}; // Amber
         case FileRunRecord::Status::Done:       return {0.40f, 1.00f, 0.40f, 1.0f}; // Green
         case FileRunRecord::Status::Error:      return {1.00f, 0.40f, 0.40f, 1.0f}; // Red
+        case FileRunRecord::Status::Cancelled:  return {0.70f, 0.70f, 0.70f, 1.0f}; // Grey
         default:                                return ImGui::GetStyle().Colors[ImGuiCol_TextDisabled];
     }
 }
@@ -68,6 +69,7 @@ static const char* statusLabel(FileRunRecord::Status st)
         case FileRunRecord::Status::Processing: return " RUN ";
         case FileRunRecord::Status::Done:       return "  OK ";
         case FileRunRecord::Status::Error:      return " ERR ";
+        case FileRunRecord::Status::Cancelled:  return " CXL ";
         default:                                return " ... ";
     }
 }
@@ -147,9 +149,10 @@ void ManifoldApp::UI_Tasks()
                 const bool  selected = (tasksUI.selectedRunIdx == i);
                 const bool  active   = !run->isComplete();
 
-                const size_t total = run->records.size();
-                const size_t done  = run->countByStatus(FileRunRecord::Status::Done);
-                const size_t err   = run->countByStatus(FileRunRecord::Status::Error);
+                const size_t total     = run->records.size();
+                const size_t done      = run->countByStatus(FileRunRecord::Status::Done);
+                const size_t err       = run->countByStatus(FileRunRecord::Status::Error);
+                const size_t cancelled = run->countByStatus(FileRunRecord::Status::Cancelled);
 
                 ImGui::PushID(i);
 
@@ -214,6 +217,12 @@ void ManifoldApp::UI_Tasks()
                     if (active)
                         std::snprintf(stats, sizeof(stats),
                                     "Processing...  %zu / %zu done", done + err, total);
+                    else if (cancelled > 0 && err > 0)
+                        std::snprintf(stats, sizeof(stats),
+                                    "%zu files  |  %zu OK  |  %zu error(s)  |  %zu cancelled", total, done, err, cancelled);
+                    else if (cancelled > 0)
+                        std::snprintf(stats, sizeof(stats),
+                                    "%zu files  |  %zu OK  |  %zu cancelled", total, done, cancelled);
                     else if (err > 0)
                         std::snprintf(stats, sizeof(stats),
                                     "%zu files  |  %zu OK  |  %zu error(s)", total, done, err);
@@ -329,6 +338,27 @@ void ManifoldApp::UI_Tasks()
                 char title[64];
                 std::snprintf(title, sizeof(title), "Run #%llu", run->id);
                 ImGui::SeparatorText(title);
+            }
+
+            // Cancel button — right-aligned, shown only on active runs
+            if (active)
+            {
+                constexpr float btnW = 110.0f;
+                const bool cancelling = run->cancelRequested.load(std::memory_order_relaxed);
+
+                ImGui::SetCursorPosX(ImGui::GetContentRegionMax().x - btnW);
+                ImGui::BeginDisabled(cancelling);
+                if (!cancelling)
+                {
+                    ImGui::PushStyleColor(ImGuiCol_Button,        ImVec4(0.65f, 0.15f, 0.15f, 1.0f));
+                    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.80f, 0.20f, 0.20f, 1.0f));
+                    ImGui::PushStyleColor(ImGuiCol_ButtonActive,  ImVec4(0.90f, 0.25f, 0.25f, 1.0f));
+                }
+                if (ImGui::Button(cancelling ? "Cancelling..." : "Cancel", ImVec2(btnW, 0)))
+                    run->requestCancel();
+                if (!cancelling)
+                    ImGui::PopStyleColor(3);
+                ImGui::EndDisabled();
             }
 
             // Run-level meta row
@@ -465,6 +495,10 @@ void ManifoldApp::UI_Tasks()
                             const std::string elapsed =
                                 fmtElapsed(rec->timestampStarted, rec->timestampFinished);
                             ImGui::TextDisabled("%s", elapsed.c_str());
+                        }
+                        else if (st == FileRunRecord::Status::Cancelled)
+                        {
+                            ImGui::TextDisabled("Cancelled");
                         }
 
                         // Col 3 — Report badges
