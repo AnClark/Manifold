@@ -49,6 +49,12 @@ find_package (PkgConfig REQUIRED)
 set(PKG_CONFIG_ARGN "--static")
 
 #
+# Feature options (can be toggled during CMake configuration)
+#
+
+option (MANIFOLD_ENABLE_PARALLEL_ANALYZING "Enable analyzing audio file in parallel (EBU R128, DC Offset)" ON)
+
+#
 # Build our main application
 #
 
@@ -63,6 +69,7 @@ add_executable (${PROJECT_NAME} WIN32
     src/workers/EBUR128Worker.cpp
     src/workers/DcOffsetWorker.cpp
     src/workers/SingleFileProcessorWorker.cpp
+    src/dispatchers/AnalyzerDispatcher.cpp
     src/utils/AudioPlayer.cpp
     src/config/Config.cpp
     src/config/Preferences.cpp
@@ -96,6 +103,14 @@ add_executable (${PROJECT_NAME} WIN32
     src/ui_components/Actions_Output.cpp
     src/ui_components/Actions_NodeChain.cpp
 )
+
+# Apply feature switches
+if (MANIFOLD_ENABLE_PARALLEL_ANALYZING)
+    message (STATUS "${PROJECT_NAME}: Parallel analyzing:\t\tON")
+    target_compile_definitions (${PROJECT_NAME} PRIVATE ENABLE_PARALLEL_ANALYZING=1)
+else ()
+    message (STATUS "${PROJECT_NAME}: Parallel analyzing:\t\tOFF")
+endif ()
 
 #
 # Build & Include Dependencies
