@@ -254,6 +254,9 @@ void ManifoldApp::UI_Files()
                     // 第二列：Bit Depth
                     ImGui::TableSetColumnIndex(1);
                     ImGui::Text("%s", sndFileList[i]->isParseOK ? sndFileList[i]->getBitDepth() : "---");
+                    if (ImGui::IsItemHovered() && sndFileList[i]->isSpecialBitDepthFormat())
+                        ImGui::SetTooltip("NOTICE:\nSome codecs (MP3, Vorbis, Opus etc.) have special bit depths,\n"
+                                               "So you will only see their codec names here.");
 
                     // 第三列：Duration
                     ImGui::TableSetColumnIndex(2);
