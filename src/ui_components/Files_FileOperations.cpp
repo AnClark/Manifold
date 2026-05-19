@@ -85,7 +85,7 @@ void UIComponents_Files::button_AddMultipleFiles()
             }
 
             _ingestPaths(paths);
-            LOG_DEBUGF("Files", "Added %d audio files to list.", paths.size());
+            LOG_INFOF("Files", "Added %d audio files to list.", paths.size());
             if (paths.size())
                 ImGui::InsertNotification({ImGuiToastType::Success, 5000, "Added %d audio files to list.", paths.size()});
             else
@@ -137,7 +137,7 @@ void UIComponents_Files::button_AddFolder()
             }
 
             _ingestPaths(foundPaths);
-            LOG_DEBUGF("Files", "Added %d audio files from specified folder (%s).", foundPaths.size(), pickedPath);
+            LOG_INFOF("Files", "Added %d audio files from specified folder (%s).", foundPaths.size(), pickedPath);
             if (foundPaths.size())
                 ImGui::InsertNotification({ImGuiToastType::Success, 5000, "Added %d audio files from specified folder.", foundPaths.size()});
             else
