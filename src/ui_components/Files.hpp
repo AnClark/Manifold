@@ -21,6 +21,7 @@ public:
     void button_AddFolder();
     void button_RemoveSelectedFiles(int selectedCount);
     void popup_ConfirmRemoveSelectedFiles(int selectedCount);
+    void subroutine_WarnAboutDuplicateFiles(int addedFiles);
 
 private:
     ManifoldApp* app;

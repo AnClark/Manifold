@@ -63,15 +63,6 @@ void ManifoldApp::UI_Files()
         }
         ImGui::EndGroup();
 
-        if (detectedDuplicateCount > 0)
-        {
-            LOG_WARNF("Files", "User attempted to add %d duplicate file(s), which were skipped.", detectedDuplicateCount);
-            ImGui::InsertNotification({ImGuiToastType::Warning, 5000, "Detected %d duplicate files(s). Skipped.", detectedDuplicateCount});
-
-            // Remember to reset the counter after reporting to avoid showing stale warnings on next additions
-            detectedDuplicateCount = 0;
-        }
-
         //
         // FILE DETAILS view
         //

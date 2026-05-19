@@ -87,7 +87,12 @@ void UIComponents_Files::button_AddMultipleFiles()
             _ingestPaths(paths);
             LOG_INFOF("Files", "Added %d audio files to list.", paths.size());
             if (paths.size())
-                ImGui::InsertNotification({ImGuiToastType::Success, 5000, "Added %d audio files to list.", paths.size()});
+            {
+                if (app->detectedDuplicateCount > 0)
+                    subroutine_WarnAboutDuplicateFiles(paths.size());
+                else           
+                    ImGui::InsertNotification({ImGuiToastType::Success, 5000, "Added %d audio files to list.", paths.size()});
+            }
             else
                 ImGui::InsertNotification({ImGuiToastType::Warning, 5000, "No file added to list.", paths.size()});
 
@@ -139,7 +144,12 @@ void UIComponents_Files::button_AddFolder()
             _ingestPaths(foundPaths);
             LOG_INFOF("Files", "Added %d audio files from specified folder (%s).", foundPaths.size(), pickedPath);
             if (foundPaths.size())
-                ImGui::InsertNotification({ImGuiToastType::Success, 5000, "Added %d audio files from specified folder.", foundPaths.size()});
+            {
+                if (app->detectedDuplicateCount > 0)
+                    subroutine_WarnAboutDuplicateFiles(foundPaths.size());
+                else
+                    ImGui::InsertNotification({ImGuiToastType::Success, 5000, "Added %d audio files from specified folder.", foundPaths.size()});
+            }
             else
                 ImGui::InsertNotification({ImGuiToastType::Warning, 5000, "No file added from specified folder.\n(Maybe no media files in folder, or failed to open directory?)", foundPaths.size()});
 
@@ -207,5 +217,17 @@ void UIComponents_Files::popup_ConfirmRemoveSelectedFiles(int selectedCount)
             ImGui::CloseCurrentPopup();
 
         ImGui::EndPopup();
+    }
+}
+
+void UIComponents_Files::subroutine_WarnAboutDuplicateFiles(int addedFiles)
+{
+    if (app->detectedDuplicateCount > 0)
+    {
+        LOG_WARNF("Files", "User attempted to add %d duplicate file(s), which were skipped.", app->detectedDuplicateCount);
+        ImGui::InsertNotification({ImGuiToastType::Warning, 5000, "Detected %d duplicate file(s) out of %d newly added files. Skipped.", app->detectedDuplicateCount, addedFiles});
+
+        // Remember to reset the counter after reporting to avoid showing stale warnings on next additions
+        app->detectedDuplicateCount = 0;
     }
 }
