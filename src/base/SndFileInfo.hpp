@@ -40,6 +40,7 @@ struct SndFileInfo
     void parseSndFile(const char* newFileName);
     double getDurationSeconds() const;
     const char* getBitDepth() const;
+    bool isSpecialBitDepthFormat() const;
 
 private:
     void _calculateDurationTimeString();

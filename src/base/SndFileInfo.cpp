@@ -73,12 +73,36 @@ const char* SndFileInfo::getBitDepth() const
         // Some special formats with non-standard bit depths
         case SF_FORMAT_VORBIS:
             return "Vorbis";
+        case SF_FORMAT_OPUS:
+            return "Opus";
         case SF_FORMAT_PCM_U8:
             return "Unsigned 8-bit";
+        case SF_FORMAT_MPEG_LAYER_I:
+            return "MP1";
+        case SF_FORMAT_MPEG_LAYER_II:
+            return "MP2";
+        case SF_FORMAT_MPEG_LAYER_III:
+            return "MP3";
         
         // Fallback
         default:
             return "Unknown";
+    }
+}
+
+bool SndFileInfo::isSpecialBitDepthFormat() const
+{
+    int formatSubType = info.format & SF_FORMAT_SUBMASK;
+    switch (formatSubType)
+    {
+        case SF_FORMAT_VORBIS:
+        case SF_FORMAT_OPUS:
+        case SF_FORMAT_MPEG_LAYER_I:
+        case SF_FORMAT_MPEG_LAYER_II:
+        case SF_FORMAT_MPEG_LAYER_III:
+            return true;
+        default:
+            return false;
     }
 }
 
