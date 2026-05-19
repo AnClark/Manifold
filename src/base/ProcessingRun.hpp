@@ -21,7 +21,7 @@ using RunTimePoint = std::chrono::system_clock::time_point;
 // ---------------------------------------------------------------------------
 struct FileRunRecord
 {
-    enum class Status : uint8_t { Pending, Processing, Done, Error };
+    enum class Status : uint8_t { Pending, Processing, Done, Error, Cancelled };
 
     explicit FileRunRecord(std::shared_ptr<SndFileInfo> fi)
         : fileInfo(std::move(fi)) {}
@@ -38,6 +38,11 @@ struct FileRunRecord
     /// Set by the UI thread at run creation from the active FilenameTemplate.
     /// Empty string = fall back to the source file's own stem.
     std::string resolvedOutputStem;
+
+    /// Points to the owning ProcessingRun::cancelRequested flag.
+    /// Set by the UI thread at run creation; read by the worker thread to
+    /// interrupt stream processing mid-file and skip queued files.
+    const std::atomic<bool>* runCancelToken = nullptr;
 
     // Protected by progressMutex — written by worker, read by UI
     size_t      currentNodeIndex { 0 };
@@ -82,6 +87,11 @@ struct ProcessingRun
 
     std::vector<std::shared_ptr<FileRunRecord>> records;
 
+    /// Set from the UI thread (Cancel button); read by worker thread via FileRunRecord::runCancelToken.
+    std::atomic<bool> cancelRequested{false};
+
+    void requestCancel() { cancelRequested.store(true, std::memory_order_relaxed); }
+
     // ---- Derived queries (UI thread only) ---------------------------------
 
     size_t countByStatus(FileRunRecord::Status s) const
@@ -109,7 +119,8 @@ struct ProcessingRun
     {
         if (records.empty()) return 1.0f;
         const size_t done = countByStatus(FileRunRecord::Status::Done)
-                          + countByStatus(FileRunRecord::Status::Error);
+                          + countByStatus(FileRunRecord::Status::Error)
+                          + countByStatus(FileRunRecord::Status::Cancelled);
         return static_cast<float>(done) / static_cast<float>(records.size());
     }
 };

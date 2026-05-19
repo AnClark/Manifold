@@ -108,11 +108,22 @@ void OutputSinkNode::consume(std::unique_ptr<AudioStream> stream, NodeContext& c
     constexpr size_t kBlockFrames = 4096;
     std::vector<float> buf(kBlockFrames * static_cast<size_t>(fmt.channels));
 
+    bool cancelled = false;
     size_t got;
-    while ((got = stream->read(buf.data(), kBlockFrames)) > 0) {
+    while ((got = stream->read(buf.data(), kBlockFrames)) > 0)
+    {
+        if (ctx.isCancelled()) { cancelled = true; break; }
         sf_writef_float(outSf, buf.data(), static_cast<sf_count_t>(got));
     }
-    // stream goes out of scope after consume() returns → triggers loudness finalisation
+
+    if (cancelled)
+    {
+        sf_close(outSf);
+        // Remove the partially-written output file to avoid leaving corrupt data on disk.
+        std::error_code ec;
+        std::filesystem::remove(std::filesystem::u8path(outPath), ec);
+        return;  // caller (SingleFileProcessorWorker) checks isCancelled() to set record status
+    }
 
     // Optional: write loudness metadata if available
     auto loudness = ctx.getSideband<double>("loudness_lufs");

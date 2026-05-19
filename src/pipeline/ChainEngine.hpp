@@ -87,6 +87,15 @@ public:
         onReport = std::move(callback);
     }
 
+    /**
+     * @brief Set the cancellation token for mid-file interruption.
+     *
+     * When the pointed-to flag is set to true, sink nodes will break out of
+     * their pull loop at the next block boundary and return early.
+     * Must be called before processFile().
+     */
+    void setCancelToken(const std::atomic<bool>* token) { cancelToken_ = token; }
+
 private:
     std::vector<Node*> nodes_;
 
@@ -108,4 +117,7 @@ private:
 
     /** @brief Callback for forwarding node-produced reports to the active FileRunRecord. */
     std::function<void(std::shared_ptr<Report>)>                   onReport;
+
+    /** @brief Optional cancellation token; injected into NodeContext before each executeFor(). */
+    const std::atomic<bool>* cancelToken_ = nullptr;
 };

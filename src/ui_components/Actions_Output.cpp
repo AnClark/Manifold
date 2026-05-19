@@ -53,6 +53,9 @@ void UIComponents_Actions::command_StartProcessingAllFiles()
             record->resolvedOutputStem =
                 app->outputFilenameTemplate.resolve(sourceStem, fileCounter);
 
+            // Wire the run's cancel token so the worker can interrupt processing mid-file.
+            record->runCancelToken = &run->cancelRequested;
+
             // Now that we have the resolved output stem, we can determine the final output path for this file and store it in the record.
             // Then, we can send the file to the single-file processor worker.
             run->records.push_back(record);
