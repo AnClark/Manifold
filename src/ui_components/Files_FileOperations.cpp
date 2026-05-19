@@ -85,6 +85,11 @@ void UIComponents_Files::button_AddMultipleFiles()
             }
 
             _ingestPaths(paths);
+            LOG_DEBUGF("Files", "Added %d audio files to list.", paths.size());
+            if (paths.size())
+                ImGui::InsertNotification({ImGuiToastType::Success, 5000, "Added %d audio files to list.", paths.size()});
+            else
+                ImGui::InsertNotification({ImGuiToastType::Warning, 5000, "No file added to list.", paths.size()});
 
             app->NFDLastError.clear();
         }
@@ -130,9 +135,15 @@ void UIComponents_Files::button_AddFolder()
                 if (supportedExts.count(ext))
                     foundPaths.push_back(entry.path().string());
             }
-            NFD::FreePath(pickedPath);
 
             _ingestPaths(foundPaths);
+            LOG_DEBUGF("Files", "Added %d audio files from specified folder (%s).", foundPaths.size(), pickedPath);
+            if (foundPaths.size())
+                ImGui::InsertNotification({ImGuiToastType::Success, 5000, "Added %d audio files from specified folder.", foundPaths.size()});
+            else
+                ImGui::InsertNotification({ImGuiToastType::Warning, 5000, "No file added from specified folder.\n(Maybe no media files in folder, or failed to open directory?)", foundPaths.size()});
+
+            NFD::FreePath(pickedPath);
 
             app->NFDLastError.clear();
         }
