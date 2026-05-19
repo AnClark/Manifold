@@ -15,6 +15,7 @@ public:
     void subroutine_ReportOnAudioPlayerError();
 
     void button_AddMultipleFiles();
+    void button_AddFolder();
     void button_RemoveSelectedFiles(int selectedCount);
     void popup_ConfirmRemoveSelectedFiles(int selectedCount);
 

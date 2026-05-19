@@ -90,6 +90,77 @@ void UIComponents_Files::button_AddMultipleFiles()
     }
 }
 
+void UIComponents_Files::button_AddFolder()
+{
+    if (ImGui::Button("Add Folder..."))
+    {
+        app->detectedDuplicateCount = 0;
+
+        nfdu8char_t* pickedPath = nullptr;
+
+        nfdwindowhandle_t parentWindow = {};
+        NFD_GetNativeWindowFromGLFWWindow(app->getWindow(), &parentWindow);
+
+        nfdresult_t result = NFD::PickFolder(pickedPath, nullptr, parentWindow);
+        if (result == NFD_OKAY)
+        {
+            // Collect all matching files first so we can reserve vector capacity atomically
+            static const std::unordered_set<std::string> supportedExts = {
+                ".wav", ".flac", ".mp3", ".ogg", ".aiff", ".caf"
+            };
+
+            std::vector<std::string> foundPaths;
+            std::error_code ec;
+            for (const auto& entry : std::filesystem::recursive_directory_iterator(pickedPath, ec))
+            {
+                if (!entry.is_regular_file(ec))
+                    continue;
+                std::string ext = entry.path().extension().string();
+                // Lowercase extension for case-insensitive comparison
+                std::transform(ext.begin(), ext.end(), ext.begin(),
+                    [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
+                if (supportedExts.count(ext))
+                    foundPaths.push_back(entry.path().string());
+            }
+            NFD::FreePath(pickedPath);
+
+            {
+                std::scoped_lock<std::mutex> sndFileListGuard(app->sndFileListMutex);
+                app->sndFileList.reserve(app->sndFileList.size() + foundPaths.size());
+
+                for (const auto& rawPath : foundPaths)
+                {
+                    std::string pathKey = makePathKey(rawPath.c_str());
+
+                    if (app->sndFilePathSet.count(pathKey))
+                    {
+                        app->detectedDuplicateCount++;
+                        continue;
+                    }
+
+                    auto newFilePtr = std::make_shared<SndFileInfo>();
+                    newFilePtr->updateFilePath(rawPath.c_str());
+                    app->sndFileList.push_back(newFilePtr);
+                    app->sndFilePathSet.insert(std::move(pathKey));
+
+                    app->sndFileWorker.addFile(newFilePtr);
+                    app->ebur128Worker.addFile(newFilePtr);
+                    app->dcOffsetWorker.addFile(newFilePtr);
+                }
+            }
+            app->NFDLastError.clear();
+        }
+        else if (result == NFD_ERROR)
+        {
+            app->NFDLastError = NFD::GetError();
+
+            const char* errMsgTemplate = "Failed when loading folder dialog: %s";
+            LOG_ERRORF("Files", errMsgTemplate, app->NFDLastError.c_str());
+            ImGui::InsertNotification({ImGuiToastType::Error, 5000, errMsgTemplate, app->NFDLastError.c_str()});
+        }
+    }
+}
+
 void UIComponents_Files::button_RemoveSelectedFiles(int selectedCount)
 {
     ImGui::BeginDisabled(selectedCount == 0);

@@ -37,6 +37,10 @@ void ManifoldApp::UI_Files()
 
             ImGui::SameLine();
 
+            uiFiles.button_AddFolder();
+
+            ImGui::SameLine();
+
             // 统计已选中数量（selected 仅由主线程修改，无需加锁）
             int selectedCount = 0;
             for (const auto& f : sndFileList)
