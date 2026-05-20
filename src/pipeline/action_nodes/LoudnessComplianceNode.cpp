@@ -10,6 +10,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <limits>
+#include <stdexcept>
 #include <string>
 
 // --------------------------------------------------------------------------
@@ -152,9 +153,12 @@ public:
                 static_cast<unsigned int>(fmt.channels),
                 static_cast<unsigned long>(fmt.sampleRate),
                 EBUR128_MODE_I | EBUR128_MODE_SAMPLE_PEAK);
-            if (!ebur128_)
+            if (!ebur128_) {
                 LOG_ERRORF("LoudnessCompliance",
-                    "ebur128_init failed — InlineEbur128 measurement disabled.");
+                    "ebur128_init failed — cannot proceed with InlineEbur128 measurement.");
+                throw std::runtime_error(
+                    "[LoudnessCompliance] ebur128_init failed for InlineEbur128 mode.");
+            }
         }
     }
 
@@ -206,16 +210,18 @@ private:
 
     /** Run a full libsndfile + ebur128 pass on filePath, return lufs/peak via out-params.
      *  Returns false when opening or measuring fails. */
-    static bool measureOffline(const std::string& filePath,
+    static void measureOffline(const std::string& filePath,
                                double& outLufs, double& outPeakDbfs)
     {
         SF_INFO sfInfo = {};
         SNDFILE* file = SfOpenUtf8(filePath, SFM_READ, &sfInfo);
         if (!file) {
+            const std::string sfErr = sf_strerror(nullptr);
             LOG_ERRORF("LoudnessCompliance",
                 "OfflineEbur128: cannot open '%s': %s",
-                filePath.c_str(), sf_strerror(nullptr));
-            return false;
+                filePath.c_str(), sfErr.c_str());
+            throw std::runtime_error(
+                "[LoudnessCompliance] OfflineEbur128: cannot open '" + filePath + "': " + sfErr);
         }
 
         ebur128_state* st = ebur128_init(
@@ -226,7 +232,8 @@ private:
             LOG_ERRORF("LoudnessCompliance",
                 "OfflineEbur128: ebur128_init failed for '%s'.", filePath.c_str());
             sf_close(file);
-            return false;
+            throw std::runtime_error(
+                "[LoudnessCompliance] OfflineEbur128: ebur128_init failed for '" + filePath + "'.");
         }
 
         const size_t chunkFrames = static_cast<size_t>(sfInfo.samplerate); // 1 s
@@ -238,7 +245,7 @@ private:
             LOG_ERRORF("LoudnessCompliance", "OfflineEbur128: out of memory.");
             ebur128_destroy(&st);
             sf_close(file);
-            return false;
+            throw std::runtime_error("[LoudnessCompliance] OfflineEbur128: out of memory.");
         }
 
         sf_count_t n;
@@ -249,7 +256,11 @@ private:
         std::free(buf);
         sf_close(file);
 
-        bool ok = (ebur128_loudness_global(st, &outLufs) == EBUR128_SUCCESS);
+        if (ebur128_loudness_global(st, &outLufs) != EBUR128_SUCCESS) {
+            ebur128_destroy(&st);
+            throw std::runtime_error(
+                "[LoudnessCompliance] OfflineEbur128: ebur128_loudness_global failed for '" + filePath + "'.");
+        }
 
         double maxPeak = 0.0;
         for (unsigned int ch = 0;
@@ -263,7 +274,6 @@ private:
                                     : -std::numeric_limits<double>::infinity();
 
         ebur128_destroy(&st);
-        return ok;
     }
 
     // ------------------------------------------------------------------
@@ -305,14 +315,15 @@ private:
         }
         case MeasurementBackend::OfflineEbur128:
         {
-            if (!ctx_.sourcePath.empty()) {
-                double lufs = 0.0, peakDbfs = 0.0;
-                if (measureOffline(ctx_.sourcePath, lufs, peakDbfs))
-                    fillReport(*report, lufs, peakDbfs);
-            } else {
-                LOG_WARNF("LoudnessCompliance",
+            if (ctx_.sourcePath.empty()) {
+                LOG_ERRORF("LoudnessCompliance",
                     "OfflineEbur128: ctx.sourcePath is empty — cannot measure.");
+                throw std::runtime_error(
+                    "[LoudnessCompliance] OfflineEbur128: source path is empty.");
             }
+            double lufs = 0.0, peakDbfs = 0.0;
+            measureOffline(ctx_.sourcePath, lufs, peakDbfs); // throws on failure
+            fillReport(*report, lufs, peakDbfs);
             break;
         }
         case MeasurementBackend::Sideband:
