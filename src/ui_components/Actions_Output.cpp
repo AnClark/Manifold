@@ -5,6 +5,7 @@
 
 #include <imgui.h>
 #include "utils/NFDIncludes.h"  // IWYU pragma: keep
+#include "ImGuiNotify_MOD.hpp"
 
 #include <algorithm>
 #include <filesystem>
@@ -604,6 +605,25 @@ const char* UIComponents_Actions::query_ProcessingHints() const
         return "Add at least one action node to enable processing.";    
 }
 
+bool UIComponents_Actions::query_AllFilesFullyAnalyzed() const
+{
+    std::scoped_lock<std::mutex> sndFileListLock(app->sndFileListMutex);
+
+    uint32_t fileCountOK = 0;
+    uint32_t fileCountErr = 0;
+    for (const auto& file : app->sndFileList)
+    {
+        if (file->isParseOK && file->isR128ParsedOK && file->isDcOffsetCalculatedOK)
+            fileCountOK++;
+        if (!file->errorMsg.empty() || !file->errorMsgR128.empty() || !file->errorMsgDcOffset.empty())
+            fileCountErr++;
+    }
+
+    // If analyzed file count (OK + Err) is less than the number of elements in sndFileList,
+    // then we know there are still some files are being analyzed.
+    return (fileCountOK + fileCountErr == app->sndFileList.size());
+}
+
 void UIComponents_Actions::info_ShowProcessingHints()
 {
     if (!query_CanProcess())
@@ -723,7 +743,18 @@ void UIComponents_Actions::button_ProcessAllFiles()
     ImGui::BeginDisabled(!canProcess);
     if (ImGui::Button("Process All Files", ImVec2(-1, 28.0f)))
     {
-        command_StartProcessingAllFiles();
+        // Check if all files have been analyzed. If not, warn user and abort.
+        if (query_AllFilesFullyAnalyzed())
+            command_StartProcessingAllFiles();
+        else
+        {
+            ImGuiToast toast = {ImGuiToastType::Warning,
+                                    5000, 
+                                        "Please wait until all input files have been analyzed.\n"
+                                               "Go to Files view for more details."};
+            toast.setTitle("Wait a minute!");
+            ImGui::InsertNotification(std::move(toast));
+        }
     }
     ImGui::EndDisabled();
 }

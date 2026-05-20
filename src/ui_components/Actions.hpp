@@ -34,6 +34,7 @@ public:
 
     bool query_CanProcess() const;
     const char* query_ProcessingHints() const;
+    bool query_AllFilesFullyAnalyzed() const;
     void info_ShowProcessingHints();
 
     void subUI_ShowLatestRunStatus();
