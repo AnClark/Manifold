@@ -272,8 +272,22 @@ void ManifoldApp::UI_Files()
                     ImGui::Text(sndFileList[i]->isDcOffsetCalculatedOK ? "%.5f" : "---", sndFileList[i]->maxDcOffset);
 
                     // 第八列：LUFS-I
+                    // NOTE: It is unable to measure LUFS-I for audio shorter than 400ms, so we need to inform users.
                     ImGui::TableSetColumnIndex(7);
+                    const bool durationTooShort = (sndFileList[i]->getDurationSeconds() < 0.4);
+                    if (durationTooShort)
+                        ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(127, 127, 127, 255));
                     ImGui::Text(sndFileList[i]->isR128ParsedOK ? "%.1f dB" : "---", sndFileList[i]->lufsI);
+                    if (durationTooShort)
+                        ImGui::PopStyleColor();                    
+                    if (durationTooShort && ImGui::IsItemHovered() && ImGui::BeginTooltipEx(ImGuiTooltipFlags_OverridePrevious, ImGuiWindowFlags_None))
+                    {
+                        ImGui::Text("Warning:");
+                        ImGui::BulletText("File too short for LUFS-I measurement (< 400 ms), so LUFS-I value is -inf.");
+                        ImGui::Separator();
+                        ImGui::TextDisabled("This is the characteristic of EBU R128, not a bug of Manifold.");
+                        ImGui::EndTooltip();
+                    }
                     
                     // 第九列：Sample Peak
                     ImGui::TableSetColumnIndex(8);
