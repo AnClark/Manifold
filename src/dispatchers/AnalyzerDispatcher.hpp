@@ -11,10 +11,10 @@
 /**
  * @brief Dispatches audio file analysis tasks across parallel worker pools.
  *
- * AnalyzerDispatcher owns a fixed-size pool of EBUR128Worker and DcOffsetWorker
- * instances (one thread each). Incoming files are distributed across the pools
- * using a round-robin strategy driven by an atomic counter, so that @p n files
- * submitted in sequence are spread evenly across @p parallelThreads workers.
+ * AnalyzerDispatcher owns two independently-sized pools: one for EBUR128Worker
+ * and one for DcOffsetWorker. Incoming files are distributed across each pool
+ * using a shared round-robin counter, applied modulo the respective pool size,
+ * so files are spread evenly regardless of whether the two pool sizes differ.
  *
  * @note SndFileWorker is intentionally excluded from this dispatcher because
  *       header-only parsing (sf_open + metadata read) is extremely fast and
@@ -32,10 +32,10 @@ public:
     /**
      * @brief Constructs the dispatcher and starts all worker threads.
      *
-     * @param parallelThreads Number of worker instances to create for each
-     *                        analysis type (EBUR128 and DC offset). Each
-     *                        instance runs on its own thread, so the total
-     *                        number of threads spawned is @p parallelThreads * 2.
+     * @param ebuR128Threads  Number of EBUR128Worker instances to create.
+     *                        Each runs on its own thread.
+     * @param dcOffsetThreads Number of DcOffsetWorker instances to create.
+     *                        Each runs on its own thread.
      */
     AnalyzerDispatcher(uint32_t ebuR128Threads, uint32_t dcOffsetThreads);
 
@@ -48,12 +48,13 @@ public:
     ~AnalyzerDispatcher();
 
     /**
-     * @brief Replaces the worker pools with a new set of @p newParallelThreads instances.
+     * @brief Replaces the worker pools with new instances at the requested sizes.
      *
      * Cancels any in-flight analysis, destroys the existing worker threads (blocking
-     * until each thread joins), then creates fresh pools with the requested size.
+     * until each thread joins), then creates fresh pools with the requested sizes.
      *
-     * @param newParallelThreads New number of worker instances per analysis type.
+     * @param newEbuR128Threads  New number of EBUR128Worker instances.
+     * @param newDcOffsetThreads New number of DcOffsetWorker instances.
      *
      * @warning Files that are currently queued in the old workers will be lost.
      *          Call this method only when no analysis is in progress, or when
@@ -66,10 +67,11 @@ public:
     /**
      * @brief Submits a single file for parallel analysis.
      *
-     * Selects the target worker instance via a round-robin counter and enqueues
-     * the file into both the EBUR128 and DC offset worker pools. The counter is
-     * incremented atomically, making this method safe to call from multiple
-     * threads simultaneously.
+     * Increments a shared atomic counter and selects the target worker instance
+     * for each pool independently (counter % ebuR128Threads_ for EBUR128,
+     * counter % dcOffsetThreads_ for DC offset), so the two pools are balanced
+     * separately even when their sizes differ. The atomic increment makes this
+     * method safe to call from multiple threads simultaneously.
      *
      * @param file Shared pointer to the SndFileInfo to be analysed. The pointer
      *             must remain valid until the worker has finished processing it
@@ -119,6 +121,7 @@ private:
 
     uint32_t ebuR128Threads_, dcOffsetThreads_;
 
-    /// Round-robin counter used by addFile() to select the target worker instance.
+    /// Shared round-robin counter used by addFile(); applied modulo each pool's
+    /// size independently, so both pools stay balanced even when their sizes differ.
     std::atomic<uint32_t> fileCounter_{0};
 };
