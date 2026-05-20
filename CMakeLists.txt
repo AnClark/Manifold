@@ -56,6 +56,8 @@ option (MANIFOLD_ENABLE_PARALLEL_ANALYZING "Enable analyzing audio file in paral
 set (MANIFOLD_EBUR128_ANALYZER_THREADS_DEFAULT 4 CACHE STRING "Specify the default thread count of EBU R128 parallel analysis.")
 set (MANIFOLD_DCOFFSET_ANALYZER_THREADS_DEFAULT 4 CACHE STRING "Specify the default thread count of Dc Offset parallel analysis.")
 
+option (MANIFOLD_ENABLE_NEW_LAYOUT_FOR_REPORT "Enable new layout for Report (summarize the count of passed/failed reports)" ON)
+
 #
 # Build our main application
 #
@@ -117,6 +119,12 @@ if (MANIFOLD_ENABLE_PARALLEL_ANALYZING)
     )
 else ()
     message (STATUS "${PROJECT_NAME}: Parallel analyzing:\t\tOFF")
+endif ()
+
+if (MANIFOLD_ENABLE_NEW_LAYOUT_FOR_REPORT)
+    target_compile_definitions (${PROJECT_NAME} PRIVATE
+        ENABLE_NEW_LAYOUT_FOR_REPORT=1
+    )
 endif ()
 
 #

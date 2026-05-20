@@ -511,6 +511,103 @@ void ManifoldApp::UI_Tasks()
                             }
                             else
                             {
+#ifdef ENABLE_NEW_LAYOUT_FOR_REPORT
+                                // Summarize the counts of passed / failed reports
+                                int passed = 0;
+                                int failed = 0;
+                                for (size_t bi = 0; bi < rec->reports.size(); ++bi)
+                                {
+                                    const auto& rpt = rec->reports[bi];
+
+                                    passed += rpt->passed() ? 1 : 0;
+                                    failed += rpt->passed() ? 0 : 1;
+                                }
+
+                                if (passed > 0)
+                                {
+                                    {
+                                        ImGui::BeginGroup();
+
+                                        {
+                                            ImGui::BeginGroup();
+                                            ImGui::Dummy(ImVec2(0, 0.5f));
+                                            ImGui::PushFont(NULL, 12.0f);
+                                            ImGui::TextColored({0.40f, 1.00f, 0.40f, 1.0f}, "\xe2\x97\x8f");
+                                            ImGui::PopFont();
+                                            ImGui::EndGroup();
+                                        }
+                                        ImGui::SameLine();
+                                        ImGui::TextColored({0.40f, 1.00f, 0.40f, 1.0f}, "PASS: %d", passed);
+
+                                        ImGui::EndGroup();
+                                    }
+
+                                    if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayShort | ImGuiHoveredFlags_NoSharedDelay) && ImGui::BeginTooltip())
+                                    {
+                                        ImGui::TextDisabled("Passed Reports");
+                                        ImGui::Separator();
+                                        for (const auto& rpt : rec->reports)
+                                        {
+                                            if (!rpt->passed()) continue;
+
+                                            ImGui::BulletText("%s:", rpt->nodeId().c_str());
+                                            ImGui::Indent();
+                                            ImGui::PushTextWrapPos(480.0f);
+                                            ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(200, 200, 200, 255));
+                                            ImGui::TextUnformatted(rpt->summary().c_str());
+                                            ImGui::PopStyleColor();
+                                            ImGui::PopTextWrapPos();
+                                            ImGui::Unindent();
+                                        }
+                                        ImGui::EndTooltip();
+                                    }
+                                }
+                                if (failed > 0)
+                                {
+                                    if (passed > 0)
+                                        ImGui::SameLine(0.0f, 10.0f);
+
+                                    {
+                                        ImGui::BeginGroup();
+
+                                        {
+                                            ImGui::BeginGroup();
+                                            ImGui::Dummy(ImVec2(0, 0.5f));
+                                            ImGui::PushFont(NULL, 12.0f);
+                                            ImGui::TextColored({1.00f, 0.40f, 0.40f, 1.0f}, "\xe2\x97\x8f");
+                                            ImGui::PopFont();
+                                            ImGui::EndGroup();
+                                        }
+                                        ImGui::SameLine();
+                                        ImGui::TextColored({1.00f, 0.40f, 0.40f, 1.0f}, "FAIL: %d", failed);
+
+                                        ImGui::EndGroup();
+                                    }
+
+                                    if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayShort | ImGuiHoveredFlags_NoSharedDelay) && ImGui::BeginTooltip())
+                                    {
+                                        ImGui::TextDisabled("Failed Reports");
+                                        ImGui::Separator();
+                                        for (const auto& rpt : rec->reports)
+                                        {
+                                            if (rpt->passed()) continue;
+
+                                            ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(0xe7, 0xb8, 0xa9, 255)); // Color #e7b8a9
+                                            ImGui::BulletText("%s:", rpt->nodeId().c_str());
+                                            ImGui::PopStyleColor();
+                                            ImGui::Indent();
+                                            ImGui::PushTextWrapPos(480.0f);
+                                            ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(200, 200, 200, 255));
+                                            ImGui::TextUnformatted(rpt->summary().c_str());
+                                            ImGui::PopStyleColor();
+                                            ImGui::PopTextWrapPos();
+                                            ImGui::Unindent();
+                                        }
+                                        ImGui::EndTooltip();
+                                    }
+                                }
+
+#else
                                 for (size_t bi = 0; bi < rec->reports.size(); ++bi)
                                 {
                                     const auto& rpt = rec->reports[bi];
@@ -544,6 +641,7 @@ void ManifoldApp::UI_Tasks()
 
                                     ImGui::PopID();
                                 }
+#endif
                             }
                         }
 
