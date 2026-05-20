@@ -53,6 +53,8 @@ set(PKG_CONFIG_ARGN "--static")
 #
 
 option (MANIFOLD_ENABLE_PARALLEL_ANALYZING "Enable analyzing audio file in parallel (EBU R128, DC Offset)" ON)
+set (MANIFOLD_EBUR128_ANALYZER_THREADS_DEFAULT 4 CACHE STRING "Specify the default thread count of EBU R128 parallel analysis.")
+set (MANIFOLD_DCOFFSET_ANALYZER_THREADS_DEFAULT 4 CACHE STRING "Specify the default thread count of Dc Offset parallel analysis.")
 
 #
 # Build our main application
@@ -107,7 +109,11 @@ add_executable (${PROJECT_NAME} WIN32
 # Apply feature switches
 if (MANIFOLD_ENABLE_PARALLEL_ANALYZING)
     message (STATUS "${PROJECT_NAME}: Parallel analyzing:\t\tON")
-    target_compile_definitions (${PROJECT_NAME} PRIVATE ENABLE_PARALLEL_ANALYZING=1)
+    target_compile_definitions (${PROJECT_NAME} PRIVATE
+        ENABLE_PARALLEL_ANALYZING=1
+        EBUR128_ANALYZER_THREADS_DEFAULT=${MANIFOLD_EBUR128_ANALYZER_THREADS_DEFAULT}
+        DCOFFSET_ANALYZER_THREADS_DEFAULT=${MANIFOLD_DCOFFSET_ANALYZER_THREADS_DEFAULT}
+    )
 else ()
     message (STATUS "${PROJECT_NAME}: Parallel analyzing:\t\tOFF")
 endif ()

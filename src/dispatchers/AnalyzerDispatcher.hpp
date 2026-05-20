@@ -37,7 +37,7 @@ public:
      *                        instance runs on its own thread, so the total
      *                        number of threads spawned is @p parallelThreads * 2.
      */
-    AnalyzerDispatcher(uint32_t parallelThreads);
+    AnalyzerDispatcher(uint32_t ebuR128Threads, uint32_t dcOffsetThreads);
 
     /**
      * @brief Stops all workers and joins their threads.
@@ -61,7 +61,7 @@ public:
      * @warning Not thread-safe with respect to concurrent addFile() calls.
      *          Ensure no other thread is submitting files while this runs.
      */
-    void changeParallelThreads(uint32_t newParallelThreads);
+    void changeParallelThreads(uint32_t newEbuR128Threads, uint32_t newDcOffsetThreads);
 
     /**
      * @brief Submits a single file for parallel analysis.
@@ -117,7 +117,7 @@ private:
     std::vector<std::unique_ptr<EBUR128Worker>>  ebuR128WorkerPool_;
     std::vector<std::unique_ptr<DcOffsetWorker>> dcOffsetWorkerPool_;
 
-    uint32_t parallelThreads_;
+    uint32_t ebuR128Threads_, dcOffsetThreads_;
 
     /// Round-robin counter used by addFile() to select the target worker instance.
     std::atomic<uint32_t> fileCounter_{0};

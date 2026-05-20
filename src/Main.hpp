@@ -62,7 +62,7 @@ private:
 
     SndFileWorker sndFileWorker;
 #ifdef ENABLE_PARALLEL_ANALYZING
-    AnalyzerDispatcher analyzerDispatcher {4};  // TODO: Adjust default thread count by CPU cores
+    AnalyzerDispatcher analyzerDispatcher { EBUR128_ANALYZER_THREADS_DEFAULT, DCOFFSET_ANALYZER_THREADS_DEFAULT };  // TODO: Adjust default thread count by CPU cores
 #else
     EBUR128Worker ebur128Worker;
     DcOffsetWorker dcOffsetWorker;
