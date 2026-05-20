@@ -47,8 +47,12 @@ void UIComponents_Files::_ingestPaths(const std::vector<std::string>& paths)
         app->sndFilePathSet.insert(std::move(pathKey));
 
         app->sndFileWorker.addFile(newFilePtr);
+#ifdef ENABLE_PARALLEL_ANALYZING
+        app->analyzerDispatcher.addFile(newFilePtr);
+#else
         app->ebur128Worker.addFile(newFilePtr);
         app->dcOffsetWorker.addFile(newFilePtr);
+#endif
     }
 }
 

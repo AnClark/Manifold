@@ -49,8 +49,12 @@ void ManifoldApp::onTerminate()
     //         for example, EBUR128Worker::processFile().
     //         When everything is done, workers will stop during deconstruction, and we can be sure that no more processing is running
     //         after onTerminate() returns.
+#ifdef ENABLE_PARALLEL_ANALYZING
+    analyzerDispatcher.requestCancelProcessing();
+#else
     ebur128Worker.requestCancelProcessing();
     dcOffsetWorker.requestCancelProcessing();
+#endif
 
     // Stop all pending/on-progress audio rendering
     singleFileProcessorWorker.requestCancelProcessing();

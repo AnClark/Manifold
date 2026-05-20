@@ -5,8 +5,12 @@
 #include "base/ProcessingRun.hpp"
 #include "ui_components/Files.hpp"
 #include "ui_components/Actions.hpp"
+#ifdef ENABLE_PARALLEL_ANALYZING
+#include "dispatchers/AnalyzerDispatcher.hpp"
+#else
 #include "workers/DcOffsetWorker.hpp"
 #include "workers/EBUR128Worker.hpp"
+#endif
 #include "workers/SndFileWorker.hpp"
 #include "workers/SingleFileProcessorWorker.hpp"
 #include "utils/AudioPlayer.hpp"
@@ -57,8 +61,12 @@ private:
     std::mutex sndFileListMutex;
 
     SndFileWorker sndFileWorker;
+#ifdef ENABLE_PARALLEL_ANALYZING
+    AnalyzerDispatcher analyzerDispatcher { EBUR128_ANALYZER_THREADS_DEFAULT, DCOFFSET_ANALYZER_THREADS_DEFAULT };  // TODO: Adjust default thread count by CPU cores
+#else
     EBUR128Worker ebur128Worker;
     DcOffsetWorker dcOffsetWorker;
+#endif
     SingleFileProcessorWorker singleFileProcessorWorker;
 
     AudioPlayer audioPlayer;
