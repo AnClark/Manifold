@@ -164,7 +164,7 @@ void UIComponents_Actions::button_ExportNodeChainToFile()
                 if (ofs)
                     ofs << outputTOML;
 
-                LOG_ERRORF("Actions", "Exported Node Chain to file: %s", savePath.get());
+                LOG_INFOF("Actions", "Exported Node Chain to file: %s", savePath.get());
                 ImGui::InsertNotification({ImGuiToastType::Success, 5000, "Successfully exported Node Chain."});
             } catch (std::exception &e) {
                 constexpr const char* errMsgTemplate = "Failed to export node chain:\n %s";
