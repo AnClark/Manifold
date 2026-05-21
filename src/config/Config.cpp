@@ -27,6 +27,7 @@ std::string NodeConfig::saveNodeChain(std::vector<std::shared_ptr<Node>> &nodeCh
         {
             toml::table nodeTable;
             nodeTable.insert("id", node->id());  // Store the node's ID (unique factory key) for reconstruction
+            nodeTable.insert("is_ui_collapsed", node->isUiCollapsed()); // Store the node's UI collapsed state for better UX when importing/exporting node chain
 
             auto config = node->exportConfig();
             for (const auto& pair : config)
@@ -101,8 +102,17 @@ void NodeConfig::loadNodeChain(std::string_view configFilePath, std::vector<std:
                 {
                     // Intialize Node instance from registry
                     // NOTE: NodeRegistry::create() throws a runtime error if a node is not in the registry.
-                    const auto id = nodeTable->get("id")->value<std::string>();
+                    const auto* idNode = nodeTable->get("id");
+                    if (!idNode)
+                        throw std::runtime_error("Node chain entry is missing required field 'id'");
+                    const auto id = idNode->value<std::string>();
                     auto node = NodeRegistry::getInstance().create(id->c_str());
+
+                    // Set UI collapsed state before init() so that the node's drawUI() can adjust accordingly when being initialized.
+                    // NOTE: is_ui_collapsed may be absent in older config files; guard against null before dereferencing.
+                    if (const auto* isUiCollapsedNode = nodeTable->get("is_ui_collapsed"))
+                        if (const auto isUiCollapsed = isUiCollapsedNode->value<bool>())
+                            node->collapseUI(*isUiCollapsed);
 
                     // Parse and load parameters
                     // NOTE: We don't validate parameters here, just pass them to Node as-is.

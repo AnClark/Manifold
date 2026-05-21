@@ -110,6 +110,23 @@ public:
         width = 0.0f;
         height = 100.0f;
     }
+
+    /**
+     * @brief Query whether the node's UI panel is currently collapsed.
+     *
+     * @return `true` if the panel is collapsed, `false` otherwise.
+     */
+    virtual bool isUiCollapsed() { return uiCollapsed_; }
+
+    /**
+     * @brief Collapse or expand the node's UI panel in the Action Editor.
+     *
+     * @param collapse `true` to collapse the panel, `false` to expand it.
+     */
+    virtual void collapseUI(bool collapse) { uiCollapsed_ = collapse; }
+
+private:
+    bool uiCollapsed_ { false }; ///< Tracks whether the node's UI panel is collapsed.
 };
 
 // --------------------------------------------------------------------------
