@@ -184,6 +184,9 @@ void ManifoldApp::UI_Actions()
                         ImGui::BeginChild("Actions_NodeList", ImVec2(0, std::max(topChildH, kTopMinH)));
                     }
 
+                    // Add a spacing between topbar and Node Editor cells
+                    ImGui::Dummy(ImVec2(ImGui::GetStyle().ItemSpacing.x, ImGui::GetStyle().ItemSpacing.y * 0.8));
+
                     uiActions.subUI_NodeChainView();
 
                     ImGui::EndChild(); // [Top node-list child] end
