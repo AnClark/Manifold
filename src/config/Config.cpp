@@ -106,8 +106,10 @@ void NodeConfig::loadNodeChain(std::string_view configFilePath, std::vector<std:
                     auto node = NodeRegistry::getInstance().create(id->c_str());
 
                     // Set UI collapsed state before init() so that the node's drawUI() can adjust accordingly when being initialized.
-                    const auto isUiCollapsed = nodeTable->get("is_ui_collapsed")->value<bool>();
-                    node->collapseUI(isUiCollapsed ? true : false);
+                    // NOTE: is_ui_collapsed may be absent in older config files; guard against null before dereferencing.
+                    if (const auto* isUiCollapsedNode = nodeTable->get("is_ui_collapsed"))
+                        if (const auto isUiCollapsed = isUiCollapsedNode->value<bool>())
+                            node->collapseUI(*isUiCollapsed);
 
                     // Parse and load parameters
                     // NOTE: We don't validate parameters here, just pass them to Node as-is.
