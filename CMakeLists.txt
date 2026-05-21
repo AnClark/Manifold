@@ -245,3 +245,34 @@ target_link_libraries (manifold_pipeline_test PRIVATE
     PkgConfig::SNDFILE
     imgui
 )
+
+# ===========================================================================
+# analyzer_node_test — Functional regression test for AnalyzerNode refactoring
+# ===========================================================================
+
+set (ANALYZER_TEST_SOURCES
+    src/pipeline/NodeRegistry.cpp
+    src/pipeline/ChainEngine.cpp
+    src/pipeline/base_nodes/FileSourceNode.cpp
+    src/pipeline/base_nodes/NullSinkNode.cpp
+    src/pipeline/base_nodes/AnalyzerNode.cpp
+    src/pipeline/action_nodes/ClippingDetectionNode.cpp
+    src/pipeline/action_nodes/LoudnessComplianceNode.cpp
+    src/utils/LogManager.cpp
+)
+
+add_executable (analyzer_node_test
+    test/analyzer_node_test.cpp
+    ${ANALYZER_TEST_SOURCES}
+)
+
+target_include_directories (analyzer_node_test PRIVATE
+    src
+    deps/libebur128/ebur128
+)
+
+target_link_libraries (analyzer_node_test PRIVATE
+    ebur128
+    PkgConfig::SNDFILE
+    imgui
+)
