@@ -132,11 +132,23 @@ void ManifoldApp::UI_Tasks()
 
             // Center the placeholder message vertically
             const float avail = ImGui::GetContentRegionAvail().y;
-            ImGui::Dummy(ImVec2(0.0f, avail * 0.45f));
+            ImGui::Dummy(ImVec2(0.0f, avail * 0.435f));
 
             // Align placeholder message to an appropriate position, horizontally
             ImGui::SetCursorPosX(ImGui::GetCursorPosX() + ImGui::GetContentRegionAvail().x * 0.1f);
-            ImGui::TextDisabled("No processing runs yet. \nGo to Actions and click \"Process All Files\".");
+            {
+                ImGui::BeginGroup();
+
+                ImGui::TextDisabled("No processing runs yet.");
+                ImGui::TextDisabled("Go to ");
+                ImGui::SameLine(0, 0);
+                if (ImGui::TextLink("Actions"))
+                    uiState = pUIActions;
+                ImGui::SameLine(0, 0);
+                ImGui::TextDisabled(" and click \"Process All Files\".");
+
+                ImGui::EndGroup();
+            }
 
             ImGui::EndGroup();
         }
