@@ -340,31 +340,35 @@ void ManifoldApp::UI_Tasks()
                 ImGui::SeparatorText(title);
             }
 
-            // Cancel button — right-aligned, shown only on active runs
-            if (active)
-            {
-                constexpr float btnW = 110.0f;
-                const bool cancelling = run->cancelRequested.load(std::memory_order_relaxed);
-
-                ImGui::SetCursorPosX(ImGui::GetContentRegionMax().x - btnW);
-                ImGui::BeginDisabled(cancelling);
-                if (!cancelling)
-                {
-                    ImGui::PushStyleColor(ImGuiCol_Button,        ImVec4(0.65f, 0.15f, 0.15f, 1.0f));
-                    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.80f, 0.20f, 0.20f, 1.0f));
-                    ImGui::PushStyleColor(ImGuiCol_ButtonActive,  ImVec4(0.90f, 0.25f, 0.25f, 1.0f));
-                }
-                if (ImGui::Button(cancelling ? "Cancelling..." : "Cancel", ImVec2(btnW, 0)))
-                    run->requestCancel();
-                if (!cancelling)
-                    ImGui::PopStyleColor(3);
-                ImGui::EndDisabled();
-            }
-
             // Run-level meta row
             {
+                ImGui::AlignTextToFramePadding();
                 ImGui::TextDisabled("Created: %s",
                     fmtRunTimestamp(run->timestampCreated).c_str());
+
+                // Cancel button — right-aligned, shown only on active runs
+                if (active)
+                {
+                    ImGui::SameLine();
+
+                    constexpr float btnW = 110.0f;
+                    constexpr float extraPadding = 10.0f;
+                    const bool cancelling = run->cancelRequested.load(std::memory_order_relaxed);
+
+                    ImGui::SetCursorPosX(ImGui::GetContentRegionMax().x - btnW - extraPadding);
+                    ImGui::BeginDisabled(cancelling);
+                    if (!cancelling)
+                    {
+                        ImGui::PushStyleColor(ImGuiCol_Button,        ImVec4(0.65f, 0.15f, 0.15f, 1.0f));
+                        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.80f, 0.20f, 0.20f, 1.0f));
+                        ImGui::PushStyleColor(ImGuiCol_ButtonActive,  ImVec4(0.90f, 0.25f, 0.25f, 1.0f));
+                    }
+                    if (ImGui::Button(cancelling ? "Cancelling..." : "Cancel", ImVec2(btnW, 0)))
+                        run->requestCancel();
+                    if (!cancelling)
+                        ImGui::PopStyleColor(3);
+                    ImGui::EndDisabled();
+                }
 
                 if (!active)
                 {
