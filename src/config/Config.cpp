@@ -102,7 +102,10 @@ void NodeConfig::loadNodeChain(std::string_view configFilePath, std::vector<std:
                 {
                     // Intialize Node instance from registry
                     // NOTE: NodeRegistry::create() throws a runtime error if a node is not in the registry.
-                    const auto id = nodeTable->get("id")->value<std::string>();
+                    const auto* idNode = nodeTable->get("id");
+                    if (!idNode)
+                        throw std::runtime_error("Node chain entry is missing required field 'id'");
+                    const auto id = idNode->value<std::string>();
                     auto node = NodeRegistry::getInstance().create(id->c_str());
 
                     // Set UI collapsed state before init() so that the node's drawUI() can adjust accordingly when being initialized.
