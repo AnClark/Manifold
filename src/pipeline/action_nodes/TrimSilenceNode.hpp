@@ -45,7 +45,7 @@ public:
     void getUiSize(float& width, float& height) override
     {
         width  = 0.0f;
-        height = 148.0f;
+        height = 150.0f;
     }
 
 private:
