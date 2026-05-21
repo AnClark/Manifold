@@ -145,6 +145,14 @@ void ManifoldApp::UI_Files()
                     }
                 }
 
+                // Process shortcut keys
+                if (ImGui::Shortcut(ImGuiMod_Ctrl | ImGuiKey_A))
+                {
+                    // Ctrl+A: Select all files
+                    for (auto& file : sndFileList)
+                        file->selected = true;
+                }
+
                 // 显示数据行
                 for (int i = 0; i < sndFileList.size(); i++)
                 {
