@@ -84,11 +84,17 @@ void UIComponents_Actions::subUI_NodeChainView()
                     // ── UI expand/collapse toggler ───────────────────────
                     {
                         if (faFont) ImGui::PushFont(faFont, 16.0f);
-                        ImGui::Text(isUiCollapsed ? ICON_FA_CARET_RIGHT : ICON_FA_CARET_DOWN);
+                        {
+                            ImGui::PushStyleColor(ImGuiCol_Button,        ImVec4(0, 0, 0, 0));
+                            ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0, 0, 0, 0));
+                            ImGui::PushStyleColor(ImGuiCol_ButtonActive,  ImVec4(0, 0, 0, 0));
+                            ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0, 0));
+                            if (ImGui::Button(isUiCollapsed ? ICON_FA_CARET_RIGHT : ICON_FA_CARET_DOWN, ImVec2(16.0f, 0)))
+                                currentNode->collapseUI(!isUiCollapsed);
+                            ImGui::PopStyleVar();
+                            ImGui::PopStyleColor(3);
+                        }
                         if (faFont) ImGui::PopFont();
-
-                        if (ImGui::IsItemClicked())
-                            currentNode->collapseUI(!isUiCollapsed);
 
                         if (ImGui::IsItemHovered())
                             ImGui::SetMouseCursor(ImGuiMouseCursor_Hand);
