@@ -217,6 +217,10 @@ void UIComponents_Files::popup_ConfirmRemoveSelectedFiles(int selectedCount)
             ImGui::CloseCurrentPopup();
         }
         ImGui::SameLine();
+
+        if (ImGui::Shortcut(ImGuiKey_Escape))
+            ImGui::CloseCurrentPopup();
+
         if (ImGui::Button("Cancel", ImVec2(120, 0)))
             ImGui::CloseCurrentPopup();
 
