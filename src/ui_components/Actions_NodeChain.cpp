@@ -112,7 +112,13 @@ void UIComponents_Actions::subUI_NodeChainView()
                 }
 
                 // Node-specific UI
-                currentNode->drawUI();       
+                ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(10.0f, 2.0f));
+                if (ImGui::BeginChild("NodeSpecificUI", ImVec2(0, 0), ImGuiChildFlags_AlwaysUseWindowPadding))
+                {
+                    currentNode->drawUI();
+                }
+                ImGui::EndChild();
+                ImGui::PopStyleVar();
             }
             ImGui::EndChild(); 
 
