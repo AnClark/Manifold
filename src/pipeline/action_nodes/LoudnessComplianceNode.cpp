@@ -133,15 +133,14 @@ std::unordered_map<std::string, std::string> LoudnessComplianceNode::exportConfi
 
 namespace {
 
-class LoudnessComplianceStream : public AudioStream {
+class LoudnessComplianceStream : public AnalyzerStream {
 public:
     LoudnessComplianceStream(
         std::unique_ptr<AudioStream> upstream,
         NodeContext& ctx,
         MeasurementBackend backend,
         float targetLufs, float tpCeiling, float lufsTolerance)
-        : upstream_(std::move(upstream))
-        , ctx_(ctx)
+        : AnalyzerStream(std::move(upstream), ctx)
         , backend_(backend)
         , targetLufs_(targetLufs)
         , tpCeiling_(tpCeiling)
@@ -168,26 +167,12 @@ public:
             ebur128_destroy(&ebur128_);
     }
 
-    size_t read(float* buf, size_t frames) override
+protected:
+    void onSamples(const float* buf, size_t frames) override
     {
-        // Pull from upstream into the caller's buffer and pass it through unchanged.
-        // The Sink (downstream) owns `buf`; we never modify its contents —
-        // in InlineEbur128 mode we only *observe* the samples via ebur128_add_frames_float.
-        size_t got = upstream_->read(buf, frames);
-        if (got > 0) {
-            if (backend_ == MeasurementBackend::InlineEbur128 && ebur128_)
-                ebur128_add_frames_float(ebur128_, buf, got);
-        } else if (!finalized_) {
-            // EOF: upstream has no more samples — run compliance evaluation now.
-            // For Sideband / OfflineEbur128 this is also the first moment we
-            // have access to a complete sideband (LoudnessAnalyzerNode's own
-            // finalize() ran just before returning 0 to us).
-            finalize();
-        }
-        return got;
+        if (backend_ == MeasurementBackend::InlineEbur128 && ebur128_)
+            ebur128_add_frames_float(ebur128_, buf, frames);
     }
-
-    const AudioFormat& format() const override { return upstream_->format(); }
 
 private:
     // ------------------------------------------------------------------
@@ -280,9 +265,11 @@ private:
     // finalize
     // ------------------------------------------------------------------
 
-    void finalize()
+    void onFinalize() override
     {
-        finalized_ = true;
+        // For Sideband / OfflineEbur128 this is the first moment we have access
+        // to a complete sideband (any upstream analyzer's own finalize() ran just
+        // before upstream returned 0 to AnalyzerStream::read()).
 
         auto report = std::make_shared<LoudnessComplianceReport>();
         report->sourcePath    = ctx_.sourcePath;
@@ -347,13 +334,10 @@ private:
             ctx_.onReport(std::move(report));
     }
 
-    std::unique_ptr<AudioStream> upstream_;
-    NodeContext&       ctx_;
     MeasurementBackend backend_;
     float targetLufs_;
     float tpCeiling_;
     float lufsTolerance_;
-    bool  finalized_  = false;
     ebur128_state* ebur128_ = nullptr;
 };
 

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../Node.hpp"
+#include "../base_nodes/AnalyzerNode.hpp"
 #include "../../base/Report.hpp"
 
 #include <memory>
@@ -85,7 +85,7 @@ struct LoudnessComplianceReport : public Report {
  * Must be placed after a LoudnessAnalyzerNode (or after the stream segment
  * when files are pre-analysed).
  */
-class LoudnessComplianceNode : public Node, public StreamProcessorNode {
+class LoudnessComplianceNode : public AnalyzerNode {
 public:
     LoudnessComplianceNode() = default;
 
@@ -93,9 +93,6 @@ public:
 
     void init(const std::unordered_map<std::string, std::string>& params) override;
     std::unordered_map<std::string, std::string> exportConfig() override;
-
-    PortType primaryInput()  const override { return PortType::AudioStream; }
-    PortType primaryOutput() const override { return PortType::AudioStream; }
 
     std::unique_ptr<AudioStream> wrap(
         std::unique_ptr<AudioStream> upstream,

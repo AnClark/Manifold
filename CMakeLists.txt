@@ -91,6 +91,7 @@ add_executable (${PROJECT_NAME} WIN32
     src/pipeline/base_nodes/FileSourceNode.cpp
     src/pipeline/base_nodes/OutputSinkNode.cpp
     src/pipeline/base_nodes/DSPNode.cpp
+    src/pipeline/base_nodes/AnalyzerNode.cpp
     src/pipeline/base_nodes/ResamplerNode.cpp
     src/pipeline/base_nodes/NullSinkNode.cpp
     src/pipeline/action_nodes/LoudnessNormalizeNode.cpp
