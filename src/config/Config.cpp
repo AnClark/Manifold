@@ -116,8 +116,11 @@ void NodeConfig::loadNodeChain(std::string_view configFilePath, std::vector<std:
                     for (auto& [key, node] : *nodeTable)
                     {
                         const std::string_view k = key.str();   // toml::key is toml++'s internal type. Implicitly conver to string_view to get its value.
-                        const auto v = node.value<std::string>();   // `v` is a std::optional. Cannot be directly passed as unordered_map's value. Convertion is needed as well.
-                        params[k.data()] = v->c_str();
+                        // `v` is a std::optional. Cannot be directly passed as unordered_map's value. Convertion is needed as well.
+                        // NOTICE: Make sure the conversion is successful, otherwise the program will crash if the value were not std::string.
+                        //         (`v` will be nullptr if conversion failed.)
+                        if (const auto v = node.value<std::string>())
+                            params[k.data()] = v->c_str();
                     }
                     node->init(std::move(params));
 
