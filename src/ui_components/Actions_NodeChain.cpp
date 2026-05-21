@@ -42,6 +42,11 @@ void UIComponents_Actions::subUI_NodeChainView()
             float uiWidth, uiHeight;
             currentNode->getUiSize(uiWidth, uiHeight);
 
+            constexpr float toolbarHeight = 36.0f;
+            const bool isUiCollapsed = currentNode->isUiCollapsed();
+            if (isUiCollapsed || uiHeight < toolbarHeight)
+                uiHeight = toolbarHeight;
+
             // Record top Y of this item (screen coords) before drawing
             itemTopY[i] = ImGui::GetCursorScreenPos().y;
 
@@ -72,6 +77,24 @@ void UIComponents_Actions::subUI_NodeChainView()
                             && ImGui::IsMouseDown(ImGuiMouseButton_Left)
                             && s_dragSourceIdx == -1)
                             s_dragSourceIdx = (int)i;
+                    }
+                    ImGui::SameLine(0, 10);
+                    // ─────────────────────────────────────────────────────
+
+                    // ── UI expand/collapse toggler ───────────────────────
+                    {
+                        if (faFont) ImGui::PushFont(faFont, 16.0f);
+                        ImGui::Text(isUiCollapsed ? ICON_FA_CARET_RIGHT : ICON_FA_CARET_DOWN);
+                        if (faFont) ImGui::PopFont();
+
+                        if (ImGui::IsItemClicked())
+                            currentNode->collapseUI(!isUiCollapsed);
+
+                        if (ImGui::IsItemHovered())
+                            ImGui::SetMouseCursor(ImGuiMouseCursor_Hand);
+
+                        if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal))
+                            ImGui::SetTooltip(isUiCollapsed ? "Expand node UI" : "Collapse node UI");
                     }
                     ImGui::SameLine(0, 10);
                     // ─────────────────────────────────────────────────────
@@ -107,18 +130,22 @@ void UIComponents_Actions::subUI_NodeChainView()
                     if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal))
                         ImGui::SetTooltip("Remove current node");
 
-                    ImGui::Separator();
+                    if (!isUiCollapsed)
+                        ImGui::Separator();
                     ImGui::EndGroup();
                 }
 
                 // Node-specific UI
-                ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(10.0f, 2.0f));
-                if (ImGui::BeginChild("NodeSpecificUI", ImVec2(0, 0), ImGuiChildFlags_AlwaysUseWindowPadding))
+                if (!isUiCollapsed)
                 {
-                    currentNode->drawUI();
+                    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(10.0f, 2.0f));
+                    if (ImGui::BeginChild("NodeSpecificUI", ImVec2(0, 0), ImGuiChildFlags_AlwaysUseWindowPadding))
+                    {
+                        currentNode->drawUI();
+                    }
+                    ImGui::EndChild();
+                    ImGui::PopStyleVar();
                 }
-                ImGui::EndChild();
-                ImGui::PopStyleVar();
             }
             ImGui::EndChild(); 
 
