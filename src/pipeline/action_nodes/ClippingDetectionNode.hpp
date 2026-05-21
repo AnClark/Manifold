@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../Node.hpp"
+#include "../base_nodes/AnalyzerNode.hpp"
 #include "../../base/Report.hpp"
 
 #include <cstdint>
@@ -80,7 +80,7 @@ struct ClippingDetectionReport : public Report {
  *   "clipping_count" (int64_t) — total clipped samples, available to any
  *   downstream node that wishes to act on this result.
  */
-class ClippingDetectionNode : public Node, public StreamProcessorNode {
+class ClippingDetectionNode : public AnalyzerNode {
 public:
     ClippingDetectionNode() = default;
 
@@ -88,9 +88,6 @@ public:
 
     void init(const std::unordered_map<std::string, std::string>& params) override;
     std::unordered_map<std::string, std::string> exportConfig() override;
-
-    PortType primaryInput()  const override { return PortType::AudioStream; }
-    PortType primaryOutput() const override { return PortType::AudioStream; }
 
     std::unique_ptr<AudioStream> wrap(
         std::unique_ptr<AudioStream> upstream,

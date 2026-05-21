@@ -117,7 +117,7 @@ static constexpr int         kNumBackends    = 2;
 
 // ---------------------------------------------------------------------------
 
-class ClippingDetectionStream : public AudioStream {
+class ClippingDetectionStream : public AnalyzerStream {
 public:
     ClippingDetectionStream(
         std::unique_ptr<AudioStream> upstream,
@@ -125,8 +125,7 @@ public:
         ClippingBackend backend,
         float thresholdDbfs,
         int64_t maxAllowedClipped)
-        : upstream_(std::move(upstream))
-        , ctx_(ctx)
+        : AnalyzerStream(std::move(upstream), ctx)
         , backend_(backend)
         , thresholdDbfs_(thresholdDbfs)
         // Pre-convert the dBFS threshold to a linear amplitude so the hot
@@ -136,23 +135,12 @@ public:
         , maxAllowedClipped_(maxAllowedClipped)
     {}
 
-    size_t read(float* buf, size_t frames) override
+protected:
+    void onSamples(const float* buf, size_t frames) override
     {
-        // Pull from upstream into the caller's buffer and pass it through unchanged.
-        // The Sink (downstream) owns `buf`; we never modify its contents —
-        // in InlineEbur128 mode we only *observe* the samples via ebur128_add_frames_float.
-        size_t got = upstream_->read(buf, frames);
-
-        if (got > 0) {
-            if (backend_ == ClippingBackend::Inline)
-                scanBuffer(buf, got);
-        } else if (!finalized_) {
-            finalize();
-        }
-        return got;
+        if (backend_ == ClippingBackend::Inline)
+            scanBuffer(buf, frames);
     }
-
-    const AudioFormat& format() const override { return upstream_->format(); }
 
 private:
     // ------------------------------------------------------------------
@@ -288,10 +276,8 @@ private:
     //   60-second file is ~0.35 ppm vs. 0.000035%, which is hard to parse.
     // ------------------------------------------------------------------
 
-    void finalize()
+    void onFinalize() override
     {
-        finalized_ = true;
-
         if (backend_ == ClippingBackend::Offline)
             scanOffline();
 
@@ -320,8 +306,6 @@ private:
     // Members
     // ------------------------------------------------------------------
 
-    std::unique_ptr<AudioStream> upstream_;
-    NodeContext&    ctx_;
     ClippingBackend backend_;
     float           thresholdDbfs_;
     float           thresholdLinear_;
@@ -332,7 +316,6 @@ private:
     int64_t  clippedSamples_     = 0;
     float    maxSeen_            = 0.0f;
     uint32_t clippedChannelMask_ = 0;
-    bool     finalized_          = false;
 };
 
 } // anonymous namespace
