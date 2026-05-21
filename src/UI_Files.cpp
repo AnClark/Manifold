@@ -12,6 +12,11 @@ void ManifoldApp::UI_Files()
 {
     if (ImGui::BeginChild("Files"))
     {
+        // Calculate the count of selected files (`selected` is only modified by main thread, no lock needed)
+        int selectedCount = 0;
+        for (const auto& f : sndFileList)
+            if (f->selected) selectedCount++;
+
         //
         // TOOLBAR
         //
@@ -41,13 +46,7 @@ void ManifoldApp::UI_Files()
 
             ImGui::SameLine();
 
-            // 统计已选中数量（selected 仅由主线程修改，无需加锁）
-            int selectedCount = 0;
-            for (const auto& f : sndFileList)
-                if (f->selected) selectedCount++;
-
             uiFiles.button_RemoveSelectedFiles(selectedCount);
-            uiFiles.popup_ConfirmRemoveSelectedFiles(selectedCount);
 
             ImGui::SameLine();
 
@@ -66,6 +65,8 @@ void ManifoldApp::UI_Files()
         //
         // FILE DETAILS view
         //
+        bool pendingOpenRemoveConfirm = false;
+
         if (ImGui::BeginChild("File List With Details"))
         {
             // 表格标志：可排序、充满宽度、无内部边框、可滚动
@@ -151,6 +152,13 @@ void ManifoldApp::UI_Files()
                     // Ctrl+A: Select all files
                     for (auto& file : sndFileList)
                         file->selected = true;
+                }
+                else if (ImGui::Shortcut(ImGuiKey_Delete))
+                {
+                    // Del: Remove selected files
+                    // NOTE: OpenPopup must be called from the same window context as BeginPopupModal.
+                    //       We're inside a nested child window here, so defer to the outer scope via flag.
+                    pendingOpenRemoveConfirm = true;
                 }
 
                 // 显示数据行
@@ -307,6 +315,14 @@ void ManifoldApp::UI_Files()
 
             ImGui::EndChild();
         }        
+        
+        //
+        // POPUPS
+        //
+
+        if (pendingOpenRemoveConfirm && selectedCount > 0)
+            ImGui::OpenPopup("##remove_confirm");
+        uiFiles.popup_ConfirmRemoveSelectedFiles(selectedCount);
     }
     ImGui::EndChild();
 }
