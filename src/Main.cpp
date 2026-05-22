@@ -108,7 +108,7 @@ void ManifoldApp::onImGuiDisplay()
                 if (ImGui::IsItemHovered())
                     ImGui::SetMouseCursor(ImGuiMouseCursor_Hand);
 
-                if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal | ImGuiHoveredFlags_NoSharedDelay))
+                if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayShort))
                     ImGui::SetTooltip("%s", tooltip);
 
                 // Draw indicator of current active view (Visual Studio Code style)
