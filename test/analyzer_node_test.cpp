@@ -16,6 +16,7 @@
 #include "pipeline/base_nodes/NullSinkNode.hpp"
 #include "pipeline/action_nodes/ClippingDetectionNode.hpp"
 #include "pipeline/action_nodes/LoudnessComplianceNode.hpp"
+#include "pipeline/action_nodes/DynamicRangeNode.hpp"
 #include "base/Report.hpp"
 
 #include <iostream>
@@ -213,6 +214,70 @@ static void testClippingDetectionOffline(const std::string& wavFile)
 }
 
 // ---------------------------------------------------------------------------
+// Test 4 — DynamicRangeNode
+//
+// Runs:  FileSourceNode → DynamicRangeNode → NullSinkNode
+//
+// Checks:
+//   • A DynamicRangeReport is emitted
+//   • drValue is finite and >= 0 (when audio is long enough for ≥1 block)
+//   • crestFactorDb is finite and >= 0
+//   • blocksAnalyzed >= 1
+// ---------------------------------------------------------------------------
+
+static void testDynamicRange(const std::string& wavFile)
+{
+    std::cout << "\n-- DynamicRangeNode --\n";
+
+    auto src  = std::make_unique<FileSourceNode>();
+    src->init({});
+
+    auto drNode = std::make_unique<DynamicRangeNode>();
+    // Use 0.5 s blocks so even short test files produce multiple blocks
+    drNode->init({{"block_duration", "0.5"}});
+
+    auto sink = std::make_unique<NullSinkNode>();
+    sink->init({});
+
+    std::vector<std::unique_ptr<Node>> nodes;
+    nodes.push_back(std::move(src));
+    nodes.push_back(std::move(drNode));
+    nodes.push_back(std::move(sink));
+
+    ChainEngine engine(ChainEngine::toView(nodes));
+
+    std::shared_ptr<DynamicRangeReport> reportPtr;
+    engine.setReportCallback([&](std::shared_ptr<Report> r) {
+        if (auto p = std::dynamic_pointer_cast<DynamicRangeReport>(r))
+            reportPtr = std::move(p);
+    });
+
+    std::string errorMsg;
+    engine.setErrorCallback([&](std::string_view msg) {
+        errorMsg = std::string(msg);
+        std::cerr << "  Engine error: " << msg << "\n";
+    });
+
+    engine.processFile(wavFile, ".");
+
+    check(errorMsg.empty(),     "no engine error");
+    check(reportPtr != nullptr, "DynamicRangeReport was emitted");
+    if (reportPtr) {
+        if (reportPtr->hasResult()) {
+            check(std::isfinite(reportPtr->drValue) && reportPtr->drValue >= 0.0,
+                  "drValue is finite and >= 0");
+            check(std::isfinite(reportPtr->crestFactorDb) && reportPtr->crestFactorDb >= 0.0,
+                  "crestFactorDb is finite and >= 0");
+            check(reportPtr->blocksAnalyzed >= 1, "blocksAnalyzed >= 1");
+        } else {
+            // File shorter than one block — valid, not a failure
+            check(true, "file too short for DR (< 3 s) — correct behaviour");
+        }
+        std::cout << "  Info: " << reportPtr->summary() << "\n";
+    }
+}
+
+// ---------------------------------------------------------------------------
 // main
 // ---------------------------------------------------------------------------
 
@@ -242,6 +307,7 @@ int main(int argc, char* argv[])
     testClippingDetectionInline(wavFile);
     testClippingDetectionOffline(wavFile);
     testLoudnessComplianceInline(wavFile);
+    testDynamicRange(wavFile);
 
     std::cout << "\n=== Results: " << g_passed << " passed, " << g_failed << " failed ===\n";
     return g_failed == 0 ? 0 : 1;

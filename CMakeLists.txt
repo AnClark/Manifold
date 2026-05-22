@@ -104,6 +104,7 @@ add_executable (${PROJECT_NAME} WIN32
     src/pipeline/action_nodes/FadeNode.cpp
     src/pipeline/action_nodes/LoudnessComplianceNode.cpp
     src/pipeline/action_nodes/ClippingDetectionNode.cpp
+    src/pipeline/action_nodes/DynamicRangeNode.cpp
     src/ui_components/Files_MediaPlayer.cpp
     src/ui_components/Files_FileOperations.cpp
     src/ui_components/Actions_Output.cpp
@@ -260,6 +261,7 @@ set (ANALYZER_TEST_SOURCES
     src/pipeline/base_nodes/AnalyzerNode.cpp
     src/pipeline/action_nodes/ClippingDetectionNode.cpp
     src/pipeline/action_nodes/LoudnessComplianceNode.cpp
+    src/pipeline/action_nodes/DynamicRangeNode.cpp
     src/utils/LogManager.cpp
 )
 
