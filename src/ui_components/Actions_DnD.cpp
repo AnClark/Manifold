@@ -22,7 +22,7 @@ void UIComponents_Actions::system_DropHandler(int count, const char** paths)
     }
 
     // Avoid overwritting opening dialog or received path
-    if (pendingDialog != PendingDialog::Null)
+    if (pendingDialog != PendingDialog::Null || ImGui::IsPopupOpen(nullptr, ImGuiPopupFlags_AnyPopupId))
         return;
 
     this->dndReceivedPath = paths[0];
