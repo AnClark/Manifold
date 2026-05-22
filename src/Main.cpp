@@ -105,7 +105,7 @@ void ManifoldApp::onImGuiDisplay()
                 ImGui::Dummy(ImVec2(0, 4));
             };
 
-            const ImVec4 bg = ImGui::GetStyle().Colors[ImGuiCol_WindowBg];
+            const ImVec4 bg = ImGui::GetStyle().Colors[ImGuiCol_ChildBg];
             const ImVec4 btnOrigColor = ImGui::GetStyle().Colors[ImGuiCol_Button];    // Use original default color for list's hover color
             ImGui::PushStyleColor(ImGuiCol_Button, bg);
             ImGui::PushStyleColor(ImGuiCol_ButtonHovered, btnOrigColor);
