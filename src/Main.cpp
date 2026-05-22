@@ -87,11 +87,15 @@ void ManifoldApp::onImGuiDisplay()
             auto uiSwitchButton = [this, faFont](const char* label, UIState newState, const char* tooltip)
             {
                 const ImVec2 buttonPos = ImGui::GetCursorPos();  // Store the current position for drawing indicator later 
+                constexpr ImVec2 buttonSize = ImVec2(40, 40);
+                const bool isHovered = ImGui::IsMouseHoveringRect(
+                    buttonPos, ImVec2(buttonPos.x + buttonSize.x, buttonPos.y + buttonSize.y)
+                ) && ImGui::IsWindowHovered();  // Dear ImGui does not support changing text color on item hovering, so we need to implement ourselves.
 
                 if (faFont) ImGui::PushFont(faFont);
-                const bool useInactiveColor = (this->uiState != newState);  // NOTE: Store the condition flag in a variable to avoid Push/Pop mismatch
+                const bool useInactiveColor = (this->uiState != newState) && !isHovered;  // NOTE: Store the condition flag in a variable to avoid Push/Pop mismatch
                 if (useInactiveColor) ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(255, 255, 255, 127));
-                if (ImGui::Button(label, ImVec2(40, 40)))
+                if (ImGui::Button(label, buttonSize))
                 {
                     this->uiState = newState;
                 }
