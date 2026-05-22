@@ -331,6 +331,18 @@ void ManifoldApp::UI_Actions()
             ImGui::PopStyleVar();
         }
     }
+
+    //
+    // POPUPS
+    //
+
+    if (uiActions.pendingDnDLoadNodeChainConfirm)
+    {
+        ImGui::OpenPopup("##load_node_chain_confirm");
+        uiActions.pendingDnDLoadNodeChainConfirm = false;
+    }
+    uiActions.popup_ConfirmLoadNodeChain();
+
     ImGui::EndChild();
 }
 

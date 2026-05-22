@@ -24,6 +24,8 @@ void DnDHandler::registerDropHandler()
                 app->uiFiles.system_DropHandler(count, paths);
                 break;
             case pUIActions:
+                app->uiActions.system_DropHandler(count, paths);
+                break;
             case pUITasks:
             case pUILog:
                 break;

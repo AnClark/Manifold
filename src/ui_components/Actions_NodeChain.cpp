@@ -238,45 +238,7 @@ void UIComponents_Actions::button_ImportNodeChainFromFile()
         nfdresult_t result = NFD::OpenDialog(openPath, tomlFilter, 1, nullptr, parentWindow);
         if (result == NFD_OKAY)
         {
-            try {
-                // Pass &preferences.outputConfigPref directly: if the file contains an [output]
-                // section, it is applied in-place to the app's output settings (folder, format,
-                // subtype, null-output). If absent, the existing settings are left unchanged.
-                NodeConfig::loadNodeChain(openPath.get(), app->nodeChain, app->nodeChainMutex,
-                                            app->importNodeChainWithOutputConfig ? &app->preferences.outputConfigPref : nullptr);
-
-                // Reset drag-and-drop state since the node chain structure has changed.
-                app->dragDropState.reset();
-
-                // Validate the imported filename template if output config was applied.
-                if (app->importNodeChainWithOutputConfig)
-                {
-                    if (auto err = app->preferences.outputConfigPref.filenameTemplate.validate())
-                    {
-                        const std::string errMsg = *err;
-                        LOG_WARNF("Actions",
-                                    "Imported filename template is invalid (%s) — reset to default",
-                                    errMsg.c_str());
-                        app->preferences.outputConfigPref.filenameTemplate = FilenameTemplate::makeDefault();
-                        ImGui::InsertNotification({ImGuiToastType::Warning, 8000,
-                            "Imported filename template is invalid:\n%s\nReset to default.",
-                            errMsg.c_str()});
-                    }
-                }
-
-                LOG_INFOF("Actions", "Imported Node Chain from file: %s", openPath.get());
-                ImGui::InsertNotification({ImGuiToastType::Success, 5000, "Successfully imported Node Chain."});
-            }
-            catch (const char* err) {
-                constexpr const char* errMsgTemplate = "Failed to import node chain:\n %s";
-                LOG_ERRORF("Actions", errMsgTemplate, err);
-                ImGui::InsertNotification({ImGuiToastType::Error, 5000, errMsgTemplate, err});
-            }
-            catch (const std::exception& e) {
-                constexpr const char* errMsgTemplate = "Failed to import node chain:\n %s";
-                LOG_ERRORF("Actions", errMsgTemplate, e.what());
-                ImGui::InsertNotification({ImGuiToastType::Error, 5000, errMsgTemplate, e.what()});
-            }
+            subroutine_ImportNodeChain(openPath.get());
         }
         else if (result == NFD_ERROR)
         {
@@ -287,6 +249,57 @@ void UIComponents_Actions::button_ImportNodeChainFromFile()
         }
     }
     ImGui::PopFont();
+}
+
+void UIComponents_Actions::subroutine_ImportNodeChain(std::string path)
+{
+    if (!std::filesystem::exists(std::filesystem::u8path(path)))
+    {
+        constexpr const char* errMsgTemplate = "Node Chain file does not exist, or path is empty";
+        LOG_ERRORF("Actions", errMsgTemplate);
+        ImGui::InsertNotification({ImGuiToastType::Error, 5000, errMsgTemplate});
+        return;
+    }
+
+    try {
+        // Pass &preferences.outputConfigPref directly: if the file contains an [output]
+        // section, it is applied in-place to the app's output settings (folder, format,
+        // subtype, null-output). If absent, the existing settings are left unchanged.
+        NodeConfig::loadNodeChain(path, app->nodeChain, app->nodeChainMutex,
+                                    app->importNodeChainWithOutputConfig ? &app->preferences.outputConfigPref : nullptr);
+
+        // Reset drag-and-drop state since the node chain structure has changed.
+        app->dragDropState.reset();
+
+        // Validate the imported filename template if output config was applied.
+        if (app->importNodeChainWithOutputConfig)
+        {
+            if (auto err = app->preferences.outputConfigPref.filenameTemplate.validate())
+            {
+                const std::string errMsg = *err;
+                LOG_WARNF("Actions",
+                            "Imported filename template is invalid (%s) — reset to default",
+                            errMsg.c_str());
+                app->preferences.outputConfigPref.filenameTemplate = FilenameTemplate::makeDefault();
+                ImGui::InsertNotification({ImGuiToastType::Warning, 8000,
+                    "Imported filename template is invalid:\n%s\nReset to default.",
+                    errMsg.c_str()});
+            }
+        }
+
+        LOG_INFOF("Actions", "Imported Node Chain from file: %s", path.c_str());
+        ImGui::InsertNotification({ImGuiToastType::Success, 5000, "Successfully imported Node Chain."});
+    }
+    catch (const char* err) {
+        constexpr const char* errMsgTemplate = "Failed to import node chain:\n %s";
+        LOG_ERRORF("Actions", errMsgTemplate, err);
+        ImGui::InsertNotification({ImGuiToastType::Error, 5000, errMsgTemplate, err});
+    }
+    catch (const std::exception& e) {
+        constexpr const char* errMsgTemplate = "Failed to import node chain:\n %s";
+        LOG_ERRORF("Actions", errMsgTemplate, e.what());
+        ImGui::InsertNotification({ImGuiToastType::Error, 5000, errMsgTemplate, e.what()});
+    }
 }
 
 void UIComponents_Actions::button_OpenNodeChainMenu()
@@ -324,4 +337,31 @@ void UIComponents_Actions::popup_NodeChainMenu()
 
         ImGui::EndPopup();
     }                            
+}
+
+void UIComponents_Actions::popup_ConfirmLoadNodeChain()
+{
+    if (ImGui::BeginPopupModal("##load_node_chain_confirm", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
+    {
+        ImGui::Text("Load Node Chain from file?");
+        ImGui::BulletText("%s", dndReceivedPath.c_str());
+        ImGui::Spacing();
+        ImGui::TextColored(ImVec4(1.0f, 0.4f, 0.4f, 1.0f), "Your current Chain will be overwritten!");
+        ImGui::Separator();
+
+        if (ImGui::Button("Confirm", ImVec2(120, 0)))
+        {
+            subroutine_ImportNodeChain(dndReceivedPath.c_str());
+            ImGui::CloseCurrentPopup();
+        }
+        ImGui::SameLine();
+
+        if (ImGui::Shortcut(ImGuiKey_Escape))
+            ImGui::CloseCurrentPopup();
+
+        if (ImGui::Button("Cancel", ImVec2(120, 0)))
+            ImGui::CloseCurrentPopup();
+
+        ImGui::EndPopup();
+    }
 }

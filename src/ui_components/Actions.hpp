@@ -19,6 +19,8 @@ public:
     void button_ImportNodeChainFromFile();
     void button_OpenNodeChainMenu();
     void popup_NodeChainMenu();
+    void subroutine_ImportNodeChain(std::string path);
+    void popup_ConfirmLoadNodeChain();
 
     void command_StartProcessingAllFiles();
 
@@ -39,6 +41,11 @@ public:
 
     void subUI_ShowLatestRunStatus();
 
+    void system_DropHandler(int count, const char** paths);
+    bool pendingDnDLoadNodeChainConfirm { false };
+
 private:
     ManifoldApp* app;
+
+    std::string dndReceivedPath;
 };
