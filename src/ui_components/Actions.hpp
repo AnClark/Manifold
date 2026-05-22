@@ -19,10 +19,13 @@ public:
     void button_ImportNodeChainFromFile();
     void button_OpenNodeChainMenu();
     void popup_NodeChainMenu();
+    void subroutine_ImportNodeChain(std::string path);
+    void popup_ConfirmLoadNodeChain();
 
     void command_StartProcessingAllFiles();
 
     void button_SelectOutputFolder();
+    void popup_ConfirmSetOutputFolder();    
 
     void button_FileName();
     void popup_OutputFileNameRule(FilenameTemplate& s_editTemplate, int& s_selectedTokenIdx);
@@ -39,6 +42,12 @@ public:
 
     void subUI_ShowLatestRunStatus();
 
+    void system_DropHandler(int count, const char** paths);
+    enum class PendingDialog { Null, LoadNodeChainConfirm, SetOutputFolderConfirm };
+    PendingDialog pendingDialog { PendingDialog::Null };
+
 private:
     ManifoldApp* app;
+
+    std::string dndReceivedPath;
 };

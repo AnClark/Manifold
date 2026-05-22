@@ -25,6 +25,9 @@ void ManifoldApp::onInit()
     // Initialize NFD
     NFD_Init();
 
+    // Register DnD handler, allowing drop file(s) / folder(s) from your file explorer
+    dndHandler.registerDropHandler();
+
     // Load font with Chinese support
     // 1. Add DroidSans first
     ImGui::GetIO().Fonts->AddFontFromMemoryCompressedTTF(DroidSansFont_compressed_data, DroidSansFont_compressed_size, 16.0f, nullptr);

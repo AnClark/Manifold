@@ -56,6 +56,36 @@ void UIComponents_Files::_ingestPaths(const std::vector<std::string>& paths)
     }
 }
 
+int UIComponents_Files::_findAudioFiles(const char* pickedPath, std::vector<std::string>& foundAudioFilePaths, bool clearContainer)
+{
+    static const std::unordered_set<std::string> supportedExts = {
+        ".wav", ".flac", ".mp3", ".ogg", ".aiff", ".caf"
+    };
+
+    int foundFilesCount = 0;
+
+    if (clearContainer)
+        foundAudioFilePaths.clear();
+
+    std::error_code ec;
+    for (const auto& entry : std::filesystem::recursive_directory_iterator(pickedPath, ec))
+    {
+        if (!entry.is_regular_file(ec))
+            continue;
+        std::string ext = entry.path().extension().string();
+        // Lowercase extension for case-insensitive comparison
+        std::transform(ext.begin(), ext.end(), ext.begin(),
+            [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
+        if (supportedExts.count(ext))
+        {
+            foundAudioFilePaths.push_back(entry.path().string());
+            foundFilesCount++;
+        }
+    }
+
+    return foundFilesCount;
+}
+
 void UIComponents_Files::button_AddMultipleFiles()
 {
     if (ImGui::Button("Add Multiple Files..."))
@@ -127,23 +157,8 @@ void UIComponents_Files::button_AddFolder()
         nfdresult_t result = NFD::PickFolder(pickedPath, nullptr, parentWindow);
         if (result == NFD_OKAY)
         {
-            static const std::unordered_set<std::string> supportedExts = {
-                ".wav", ".flac", ".mp3", ".ogg", ".aiff", ".caf"
-            };
-
             std::vector<std::string> foundPaths;
-            std::error_code ec;
-            for (const auto& entry : std::filesystem::recursive_directory_iterator(pickedPath, ec))
-            {
-                if (!entry.is_regular_file(ec))
-                    continue;
-                std::string ext = entry.path().extension().string();
-                // Lowercase extension for case-insensitive comparison
-                std::transform(ext.begin(), ext.end(), ext.begin(),
-                    [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
-                if (supportedExts.count(ext))
-                    foundPaths.push_back(entry.path().string());
-            }
+            _findAudioFiles(pickedPath, foundPaths, true);
 
             _ingestPaths(foundPaths);
             LOG_INFOF("Files", "Added %d audio files from specified folder (%s).", foundPaths.size(), pickedPath);
@@ -239,3 +254,77 @@ void UIComponents_Files::subroutine_WarnAboutDuplicateFiles(int addedFiles)
         app->detectedDuplicateCount = 0;
     }
 }
+
+void UIComponents_Files::system_DropHandler(int count, const char** paths)
+{
+    auto& self = app->uiFiles;
+
+    LOG_DEBUGF("Files", "DnD: Droped %d path(s)", count);
+
+    std::vector<std::string> foundPaths;   
+    uint32_t s_filesAddedFromFolders = 0;     
+    uint32_t s_scannedFolders = 0;
+
+    for (int i = 0; i < count; i++) {
+        const auto currentPath = std::filesystem::u8path(paths[i]);
+        const bool isDirectory = std::filesystem::is_directory(currentPath);
+        LOG_DEBUGF("Files", "DnD:\t- [%s] %s", isDirectory ? "DIR" : "FILE", currentPath.generic_string().c_str());
+
+        if (isDirectory)
+        {
+            const auto found = self._findAudioFiles(currentPath.string().c_str(), foundPaths);
+            s_filesAddedFromFolders += found;
+            s_scannedFolders++;
+        }
+        else
+        {
+            foundPaths.emplace_back(currentPath.string());
+        }
+    }
+
+    if (foundPaths.size() > 0)
+    {
+        self._ingestPaths(foundPaths);
+
+        if (s_scannedFolders)
+        {
+            if (app->detectedDuplicateCount > 0)
+            {
+                LOG_DEBUGF("Files", "DnD: Detected duplicated files (maybe in those %d files added from %d folders(s)). See log entry below.", s_filesAddedFromFolders, s_scannedFolders);
+                self.subroutine_WarnAboutDuplicateFiles(foundPaths.size());
+            }
+            else
+            {
+                LOG_INFOF("Files", "DnD: Added %d audio files to list [including %d files added from %d folder(s)].", foundPaths.size(), s_filesAddedFromFolders, s_scannedFolders);
+                ImGui::InsertNotification({ImGuiToastType::Success,
+                                    5000,
+                                        "Added %d audio files to list\n(including %d from %d folders).",
+                                                foundPaths.size(), s_filesAddedFromFolders, s_scannedFolders});
+            }
+        }
+        else
+        {
+            if (app->detectedDuplicateCount > 0)
+            {
+                LOG_DEBUGF("Files", "DnD: Detected duplicated files. See log entry below.");
+                self.subroutine_WarnAboutDuplicateFiles(foundPaths.size());
+            }
+            else
+            {
+                LOG_INFOF("Files", "DnD: Added %d files to list.", foundPaths.size());
+                ImGui::InsertNotification({ImGuiToastType::Success,
+                                    5000,
+                                        "Added %d audio files to list.",
+                                                foundPaths.size()});
+            }
+        }
+    }
+    else
+    {
+        LOG_WARNF("Files", "DnD: No files added to list.");
+        ImGui::InsertNotification({ImGuiToastType::Warning,
+                            5000, 
+                                "No file added from specified folder.\n(Maybe no media files in folder, or failed to open directory?)"});
+    }
+}
+

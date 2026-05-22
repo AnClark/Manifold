@@ -331,6 +331,25 @@ void ManifoldApp::UI_Actions()
             ImGui::PopStyleVar();
         }
     }
+
+    //
+    // POPUPS
+    //
+
+    switch (uiActions.pendingDialog)
+    {
+        case UIComponents_Actions::PendingDialog::LoadNodeChainConfirm:
+            ImGui::OpenPopup("##load_node_chain_confirm");
+            break;
+        case UIComponents_Actions::PendingDialog::SetOutputFolderConfirm:
+            ImGui::OpenPopup("##set_output_folder_confirm");
+            break;
+        default:
+            break;
+    }
+    uiActions.popup_ConfirmLoadNodeChain();
+    uiActions.popup_ConfirmSetOutputFolder();
+
     ImGui::EndChild();
 }
 

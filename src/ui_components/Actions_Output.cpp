@@ -98,6 +98,36 @@ void UIComponents_Actions::button_SelectOutputFolder()
     }
 }
 
+void UIComponents_Actions::popup_ConfirmSetOutputFolder()
+{
+    const auto closePopup = [this]() {
+        pendingDialog = UIComponents_Actions::PendingDialog::Null;
+        ImGui::CloseCurrentPopup();
+    };
+
+    if (ImGui::BeginPopupModal("##set_output_folder_confirm", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
+    {
+        ImGui::Text("Set the path you dragged here as output folder?");
+        ImGui::BulletText("%s", dndReceivedPath.c_str());
+        ImGui::Separator();
+
+        if (ImGui::Button("Confirm", ImVec2(120, 0)))
+        {
+            app->outputPath = dndReceivedPath;
+            closePopup();
+        }
+        ImGui::SameLine();
+
+        if (ImGui::Shortcut(ImGuiKey_Escape))
+            closePopup();
+
+        if (ImGui::Button("Cancel", ImVec2(120, 0)))
+            closePopup();
+
+        ImGui::EndPopup();
+    }
+}
+
 void UIComponents_Actions::button_FileName()
 {
     // State for the filename config popup (persists while the modal is open).
