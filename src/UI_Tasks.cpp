@@ -532,15 +532,19 @@ void ManifoldApp::UI_Tasks()
                             else
                             {
 #ifdef ENABLE_NEW_LAYOUT_FOR_REPORT
-                                // Summarize the counts of passed / failed reports
+                                // Summarize the counts of passed / failed / info reports
                                 int passed = 0;
                                 int failed = 0;
+                                int info   = 0;
                                 for (size_t bi = 0; bi < rec->reports.size(); ++bi)
                                 {
                                     const auto& rpt = rec->reports[bi];
-
-                                    passed += rpt->passed() ? 1 : 0;
-                                    failed += rpt->passed() ? 0 : 1;
+                                    switch (rpt->status())
+                                    {
+                                        case Report::Status::Pass: ++passed; break;
+                                        case Report::Status::Fail: ++failed; break;
+                                        case Report::Status::Info: ++info;   break;
+                                    }
                                 }
 
                                 if (passed > 0)
@@ -610,11 +614,53 @@ void ManifoldApp::UI_Tasks()
                                         ImGui::Separator();
                                         for (const auto& rpt : rec->reports)
                                         {
-                                            if (rpt->passed()) continue;
+                                            if (rpt->status() != Report::Status::Fail) continue;
 
                                             ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(0xe7, 0xb8, 0xa9, 255)); // Color #e7b8a9
                                             ImGui::BulletText("%s:", rpt->nodeId().c_str());
                                             ImGui::PopStyleColor();
+                                            ImGui::Indent();
+                                            ImGui::PushTextWrapPos(480.0f);
+                                            ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(200, 200, 200, 255));
+                                            ImGui::TextUnformatted(rpt->summary().c_str());
+                                            ImGui::PopStyleColor();
+                                            ImGui::PopTextWrapPos();
+                                            ImGui::Unindent();
+                                        }
+                                        ImGui::EndTooltip();
+                                    }
+                                }
+                                if (info > 0)
+                                {
+                                    if (passed > 0 || failed > 0)
+                                        ImGui::SameLine(0.0f, 10.0f);
+
+                                    {
+                                        ImGui::BeginGroup();
+
+                                        {
+                                            ImGui::BeginGroup();
+                                            ImGui::Dummy(ImVec2(0, 0.5f));
+                                            ImGui::PushFont(NULL, 12.0f);
+                                            ImGui::TextColored({0.40f, 0.70f, 1.0f, 1.0f}, "\xe2\x97\x8f");
+                                            ImGui::PopFont();
+                                            ImGui::EndGroup();
+                                        }
+                                        ImGui::SameLine();
+                                        ImGui::TextColored({0.40f, 0.70f, 1.0f, 1.0f}, "INFO: %d", info);
+
+                                        ImGui::EndGroup();
+                                    }
+
+                                    if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayShort | ImGuiHoveredFlags_NoSharedDelay) && ImGui::BeginTooltip())
+                                    {
+                                        ImGui::TextDisabled("Informational Reports");
+                                        ImGui::Separator();
+                                        for (const auto& rpt : rec->reports)
+                                        {
+                                            if (rpt->status() != Report::Status::Info) continue;
+
+                                            ImGui::BulletText("%s:", rpt->nodeId().c_str());
                                             ImGui::Indent();
                                             ImGui::PushTextWrapPos(480.0f);
                                             ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(200, 200, 200, 255));
@@ -631,12 +677,14 @@ void ManifoldApp::UI_Tasks()
                                 for (size_t bi = 0; bi < rec->reports.size(); ++bi)
                                 {
                                     const auto& rpt = rec->reports[bi];
-                                    const bool  ok  = rpt->passed();
+                                    const auto  st  = rpt->status();
 
                                     ImGui::PushID(static_cast<int>(bi));
 
-                                    // Coloured badge: green dot + PASS / red dot + FAIL
-                                    if (ok)
+                                    // Coloured badge: PASS (green) / FAIL (red) / INFO (blue)
+                                    if (st == Report::Status::Info)
+                                        ImGui::TextColored({0.40f, 0.70f, 1.0f, 1.0f}, "\xe2\x97\x8f INFO");
+                                    else if (st == Report::Status::Pass)
                                         ImGui::TextColored({0.40f, 1.00f, 0.40f, 1.0f}, "\xe2\x97\x8f PASS");
                                     else
                                         ImGui::TextColored({1.00f, 0.40f, 0.40f, 1.0f}, "\xe2\x97\x8f FAIL");

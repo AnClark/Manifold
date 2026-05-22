@@ -67,7 +67,9 @@ struct LoudnessComplianceReport : public Report {
 
     std::string nodeId() const override { return "loudness_compliance"; }
     std::string summary() const override;
-    bool passed() const override { return hasMeasurement && lufsPass && peakPass; }
+    Status status() const override {
+        return (hasMeasurement && lufsPass && peakPass) ? Status::Pass : Status::Fail;
+    }
 };
 
 // --------------------------------------------------------------------------

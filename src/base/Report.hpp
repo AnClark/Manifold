@@ -15,6 +15,16 @@ class Report {
 public:
     virtual ~Report() = default;
 
+    /**
+     * @brief Outcome category used for badge display in the UI.
+     *
+     *   Pass — all criteria met            → green  ● PASS badge
+     *   Fail — one or more criteria failed → red    ● FAIL badge
+     *   Info — informational metric only,
+     *           no binary pass/fail gate   → blue   ● INFO badge
+     */
+    enum class Status { Pass, Fail, Info };
+
     /** @brief ID of the node that produced this report (matches Node::id()). */
     virtual std::string nodeId() const = 0;
 
@@ -22,10 +32,19 @@ public:
     virtual std::string summary() const = 0;
 
     /**
-     * @brief Overall pass/fail result for badge display.
+     * @brief Outcome status for badge display.
      *
-     * Returns true when all criteria evaluated by this report passed.
-     * Nodes that do not have a binary pass/fail concept should return true.
+     * Override to return Fail when criteria are not met, or Info for purely
+     * informational metrics that have no pass/fail gate.
+     * The default implementation returns Pass.
      */
-    virtual bool passed() const { return true; }
+    virtual Status status() const { return Status::Pass; }
+
+    /**
+     * @brief Convenience accessor: returns true unless status() is Fail.
+     *
+     * Preserved for call sites that only need a binary result.
+     * Prefer status() in new code when the Info state matters.
+     */
+    bool passed() const { return status() != Status::Fail; }
 };
