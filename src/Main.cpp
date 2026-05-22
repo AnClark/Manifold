@@ -87,11 +87,17 @@ void ManifoldApp::onImGuiDisplay()
             auto uiSwitchButton = [this, faFont](const char* label, UIState newState, const char* tooltip)
             {
                 if (faFont) ImGui::PushFont(faFont);
+                const bool useInactiveColor = (this->uiState != newState);  // NOTE: Store the condition flag in a variable to avoid Push/Pop mismatch
+                if (useInactiveColor) ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(255, 255, 255, 127));
                 if (ImGui::Button(label, ImVec2(40, 40)))
                 {
                     this->uiState = newState;
                 }
+                if (useInactiveColor) ImGui::PopStyleColor();
                 if (faFont) ImGui::PopFont();
+
+                if (ImGui::IsItemHovered())
+                    ImGui::SetMouseCursor(ImGuiMouseCursor_Hand);
 
                 if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal | ImGuiHoveredFlags_NoSharedDelay))
                     ImGui::SetTooltip("%s", tooltip);
