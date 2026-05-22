@@ -341,6 +341,11 @@ void UIComponents_Actions::popup_NodeChainMenu()
 
 void UIComponents_Actions::popup_ConfirmLoadNodeChain()
 {
+    const auto closePopup = [this]() {
+        pendingDialog = UIComponents_Actions::PendingDialog::Null;
+        ImGui::CloseCurrentPopup();
+    };
+
     if (ImGui::BeginPopupModal("##load_node_chain_confirm", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
     {
         ImGui::Text("Load Node Chain from file?");
@@ -352,15 +357,15 @@ void UIComponents_Actions::popup_ConfirmLoadNodeChain()
         if (ImGui::Button("Confirm", ImVec2(120, 0)))
         {
             subroutine_ImportNodeChain(dndReceivedPath.c_str());
-            ImGui::CloseCurrentPopup();
+            closePopup();
         }
         ImGui::SameLine();
 
         if (ImGui::Shortcut(ImGuiKey_Escape))
-            ImGui::CloseCurrentPopup();
+            closePopup();
 
         if (ImGui::Button("Cancel", ImVec2(120, 0)))
-            ImGui::CloseCurrentPopup();
+            closePopup();
 
         ImGui::EndPopup();
     }

@@ -25,6 +25,7 @@ public:
     void command_StartProcessingAllFiles();
 
     void button_SelectOutputFolder();
+    void popup_ConfirmSetOutputFolder();    
 
     void button_FileName();
     void popup_OutputFileNameRule(FilenameTemplate& s_editTemplate, int& s_selectedTokenIdx);
@@ -42,7 +43,8 @@ public:
     void subUI_ShowLatestRunStatus();
 
     void system_DropHandler(int count, const char** paths);
-    bool pendingDnDLoadNodeChainConfirm { false };
+    enum class PendingDialog { Null, LoadNodeChainConfirm, SetOutputFolderConfirm };
+    PendingDialog pendingDialog { PendingDialog::Null };
 
 private:
     ManifoldApp* app;

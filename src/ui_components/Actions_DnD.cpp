@@ -21,13 +21,21 @@ void UIComponents_Actions::system_DropHandler(int count, const char** paths)
         LOG_DEBUGF("Actions", "DnD: Get path: %s", paths[0]);
     }
 
+    // Avoid overwritting opening dialog or received path
+    if (pendingDialog != PendingDialog::Null)
+        return;
+
     this->dndReceivedPath = paths[0];
     const auto inputPath = std::filesystem::u8path(this->dndReceivedPath);
     if (std::filesystem::is_regular_file(inputPath))
     {
         // NOTE: Callbacks are not in ImGui's context. Directly invoking ImGui::OpenPopup() will crash the program.
         //       Use flag instead.
-        this->pendingDnDLoadNodeChainConfirm = true;
+        this->pendingDialog = PendingDialog::LoadNodeChainConfirm;
+    }
+    else if (std::filesystem::is_directory(inputPath))
+    {
+        this->pendingDialog = PendingDialog::SetOutputFolderConfirm;
     }
     else
     {
