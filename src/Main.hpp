@@ -5,6 +5,7 @@
 #include "base/ProcessingRun.hpp"
 #include "ui_components/Files.hpp"
 #include "ui_components/Actions.hpp"
+#include "ui_components/DnDHandler.hpp"
 #ifdef ENABLE_PARALLEL_ANALYZING
 #include "dispatchers/AnalyzerDispatcher.hpp"
 #else
@@ -83,8 +84,10 @@ private:
     // UI Components
     UIComponents_Files uiFiles {this};
     UIComponents_Actions uiActions {this};
+    DnDHandler dndHandler {this};
     friend class UIComponents_Files;
     friend class UIComponents_Actions;
+    friend class DnDHandler;
 
     // Node Chain drag/drop (DnD) states & procedures
     struct NodeChainDnDState
