@@ -102,7 +102,7 @@ void UIComponents_Actions::subUI_NodeChainView()
                         if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal))
                             ImGui::SetTooltip(isUiCollapsed ? "Expand node UI" : "Collapse node UI");
                     }
-                    ImGui::SameLine(0, 10);
+                    ImGui::SameLine(0, 8);
                     // ─────────────────────────────────────────────────────
 
                     ImGui::Text("[%02llu] %s", i, currentNode->name().c_str());
