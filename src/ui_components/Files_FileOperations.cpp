@@ -56,6 +56,36 @@ void UIComponents_Files::_ingestPaths(const std::vector<std::string>& paths)
     }
 }
 
+int UIComponents_Files::_findAudioFiles(const char* pickedPath, std::vector<std::string>& foundAudioFilePaths, bool clearContainer)
+{
+    static const std::unordered_set<std::string> supportedExts = {
+        ".wav", ".flac", ".mp3", ".ogg", ".aiff", ".caf"
+    };
+
+    int foundFilesCount = 0;
+
+    if (clearContainer)
+        foundAudioFilePaths.clear();
+
+    std::error_code ec;
+    for (const auto& entry : std::filesystem::recursive_directory_iterator(pickedPath, ec))
+    {
+        if (!entry.is_regular_file(ec))
+            continue;
+        std::string ext = entry.path().extension().string();
+        // Lowercase extension for case-insensitive comparison
+        std::transform(ext.begin(), ext.end(), ext.begin(),
+            [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
+        if (supportedExts.count(ext))
+        {
+            foundAudioFilePaths.push_back(entry.path().string());
+            foundFilesCount++;
+        }
+    }
+
+    return foundFilesCount;
+}
+
 void UIComponents_Files::button_AddMultipleFiles()
 {
     if (ImGui::Button("Add Multiple Files..."))
@@ -127,23 +157,8 @@ void UIComponents_Files::button_AddFolder()
         nfdresult_t result = NFD::PickFolder(pickedPath, nullptr, parentWindow);
         if (result == NFD_OKAY)
         {
-            static const std::unordered_set<std::string> supportedExts = {
-                ".wav", ".flac", ".mp3", ".ogg", ".aiff", ".caf"
-            };
-
             std::vector<std::string> foundPaths;
-            std::error_code ec;
-            for (const auto& entry : std::filesystem::recursive_directory_iterator(pickedPath, ec))
-            {
-                if (!entry.is_regular_file(ec))
-                    continue;
-                std::string ext = entry.path().extension().string();
-                // Lowercase extension for case-insensitive comparison
-                std::transform(ext.begin(), ext.end(), ext.begin(),
-                    [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
-                if (supportedExts.count(ext))
-                    foundPaths.push_back(entry.path().string());
-            }
+            _findAudioFiles(pickedPath, foundPaths, true);
 
             _ingestPaths(foundPaths);
             LOG_INFOF("Files", "Added %d audio files from specified folder (%s).", foundPaths.size(), pickedPath);
