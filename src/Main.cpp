@@ -86,6 +86,8 @@ void ManifoldApp::onImGuiDisplay()
             ImGui::BeginGroup();
             auto uiSwitchButton = [this, faFont](const char* label, UIState newState, const char* tooltip)
             {
+                const ImVec2 buttonPos = ImGui::GetCursorPos();  // Store the current position for drawing indicator later 
+
                 if (faFont) ImGui::PushFont(faFont);
                 const bool useInactiveColor = (this->uiState != newState);  // NOTE: Store the condition flag in a variable to avoid Push/Pop mismatch
                 if (useInactiveColor) ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(255, 255, 255, 127));
@@ -101,6 +103,17 @@ void ManifoldApp::onImGuiDisplay()
 
                 if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal | ImGuiHoveredFlags_NoSharedDelay))
                     ImGui::SetTooltip("%s", tooltip);
+
+                // Draw indicator of current active view (Visual Studio Code style)
+                if (this->uiState == newState)
+                {
+                    ImDrawList* drawList = ImGui::GetWindowDrawList();
+
+                    const float indicatorRectWidth  = 6.0f;
+                    const ImVec2 indicatorRectBegin = ImVec2(0, buttonPos.y);
+                    const ImVec2 indicatorRectEnd   = ImVec2(0 + indicatorRectWidth, buttonPos.y + 40.0f);
+                    drawList->AddRectFilled(indicatorRectBegin, indicatorRectEnd, IM_COL32(0x60, 0xa0, 0xf3, 0xff));  // Indicator color: #aaaaaa
+                }
 
                 ImGui::Dummy(ImVec2(0, 4));
             };
