@@ -531,7 +531,6 @@ void ManifoldApp::UI_Tasks()
                             }
                             else
                             {
-#ifdef ENABLE_NEW_LAYOUT_FOR_REPORT
                                 // Summarize the counts of passed / failed / info reports
                                 int passed = 0;
                                 int failed = 0;
@@ -672,44 +671,6 @@ void ManifoldApp::UI_Tasks()
                                         ImGui::EndTooltip();
                                     }
                                 }
-
-#else
-                                for (size_t bi = 0; bi < rec->reports.size(); ++bi)
-                                {
-                                    const auto& rpt = rec->reports[bi];
-                                    const auto  st  = rpt->status();
-
-                                    ImGui::PushID(static_cast<int>(bi));
-
-                                    // Coloured badge: PASS (green) / FAIL (red) / INFO (blue)
-                                    if (st == Report::Status::Info)
-                                        ImGui::TextColored({0.40f, 0.70f, 1.0f, 1.0f}, "\xe2\x97\x8f INFO");
-                                    else if (st == Report::Status::Pass)
-                                        ImGui::TextColored({0.40f, 1.00f, 0.40f, 1.0f}, "\xe2\x97\x8f PASS");
-                                    else
-                                        ImGui::TextColored({1.00f, 0.40f, 0.40f, 1.0f}, "\xe2\x97\x8f FAIL");
-
-                                    // Tooltip: full summary()
-                                    if (ImGui::IsItemHovered(
-                                            ImGuiHoveredFlags_DelayShort |
-                                            ImGuiHoveredFlags_NoSharedDelay))
-                                    {
-                                        ImGui::BeginTooltip();
-                                        ImGui::TextDisabled("%s", rpt->nodeId().c_str());
-                                        ImGui::Separator();
-                                        ImGui::PushTextWrapPos(480.0f);
-                                        ImGui::TextUnformatted(rpt->summary().c_str());
-                                        ImGui::PopTextWrapPos();
-                                        ImGui::EndTooltip();
-                                    }
-
-                                    // Horizontal gap between badges
-                                    if (bi + 1 < rec->reports.size())
-                                        ImGui::SameLine(0.0f, 8.0f);
-
-                                    ImGui::PopID();
-                                }
-#endif
                             }
                         }
 
