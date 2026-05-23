@@ -4,6 +4,8 @@
 #include "ImGuiNotify_MOD.hpp"
 #include "utils/TableMinColumnWidth.hpp"
 
+#include "../fonts/IconFontAwesome5_Unique.h"    // For "✗" mark
+
 #include <chrono>
 #include <cstdio>
 #include <ctime>
@@ -554,7 +556,30 @@ void ManifoldApp::UI_Tasks()
                             }
                             if (!currentReport) continue;
 
-                            ImGui::Text("%s", currentReport->summary().c_str());
+                            // Cell text: prefix symbol + value, coloured by status
+                            const auto   st     = currentReport->status();
+                            const char*  prefix = (st == Report::Status::Pass) ? "\xe2\x9c\x93 "    // ✓
+                                                : (st == Report::Status::Fail) ? ICON_FA_TIMES " "  // ✗
+                                                : "";
+                            const ImVec4 col = (st == Report::Status::Pass)
+                                                   ? ImVec4{0.40f, 1.00f, 0.40f, 1.0f}
+                                                   : (st == Report::Status::Fail)
+                                                         ? ImVec4{1.00f, 0.40f, 0.40f, 1.0f}
+                                                         : ImGui::GetStyle().Colors[ImGuiCol_Text];
+                            ImGui::TextColored(col, "%s%s", prefix, currentReport->summary().c_str());
+
+                            // Tooltip: full details()
+                            if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayShort |
+                                                     ImGuiHoveredFlags_NoSharedDelay))
+                            {
+                                ImGui::BeginTooltip();
+                                ImGui::TextDisabled("%s", currentReport->nodeId().c_str());
+                                ImGui::Separator();
+                                ImGui::PushTextWrapPos(480.0f);
+                                ImGui::TextUnformatted(currentReport->details().c_str());
+                                ImGui::PopTextWrapPos();
+                                ImGui::EndTooltip();
+                            }
                         }
 
                         ImGui::PopID();
