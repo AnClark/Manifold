@@ -90,8 +90,7 @@ struct ProcessingRun
     std::vector<std::shared_ptr<FileRunRecord>> records;
 
     std::set<std::string> reportSrcsPopulated;
-    std::vector<std::string_view> reportSrcIds;
-    std::vector<std::string_view> reportSrcNames;
+    std::vector<const NodeDescriptor*> reportSrcDefs;
 
     /// Set from the UI thread (Cancel button); read by worker thread via FileRunRecord::runCancelToken.
     std::atomic<bool> cancelRequested{false};
@@ -145,26 +144,18 @@ struct ProcessingRun
         // Then, copy all entries to reportSrcIds for quick, internal access on UI side.
         // At the same time, get their display names and store in reportSrcNames.
         // NOTE: Only update if reportSrcsPopulated changed.
-        if (reportSrcsPopulated.size() != reportSrcIds.size())
+        if (reportSrcsPopulated.size() != reportSrcDefs.size())
         {
             // Cleanup first
-            reportSrcIds.clear();
-            reportSrcNames.clear();
+            reportSrcDefs.clear();
 
             const NodeRegistry& reg = NodeRegistry::getInstance();
             for (const auto& id : reportSrcsPopulated)
             {
-                reportSrcIds.push_back(id);
-
                 const auto nodeEntry = reg.findById(id);
                 if (nodeEntry)
-                    reportSrcNames.push_back(nodeEntry->displayName);
-                else
-                    reportSrcNames.push_back(id);
+                    reportSrcDefs.push_back(nodeEntry);
             }            
         }
-
-
-
     }
 };

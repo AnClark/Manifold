@@ -446,15 +446,15 @@ void ManifoldApp::UI_Tasks()
             {
                 ImGui::TableSetupScrollFreeze(0, 1);
                 // TODO: Store tasksFilesColumnWidths in vector rather than array
-                ImGui::TableSetupColumn("File",         ImGuiTableColumnFlags_WidthFixed, preferences.uiPref.tasksFilesColumnWidths[0]);
-                ImGui::TableSetupColumn("Status",       ImGuiTableColumnFlags_WidthFixed, preferences.uiPref.tasksFilesColumnWidths[1]);
-                ImGui::TableSetupColumn("Info",         ImGuiTableColumnFlags_WidthFixed, preferences.uiPref.tasksFilesColumnWidths[2]);
+                ImGui::TableSetupColumn("File",         ImGuiTableColumnFlags_WidthFixed, preferences.uiPref.tasksFilesColumnWidths["file"]);
+                ImGui::TableSetupColumn("Status",       ImGuiTableColumnFlags_WidthFixed, preferences.uiPref.tasksFilesColumnWidths["status"]);
+                ImGui::TableSetupColumn("Info",         ImGuiTableColumnFlags_WidthFixed, preferences.uiPref.tasksFilesColumnWidths["info"]);
                 if (s_reportColumns)
                 {
                     // NOTE: The content of run->reportSrcIds is synced with run->reportSrcsPopulated
-                    for (const auto& reportSrc : run->reportSrcNames)
+                    for (const auto& reportSrc : run->reportSrcDefs)
                     {
-                        ImGui::TableSetupColumn(reportSrc.data(), ImGuiTableColumnFlags_WidthFixed, 200.0f);
+                        ImGui::TableSetupColumn(reportSrc->displayName.c_str(), ImGuiTableColumnFlags_WidthFixed, preferences.uiPref.tasksFilesColumnWidths[reportSrc->id]);
                     }
                 }
                 ImGui::TableHeadersRow();
@@ -550,7 +550,7 @@ void ManifoldApp::UI_Tasks()
                             std::shared_ptr<Report> currentReport = nullptr;
                             for (const auto& report : record->reports)
                             {
-                                if (report->nodeId() != run->reportSrcIds[i])
+                                if (report->nodeId() != run->reportSrcDefs[i]->id)
                                     continue;
                                 currentReport = report;
                             }
@@ -580,6 +580,9 @@ void ManifoldApp::UI_Tasks()
                                 ImGui::PopTextWrapPos();
                                 ImGui::EndTooltip();
                             }
+
+                            // Save custom column width of this column
+                            preferences.uiPref.tasksFilesColumnWidths[currentReport->nodeId()] = ImGui::GetCurrentTable()->Columns[s_basicColumns + i].WidthGiven;
                         }
 
                         ImGui::PopID();
@@ -587,9 +590,10 @@ void ManifoldApp::UI_Tasks()
                 }
                 clipper.End();
 
-                // Save custom column widths
-                for (uint8_t i = 0; i < 4; i++)
-                    preferences.uiPref.tasksFilesColumnWidths[i] = ImGui::GetCurrentTable()->Columns[i].WidthGiven;
+                // Save custom column widths of the 3 basic columns
+                preferences.uiPref.tasksFilesColumnWidths["file"]   = ImGui::GetCurrentTable()->Columns[0].WidthGiven;
+                preferences.uiPref.tasksFilesColumnWidths["status"] = ImGui::GetCurrentTable()->Columns[1].WidthGiven;
+                preferences.uiPref.tasksFilesColumnWidths["info"]   = ImGui::GetCurrentTable()->Columns[2].WidthGiven;
 
                 ImGui::EndTable();
             }
