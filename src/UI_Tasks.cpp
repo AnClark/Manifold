@@ -435,13 +435,26 @@ void ManifoldApp::UI_Tasks()
                 ImGuiTableFlags_ScrollX            |
                 ImGuiTableFlags_ScrollY;
 
-            if (ImGui::BeginTable("Tasks_Files", 4, tblFlags))
+            // Populate actual column count (basic columns + report columns)
+            run->populateReportSources();
+            constexpr int s_basicColumns  = 3;
+            const int     s_reportColumns = run->reportSrcsPopulated.size();
+
+            if (ImGui::BeginTable("Tasks_Files", s_basicColumns + s_reportColumns, tblFlags))
             {
                 ImGui::TableSetupScrollFreeze(0, 1);
+                // TODO: Store tasksFilesColumnWidths in vector rather than array
                 ImGui::TableSetupColumn("File",         ImGuiTableColumnFlags_WidthFixed, preferences.uiPref.tasksFilesColumnWidths[0]);
                 ImGui::TableSetupColumn("Status",       ImGuiTableColumnFlags_WidthFixed, preferences.uiPref.tasksFilesColumnWidths[1]);
                 ImGui::TableSetupColumn("Info",         ImGuiTableColumnFlags_WidthFixed, preferences.uiPref.tasksFilesColumnWidths[2]);
-                ImGui::TableSetupColumn("Reports",      ImGuiTableColumnFlags_WidthFixed, preferences.uiPref.tasksFilesColumnWidths[3]);
+                if (s_reportColumns)
+                {
+                    // NOTE: The content of run->reportSrcIds is synced with run->reportSrcsPopulated
+                    for (const auto& reportSrc : run->reportSrcNames)
+                    {
+                        ImGui::TableSetupColumn(reportSrc.data(), ImGuiTableColumnFlags_WidthFixed, 200.0f);
+                    }
+                }
                 ImGui::TableHeadersRow();
 
                 ImGuiListClipper clipper;
@@ -527,157 +540,21 @@ void ManifoldApp::UI_Tasks()
                             }
                         }
 
-                        // Col 3 — Report badges
-                        ImGui::TableSetColumnIndex(3);
+                        // Col 3+ — Report view
+                        for (int i = 0; i < s_reportColumns; i++)
                         {
-                            std::scoped_lock<std::mutex> rlock(record->progressMutex);
-                            if (record->reports.empty())
+                            ImGui::TableSetColumnIndex(s_basicColumns + i);
+
+                            std::shared_ptr<Report> currentReport = nullptr;
+                            for (const auto& report : record->reports)
                             {
-                                ImGui::TextDisabled("\xe2\x80\x94"); // em dash
+                                if (report->nodeId() != run->reportSrcIds[i])
+                                    continue;
+                                currentReport = report;
                             }
-                            else
-                            {
-                                // Summarize the counts of passed / failed / info reports
-                                int passed = 0;
-                                int failed = 0;
-                                int info   = 0;
-                                for (size_t bi = 0; bi < record->reports.size(); ++bi)
-                                {
-                                    const auto& rpt = record->reports[bi];
-                                    switch (rpt->status())
-                                    {
-                                        case Report::Status::Pass: ++passed; break;
-                                        case Report::Status::Fail: ++failed; break;
-                                        case Report::Status::Info: ++info;   break;
-                                    }
-                                }
+                            if (!currentReport) continue;
 
-                                if (passed > 0)
-                                {
-                                    {
-                                        ImGui::BeginGroup();
-
-                                        {
-                                            ImGui::BeginGroup();
-                                            ImGui::Dummy(ImVec2(0, 0.5f));
-                                            ImGui::PushFont(NULL, 12.0f);
-                                            ImGui::TextColored({0.40f, 1.00f, 0.40f, 1.0f}, "\xe2\x97\x8f");
-                                            ImGui::PopFont();
-                                            ImGui::EndGroup();
-                                        }
-                                        ImGui::SameLine();
-                                        ImGui::TextColored({0.40f, 1.00f, 0.40f, 1.0f}, "PASS: %d", passed);
-
-                                        ImGui::EndGroup();
-                                    }
-
-                                    if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayShort | ImGuiHoveredFlags_NoSharedDelay) && ImGui::BeginTooltip())
-                                    {
-                                        ImGui::TextDisabled("Passed Reports");
-                                        ImGui::Separator();
-                                        for (const auto& rpt : record->reports)
-                                        {
-                                            if (!rpt->passed()) continue;
-
-                                            ImGui::BulletText("%s:", rpt->nodeId().c_str());
-                                            ImGui::Indent();
-                                            ImGui::PushTextWrapPos(480.0f);
-                                            ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(200, 200, 200, 255));
-                                            ImGui::TextUnformatted(rpt->summary().c_str());
-                                            ImGui::PopStyleColor();
-                                            ImGui::PopTextWrapPos();
-                                            ImGui::Unindent();
-                                        }
-                                        ImGui::EndTooltip();
-                                    }
-                                }
-                                if (failed > 0)
-                                {
-                                    if (passed > 0)
-                                        ImGui::SameLine(0.0f, 10.0f);
-
-                                    {
-                                        ImGui::BeginGroup();
-
-                                        {
-                                            ImGui::BeginGroup();
-                                            ImGui::Dummy(ImVec2(0, 0.5f));
-                                            ImGui::PushFont(NULL, 12.0f);
-                                            ImGui::TextColored({1.00f, 0.40f, 0.40f, 1.0f}, "\xe2\x97\x8f");
-                                            ImGui::PopFont();
-                                            ImGui::EndGroup();
-                                        }
-                                        ImGui::SameLine();
-                                        ImGui::TextColored({1.00f, 0.40f, 0.40f, 1.0f}, "FAIL: %d", failed);
-
-                                        ImGui::EndGroup();
-                                    }
-
-                                    if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayShort | ImGuiHoveredFlags_NoSharedDelay) && ImGui::BeginTooltip())
-                                    {
-                                        ImGui::TextDisabled("Failed Reports");
-                                        ImGui::Separator();
-                                        for (const auto& rpt : record->reports)
-                                        {
-                                            if (rpt->status() != Report::Status::Fail) continue;
-
-                                            ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(0xe7, 0xb8, 0xa9, 255)); // Color #e7b8a9
-                                            ImGui::BulletText("%s:", rpt->nodeId().c_str());
-                                            ImGui::PopStyleColor();
-                                            ImGui::Indent();
-                                            ImGui::PushTextWrapPos(480.0f);
-                                            ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(200, 200, 200, 255));
-                                            ImGui::TextUnformatted(rpt->summary().c_str());
-                                            ImGui::PopStyleColor();
-                                            ImGui::PopTextWrapPos();
-                                            ImGui::Unindent();
-                                        }
-                                        ImGui::EndTooltip();
-                                    }
-                                }
-                                if (info > 0)
-                                {
-                                    if (passed > 0 || failed > 0)
-                                        ImGui::SameLine(0.0f, 10.0f);
-
-                                    {
-                                        ImGui::BeginGroup();
-
-                                        {
-                                            ImGui::BeginGroup();
-                                            ImGui::Dummy(ImVec2(0, 0.5f));
-                                            ImGui::PushFont(NULL, 12.0f);
-                                            ImGui::TextColored({0.40f, 0.70f, 1.0f, 1.0f}, "\xe2\x97\x8f");
-                                            ImGui::PopFont();
-                                            ImGui::EndGroup();
-                                        }
-                                        ImGui::SameLine();
-                                        ImGui::TextColored({0.40f, 0.70f, 1.0f, 1.0f}, "INFO: %d", info);
-
-                                        ImGui::EndGroup();
-                                    }
-
-                                    if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayShort | ImGuiHoveredFlags_NoSharedDelay) && ImGui::BeginTooltip())
-                                    {
-                                        ImGui::TextDisabled("Informational Reports");
-                                        ImGui::Separator();
-                                        for (const auto& rpt : record->reports)
-                                        {
-                                            if (rpt->status() != Report::Status::Info) continue;
-
-                                            ImGui::BulletText("%s:", rpt->nodeId().c_str());
-                                            ImGui::Indent();
-                                            ImGui::PushTextWrapPos(480.0f);
-                                            ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(200, 200, 200, 255));
-                                            ImGui::TextUnformatted(rpt->summary().c_str());
-                                            ImGui::PopStyleColor();
-                                            ImGui::PopTextWrapPos();
-                                            ImGui::Unindent();
-                                        }
-                                        ImGui::EndTooltip();
-                                    }
-                                }
-                            }
+                            ImGui::Text("%s", currentReport->summary().c_str());
                         }
 
                         ImGui::PopID();

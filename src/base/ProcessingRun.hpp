@@ -2,6 +2,7 @@
 
 #include "Report.hpp"
 #include "SndFileInfo.hpp"
+#include "pipeline/NodeRegistry.hpp"
 
 #include <atomic>
 #include <chrono>
@@ -9,6 +10,7 @@
 #include <memory>
 #include <mutex>
 #include <string>
+#include <set>
 #include <vector>
 
 using RunTimePoint = std::chrono::system_clock::time_point;
@@ -87,6 +89,10 @@ struct ProcessingRun
 
     std::vector<std::shared_ptr<FileRunRecord>> records;
 
+    std::set<std::string> reportSrcsPopulated;
+    std::vector<std::string_view> reportSrcIds;
+    std::vector<std::string_view> reportSrcNames;
+
     /// Set from the UI thread (Cancel button); read by worker thread via FileRunRecord::runCancelToken.
     std::atomic<bool> cancelRequested{false};
 
@@ -122,5 +128,43 @@ struct ProcessingRun
                           + countByStatus(FileRunRecord::Status::Error)
                           + countByStatus(FileRunRecord::Status::Cancelled);
         return static_cast<float>(done) / static_cast<float>(records.size());
+    }
+
+    void populateReportSources()
+    {
+        // Avoid executing too repeatedly
+        if (isComplete() && !reportSrcsPopulated.empty())
+            return;
+
+        // Find all report sources (nodeIds)
+        // Store new entries in a std::set to eliminate duplicated entries
+        for (const auto& rec : records)
+            for (const auto& report : rec->reports)
+                reportSrcsPopulated.insert(report->nodeId());
+        
+        // Then, copy all entries to reportSrcIds for quick, internal access on UI side.
+        // At the same time, get their display names and store in reportSrcNames.
+        // NOTE: Only update if reportSrcsPopulated changed.
+        if (reportSrcsPopulated.size() != reportSrcIds.size())
+        {
+            // Cleanup first
+            reportSrcIds.clear();
+            reportSrcNames.clear();
+
+            const NodeRegistry& reg = NodeRegistry::getInstance();
+            for (const auto& id : reportSrcsPopulated)
+            {
+                reportSrcIds.push_back(id);
+
+                const auto nodeEntry = reg.findById(id);
+                if (nodeEntry)
+                    reportSrcNames.push_back(nodeEntry->displayName);
+                else
+                    reportSrcNames.push_back(id);
+            }            
+        }
+
+
+
     }
 };
