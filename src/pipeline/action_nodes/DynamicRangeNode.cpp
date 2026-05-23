@@ -31,10 +31,18 @@ REGISTER_NODE(
     NodeRole::StreamProcessor);
 
 // --------------------------------------------------------------------------
-// DynamicRangeReport::summary()
+// DynamicRangeReport::summary() / details()
 // --------------------------------------------------------------------------
 
 std::string DynamicRangeReport::summary() const
+{
+    if (!hasResult()) return "\xe2\x80\x94"; // em dash
+    char buf[48];
+    std::snprintf(buf, sizeof(buf), "DR%.0f  /  CF %.1f dB", drValue, crestFactorDb);
+    return buf;
+}
+
+std::string DynamicRangeReport::details() const
 {
     if (!hasResult())
         return "Not enough audio data to compute DR (< 1 complete block / < 3 s).";

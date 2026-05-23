@@ -28,8 +28,16 @@ public:
     /** @brief ID of the node that produced this report (matches Node::id()). */
     virtual std::string nodeId() const = 0;
 
-    /** @brief Single-line human-readable summary for compact display. */
+    /** @brief Compact text shown directly in the report table cell. */
     virtual std::string summary() const = 0;
+
+    /**
+     * @brief Multi-line detail text shown in the hover tooltip.
+     *
+     * The default implementation forwards to summary(), so subclasses that
+     * do not need a separate detail view do not have to override this method.
+     */
+    virtual std::string details() const { return summary(); }
 
     /**
      * @brief Outcome status for badge display.
