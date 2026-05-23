@@ -91,6 +91,14 @@ public:
      */
     std::vector<std::string> listCategories() const;
 
+    /**
+     * @brief Looks up the descriptor for the node identified by @p id.
+     * @returns Pointer to the descriptor, or nullptr if @p id is not registered.
+     *
+     * The returned pointer remains valid as long as the registry is not modified.
+     */
+    const NodeDescriptor* findById(std::string_view id) const;
+
 private:
     std::vector<NodeDescriptor>              descriptors_;
     std::unordered_map<std::string, Factory> factories_;
