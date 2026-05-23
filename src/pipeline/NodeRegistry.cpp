@@ -54,3 +54,11 @@ std::vector<std::string> NodeRegistry::listCategories() const
     }
     return cats;
 }
+
+const NodeDescriptor* NodeRegistry::findById(std::string_view id) const
+{
+    for (const auto& d : descriptors_)
+        if (d.id == id)
+            return &d;
+    return nullptr;
+}

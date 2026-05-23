@@ -57,6 +57,7 @@ struct ClippingDetectionReport : public Report {
 
     std::string nodeId()  const override { return "clipping_detection"; }
     std::string summary() const override;
+    std::string details() const override;
     Status status() const override {
         return clippedSamples <= maxAllowedClipped ? Status::Pass : Status::Fail;
     }

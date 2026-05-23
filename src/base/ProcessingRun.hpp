@@ -2,6 +2,7 @@
 
 #include "Report.hpp"
 #include "SndFileInfo.hpp"
+#include "pipeline/NodeRegistry.hpp"
 
 #include <atomic>
 #include <chrono>
@@ -9,6 +10,7 @@
 #include <memory>
 #include <mutex>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 using RunTimePoint = std::chrono::system_clock::time_point;
@@ -87,6 +89,30 @@ struct ProcessingRun
 
     std::vector<std::shared_ptr<FileRunRecord>> records;
 
+    /// Describes one column in the per-run report table.
+    /// There is one ReportColDef per occurrence of a nodeId — so if two
+    /// LoudnessComplianceNodes are in the pipeline, there will be two entries
+    /// for "loudness_compliance" with occurrenceIdx 0 and 1 respectively.
+    struct ReportColDef {
+        const NodeDescriptor* nodeDef;
+        int occurrenceIdx;    ///< 0-based index within same nodeId
+        int totalOccurrences; ///< total columns with this nodeId
+
+        /// Column header: appends " #N" (1-based) when totalOccurrences > 1.
+        std::string header() const {
+            if (totalOccurrences <= 1) return nodeDef->displayName;
+            return nodeDef->displayName + " #" + std::to_string(occurrenceIdx + 1);
+        }
+
+        /// Unique key for persisting column width in preferences.
+        std::string prefKey() const {
+            return nodeDef->id + "#" + std::to_string(occurrenceIdx);
+        }
+    };
+
+    std::unordered_map<std::string, int> reportSrcsPopulated; ///< nodeId → per-file occurrence count
+    std::vector<ReportColDef>            reportColDefs;        ///< flat column list (one entry per occurrence)
+
     /// Set from the UI thread (Cancel button); read by worker thread via FileRunRecord::runCancelToken.
     std::atomic<bool> cancelRequested{false};
 
@@ -122,5 +148,39 @@ struct ProcessingRun
                           + countByStatus(FileRunRecord::Status::Error)
                           + countByStatus(FileRunRecord::Status::Cancelled);
         return static_cast<float>(done) / static_cast<float>(records.size());
+    }
+
+    void populateReportSources()
+    {
+        // For completed runs, only compute once.
+        if (isComplete() && !reportSrcsPopulated.empty())
+            return;
+
+        // Determine the per-file occurrence count by scanning the first record
+        // that already has reports.  All records share the same pipeline, so
+        // any one completed record is representative.
+        std::unordered_map<std::string, int> freshCounts;
+        for (const auto& rec : records)
+        {
+            std::scoped_lock<std::mutex> lk(rec->progressMutex);
+            if (rec->reports.empty()) continue;
+            for (const auto& rpt : rec->reports)
+                freshCounts[rpt->nodeId()]++;
+            break; // one record is sufficient
+        }
+
+        if (freshCounts == reportSrcsPopulated) return; // nothing changed
+        reportSrcsPopulated = freshCounts;
+
+        // Rebuild the flat column list: N entries for a nodeId that appears N times.
+        reportColDefs.clear();
+        const NodeRegistry& reg = NodeRegistry::getInstance();
+        for (const auto& [id, totalCount] : reportSrcsPopulated)
+        {
+            const auto* nodeDef = reg.findById(id);
+            if (!nodeDef) continue;
+            for (int k = 0; k < totalCount; ++k)
+                reportColDefs.push_back({nodeDef, k, totalCount});
+        }
     }
 };

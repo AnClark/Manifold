@@ -35,17 +35,25 @@ REGISTER_NODE(
     NodeRole::StreamProcessor);
 
 // --------------------------------------------------------------------------
-// ClippingDetectionReport::summary()
-// --------------------------------------------------------------------------
-//
-// Produces a single-line human-readable summary for compact display in the
-// UI report list.  Three cases:
-//   1. totalSamples == 0 — Offline open failed or the stream was empty
-//   2. clippedSamples == 0 — scan completed with no clipping found → PASS
-//   3. clipped samples present — show count, ppm rate, peak level, and verdict
+// ClippingDetectionReport::summary() / details()
 // --------------------------------------------------------------------------
 
 std::string ClippingDetectionReport::summary() const
+{
+    if (totalSamples == 0) return "\xe2\x80\x94"; // em dash
+    if (clippedSamples == 0) return "0 clips";
+    char buf[32];
+    std::snprintf(buf, sizeof(buf), "%lld clips",
+                  static_cast<long long>(clippedSamples));
+    return buf;
+}
+
+// Full detail for hover tooltip.
+// Three cases:
+//   1. totalSamples == 0 — offline open failed or stream was empty
+//   2. clippedSamples == 0 — scan completed with no clipping found → PASS
+//   3. clipped samples present — count, ppm rate, peak level
+std::string ClippingDetectionReport::details() const
 {
     char buf[200];
 
@@ -56,15 +64,14 @@ std::string ClippingDetectionReport::summary() const
 
     if (clippedSamples == 0) {
         std::snprintf(buf, sizeof(buf),
-            "No clipping detected (threshold %.1f dBFS)  [PASS]",
+            "No clipping detected (threshold %.1f dBFS).",
             thresholdDbfs);
     } else {
         std::snprintf(buf, sizeof(buf),
-            "%lld clipped samples (%.2f ppm)  |  Peak: %.2f dBFS  [%s]",
+            "%lld clipped samples (%.2f ppm)  |  Peak: %.2f dBFS",
             static_cast<long long>(clippedSamples),
             clippingRatePpm,
-            maxSampleDbfs,
-            passed() ? "PASS" : "FAIL");
+            maxSampleDbfs);
     }
     return buf;
 }

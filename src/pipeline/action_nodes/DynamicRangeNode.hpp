@@ -44,6 +44,7 @@ struct DynamicRangeReport : public Report {
 
     std::string nodeId()  const override { return "dynamic_range"; }
     std::string summary() const override;
+    std::string details() const override;
     Status status() const override { return Status::Info; }
 
     // passed() uses the base-class default (true) — DR is an informational metric,

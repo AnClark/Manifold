@@ -26,18 +26,26 @@ REGISTER_NODE(
     NodeRole::StreamProcessor);
 
 // --------------------------------------------------------------------------
-// LoudnessComplianceReport::summary()
+// LoudnessComplianceReport::summary() / details()
 // --------------------------------------------------------------------------
 
 std::string LoudnessComplianceReport::summary() const
 {
+    if (!hasMeasurement) return "\xe2\x80\x94"; // em dash
+    char buf[32];
+    std::snprintf(buf, sizeof(buf), "%.1f LUFS", measuredLufs);
+    return buf;
+}
+
+std::string LoudnessComplianceReport::details() const
+{
     if (!hasMeasurement)
-        return "No measurement available — ensure the correct backend is selected. "
+        return "No measurement available \xe2\x80\x94 ensure the correct backend is selected.\n"
                "Sideband requires an upstream LoudnessAnalyzerNode or pre-analyzed files.";
 
     char buf[160];
     std::snprintf(buf, sizeof(buf),
-        "LUFS: %.1f (target %.1f +/-%.1f) [%s]  |  TP: %.1f dBFS [%s]",
+        "LUFS: %.1f  (target %.1f \xc2\xb1%.1f)  [%s]\nTP: %.1f dBFS  [%s]",
         measuredLufs,
         targetLufs, lufsTolerance, lufsPass ? "PASS" : "FAIL",
         measuredPeakDbfs,         peakPass ? "PASS" : "FAIL");
