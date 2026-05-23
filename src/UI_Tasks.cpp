@@ -440,7 +440,7 @@ void ManifoldApp::UI_Tasks()
             // Populate actual column count (basic columns + report columns)
             run->populateReportSources();
             constexpr int s_basicColumns  = 3;
-            const int     s_reportColumns = run->reportSrcsPopulated.size();
+            const int s_reportColumns = static_cast<int>(run->reportColDefs.size());
 
             if (ImGui::BeginTable("Tasks_Files", s_basicColumns + s_reportColumns, tblFlags))
             {
@@ -451,10 +451,10 @@ void ManifoldApp::UI_Tasks()
                 ImGui::TableSetupColumn("Info",         ImGuiTableColumnFlags_WidthFixed, preferences.uiPref.tasksFilesColumnWidths["info"]);
                 if (s_reportColumns)
                 {
-                    // NOTE: The content of run->reportSrcIds is synced with run->reportSrcsPopulated
-                    for (const auto& reportSrc : run->reportSrcDefs)
+                    for (const auto& col : run->reportColDefs)
                     {
-                        ImGui::TableSetupColumn(reportSrc->displayName.c_str(), ImGuiTableColumnFlags_WidthFixed, preferences.uiPref.tasksFilesColumnWidths[reportSrc->id]);
+                        ImGui::TableSetupColumn(col.header().c_str(), ImGuiTableColumnFlags_WidthFixed,
+                                                preferences.uiPref.tasksFilesColumnWidths[col.prefKey()]);
                     }
                 }
                 ImGui::TableHeadersRow();
@@ -547,12 +547,17 @@ void ManifoldApp::UI_Tasks()
                         {
                             ImGui::TableSetColumnIndex(s_basicColumns + i);
 
+                            // Find the occurrenceIdx-th report with the matching nodeId
+                            const auto& colDef = run->reportColDefs[i];
                             std::shared_ptr<Report> currentReport = nullptr;
-                            for (const auto& report : record->reports)
                             {
-                                if (report->nodeId() != run->reportSrcDefs[i]->id)
-                                    continue;
-                                currentReport = report;
+                                int occ = 0;
+                                for (const auto& report : record->reports)
+                                {
+                                    if (report->nodeId() != colDef.nodeDef->id) continue;
+                                    if (occ == colDef.occurrenceIdx) { currentReport = report; break; }
+                                    ++occ;
+                                }
                             }
                             if (!currentReport) continue;
 
@@ -582,7 +587,8 @@ void ManifoldApp::UI_Tasks()
                             }
 
                             // Save custom column width of this column
-                            preferences.uiPref.tasksFilesColumnWidths[currentReport->nodeId()] = ImGui::GetCurrentTable()->Columns[s_basicColumns + i].WidthGiven;
+                            preferences.uiPref.tasksFilesColumnWidths[run->reportColDefs[i].prefKey()] =
+                                ImGui::GetCurrentTable()->Columns[s_basicColumns + i].WidthGiven;
                         }
 
                         ImGui::PopID();
