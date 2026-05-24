@@ -329,10 +329,12 @@ private:
             if (lufs.has_value() && peak.has_value()) {
                 fillReport(*report, *lufs, *peak);
             } else {
-                LOG_WARNF("LoudnessCompliance",
+                LOG_ERRORF("LoudnessCompliance",
                     "File '%s': loudness sideband not available — "
                     "re-analyze audio file in Files view, or use Inline / Offline ebur128 instead.",
                     ctx_.sourcePath.c_str());
+                throw std::runtime_error("[LoudnessCompliance] Loudness sideband not available.\n"
+                    "Re-analyze audio file in Files view, or use Inline / Offline ebur128 instead.");
             }
             break;
         }
