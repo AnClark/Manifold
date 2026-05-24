@@ -4,7 +4,7 @@
 #include <imgui.h>
 #include "ImGuiNotify_MOD.hpp"
 
-void UIComponents_Files::button_PlaySelectedFile()
+void UIComponents_Files::button_PlaySelectedFile(bool runAsCommand)
 {
     auto& audioPlayer = app->audioPlayer;
     auto& lastClickedIndex = app->lastClickedIndex;
@@ -12,7 +12,7 @@ void UIComponents_Files::button_PlaySelectedFile()
     auto& currentPlayingFile = app->currentPlayingFile;
 
     ImGui::BeginDisabled(lastClickedIndex <= -1 || !sndFileList[lastClickedIndex]->errorMsg.empty());
-    if (ImGui::Button("Play selected file"))
+    if (runAsCommand || ImGui::Button("Play selected file"))    // NOTE: Evaluate runAsCommand first, to avoid unexpected flashing in list view.
     {
         if (lastClickedIndex >= 0 && lastClickedIndex < sndFileList.size())
         {

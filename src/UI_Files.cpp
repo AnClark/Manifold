@@ -174,7 +174,8 @@ void ManifoldApp::UI_Files()
                     ImGui::TableSetColumnIndex(0);
                     ImGuiSelectableFlags selectableFlags = 
                         ImGuiSelectableFlags_SpanAllColumns |    // 选择跨越所有列
-                        ImGuiSelectableFlags_AllowOverlap;       // 允许其他项重叠
+                        ImGuiSelectableFlags_AllowOverlap   |    // 允许其他项重叠
+                        ImGuiSelectableFlags_AllowDoubleClick;
                     
                     ImGui::PushID(reinterpret_cast<uintptr_t>(sndFileList[i].get()));
 
@@ -260,6 +261,18 @@ void ManifoldApp::UI_Files()
                             ImGui::Text("%s", sndFileList[i]->filePath.c_str());
                             ImGui::EndTooltip();
                         }
+                    }
+
+                    // Double click: Play selected file.
+                    // NOTE: IsItemHovered() is required here to gate the action to the hovered row only.
+                    //       IsMouseDoubleClicked() returns true for the entire frame, so without the
+                    //       hover check every row in the list would trigger playback on the same frame,
+                    //       causing loadAudioFile()+initDevice() to be called N times and stuttering.
+                    if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
+                    {
+                        const bool notPlayable = lastClickedIndex <= -1 || !sndFileList[lastClickedIndex]->errorMsg.empty();
+                        if (!notPlayable)
+                            uiFiles.button_PlaySelectedFile(true);  // param: runAsCommand = true
                     }
 
                     ImGui::PopID();

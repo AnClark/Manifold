@@ -12,7 +12,7 @@ public:
     UIComponents_Files(ManifoldApp* app_) : app(app_)
     {}
 
-    void button_PlaySelectedFile();
+    void button_PlaySelectedFile(bool runAsCommand = false);
     void button_PauseOrResume();
     void button_StopPlaying();
     void subroutine_ReportOnAudioPlayerError();
