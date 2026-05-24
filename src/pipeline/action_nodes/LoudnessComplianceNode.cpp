@@ -164,7 +164,7 @@ public:
                 LOG_ERRORF("LoudnessCompliance",
                     "ebur128_init failed — cannot proceed with InlineEbur128 measurement.");
                 throw std::runtime_error(
-                    "[LoudnessCompliance] ebur128_init failed for InlineEbur128 mode.");
+                    "[LoudnessCompliance] Inline Measument: Failed for measuring.");
             }
         }
     }
@@ -226,7 +226,7 @@ private:
                 "OfflineEbur128: ebur128_init failed for '%s'.", filePath.c_str());
             sf_close(file);
             throw std::runtime_error(
-                "[LoudnessCompliance] OfflineEbur128: ebur128_init failed for '" + filePath + "'.");
+                "[LoudnessCompliance] Offline Measurement: Failed to load audio file '" + filePath + "'.");
         }
 
         const size_t chunkFrames = static_cast<size_t>(sfInfo.samplerate); // 1 s
@@ -238,7 +238,7 @@ private:
             LOG_ERRORF("LoudnessCompliance", "OfflineEbur128: out of memory.");
             ebur128_destroy(&st);
             sf_close(file);
-            throw std::runtime_error("[LoudnessCompliance] OfflineEbur128: out of memory.");
+            throw std::runtime_error("[LoudnessCompliance] Offline Measurement: Out of memory. Cannot measure.");
         }
 
         sf_count_t n;
@@ -250,9 +250,11 @@ private:
         sf_close(file);
 
         if (ebur128_loudness_global(st, &outLufs) != EBUR128_SUCCESS) {
+            LOG_ERRORF("LoudnessCompliance",
+                "OfflineEbur128: ebur128_loudness_global failed for '%s'.", filePath.c_str());
             ebur128_destroy(&st);
             throw std::runtime_error(
-                "[LoudnessCompliance] OfflineEbur128: ebur128_loudness_global failed for '" + filePath + "'.");
+                "[LoudnessCompliance] Offline Measurement: Failed for measuring '" + filePath + "'.");
         }
 
         double maxPeak = 0.0;
@@ -314,7 +316,7 @@ private:
                 LOG_ERRORF("LoudnessCompliance",
                     "OfflineEbur128: ctx.sourcePath is empty — cannot measure.");
                 throw std::runtime_error(
-                    "[LoudnessCompliance] OfflineEbur128: source path is empty.");
+                    "[LoudnessCompliance] Offline Measurement: Source path is empty.");
             }
             double lufs = 0.0, peakDbfs = 0.0;
             measureOffline(ctx_.sourcePath, lufs, peakDbfs); // throws on failure
