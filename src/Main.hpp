@@ -73,7 +73,7 @@ private:
     AudioPlayer audioPlayer;
     std::shared_ptr<SndFileInfo> currentPlayingFile;  // Currently playing file
 
-    std::string NFDLastError;   // TODO: Display error message on UI
+    std::string NFDLastError;
 
     std::vector<std::shared_ptr<Node>> nodeChain;  // Store the current node chain for UI display and management
     std::mutex nodeChainMutex;                      // Protects nodeChain against concurrent access by the worker thread
