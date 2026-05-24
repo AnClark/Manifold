@@ -445,7 +445,6 @@ void ManifoldApp::UI_Tasks()
             if (ImGui::BeginTable("Tasks_Files", s_basicColumns + s_reportColumns, tblFlags))
             {
                 ImGui::TableSetupScrollFreeze(0, 1);
-                // TODO: Store tasksFilesColumnWidths in vector rather than array
                 ImGui::TableSetupColumn("File",         ImGuiTableColumnFlags_WidthFixed, preferences.uiPref.tasksFilesColumnWidths["file"]);
                 ImGui::TableSetupColumn("Status",       ImGuiTableColumnFlags_WidthFixed, preferences.uiPref.tasksFilesColumnWidths["status"]);
                 ImGui::TableSetupColumn("Info",         ImGuiTableColumnFlags_WidthFixed, preferences.uiPref.tasksFilesColumnWidths["info"]);
