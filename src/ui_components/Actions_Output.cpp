@@ -192,20 +192,30 @@ void UIComponents_Actions::popup_OutputFileNameRule(FilenameTemplate& s_editTemp
         ImGui::SeparatorText("Add Token");
         ImGui::AlignTextToFramePadding();
         ImGui::TextDisabled("Click to add token:");
+
+        // Helper: promote the current last segment's separator to "_" (inner position),
+        // then append newToken with separator "" so nothing appears before the extension.
+        auto pushToken = [&](FilenameToken newToken)
+        {
+            if (!s_editTemplate.segments.empty())
+            {
+                auto& lastSep = s_editTemplate.segments.back().separator;
+                if (lastSep.empty())
+                    lastSep = "_";
+            }
+            s_editTemplate.segments.push_back({ std::move(newToken), "" });
+            s_selectedTokenIdx = static_cast<int>(s_editTemplate.segments.size()) - 1;
+        };
+
         ImGui::SameLine();
         if (ImGui::Button("Original Name"))
-        {
-            s_editTemplate.segments.push_back(
-                { FilenameToken{ FilenameToken::Type::OriginalName }, "" });
-            s_selectedTokenIdx = static_cast<int>(s_editTemplate.segments.size()) - 1;
-        }
+            pushToken(FilenameToken{ FilenameToken::Type::OriginalName });
         ImGui::SameLine();
         if (ImGui::Button("Counter"))
         {
             FilenameToken ct;
             ct.type = FilenameToken::Type::Counter;
-            s_editTemplate.segments.push_back({ ct, "" });
-            s_selectedTokenIdx = static_cast<int>(s_editTemplate.segments.size()) - 1;
+            pushToken(ct);
         }
         ImGui::SameLine();
         if (ImGui::Button("Custom Text"))
@@ -213,8 +223,7 @@ void UIComponents_Actions::popup_OutputFileNameRule(FilenameTemplate& s_editTemp
             FilenameToken lt;
             lt.type = FilenameToken::Type::LiteralText;
             lt.literalText = "text";
-            s_editTemplate.segments.push_back({ lt, "" });
-            s_selectedTokenIdx = static_cast<int>(s_editTemplate.segments.size()) - 1;
+            pushToken(lt);
         }
 
         ImGui::Spacing();
