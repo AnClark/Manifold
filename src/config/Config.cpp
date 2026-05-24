@@ -209,3 +209,79 @@ const char* FileConfig::getPlatform()
             return kPlatformUnknown;
     }
 }
+
+std::vector<std::string> FileConfig::loadFileList(std::string_view configFilePath)
+{
+    // 1. Convert configFilePath to canonical format with std::filesystem::path.
+    //    u8path() explicitly interprets the input as UTF-8, which is required on
+    //    Windows where the default path constructor uses the ANSI (narrow) encoding.
+    const auto path = std::filesystem::u8path(configFilePath);
+
+    // 2. Check if file exists
+    if (!std::filesystem::exists(path))
+        throw "File list config file does not exist";
+
+    try
+    {
+        // 3. Open the file via std::ifstream using the filesystem::path directly.
+        //    On Windows, ifstream(filesystem::path) internally calls the wide-char
+        //    (_wfopen) API, so UTF-8 / CJK paths are handled correctly.
+        //    toml::parse_file(string) uses fopen(char*) internally, which interprets
+        //    the path as ANSI on Windows — silently failing for non-ASCII paths and
+        //    returning an empty parse result instead of an error.
+        std::ifstream ifs(path, std::ios::in);
+        if (!ifs.is_open())
+            throw std::runtime_error("Failed to open file list config file");
+
+        // 4. Parse TOML from stream.
+        //    Pass path.u8string() as the source name so toml++ includes it in
+        //    any parse-error messages.
+        auto result = toml::parse(ifs, path.u8string());
+
+        // 5. Verify config file type
+        if (const auto configType = result["config_type"].value<std::string>())
+        {
+            LOG_DEBUGF(__func__, "configType: %s", configType->c_str());
+
+            if (configType != kConfigTypeFileList)
+                throw "Invalid file list config: File type mismatch";
+        }
+
+        // 6. Warn if the platform tag does not match the current platform.
+        //    Path-separator differences (Windows '\\' vs POSIX '/') may cause the
+        //    loaded paths to be invalid on the current system, but we leave it to
+        //    the caller to decide how to handle that situation.
+        if (const auto platform = result["platform"].value<std::string>())
+        {
+            if (*platform != getPlatform())
+                LOG_WARNF("FileConfig",
+                          "Platform mismatch: file was saved on '%s', current platform is '%s'. "
+                          "Loaded paths may use a different separator.",
+                          platform->c_str(), getPlatform());
+        }
+
+        // 7. Extract file paths from the [[file]] array.
+        //    Each entry is expected to have a "path" key; entries missing that key
+        //    are skipped with a warning rather than aborting the entire load.
+        std::vector<std::string> filePaths;
+        if (const auto* fileArray = result["file"].as_array())
+        {
+            for (int i = 0; i < static_cast<int>(fileArray->size()); ++i)
+            {
+                if (const toml::table* fileTable = fileArray->get(i)->as_table())
+                {
+                    if (const auto pathValue = (*fileTable)["path"].value<std::string>())
+                        filePaths.emplace_back(*pathValue);
+                    else
+                        LOG_WARNF("FileConfig", "File entry %d is missing required field 'path'; skipped.", i);
+                }
+            }
+        }
+
+        return std::move(filePaths);
+    }
+    catch (const std::runtime_error& err)
+    {
+        throw err.what();
+    }
+}

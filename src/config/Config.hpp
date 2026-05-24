@@ -192,6 +192,24 @@ namespace FileConfig
 std::string saveFileList(SndFileList& fileList);
 
 /**
+ * @brief Deserialises a file list from a TOML file.
+ *
+ * Parses the file at @p configFilePath, validates that its `config_type` is
+ * `"file_list"`, then extracts the `path` value from every `[[file]]` entry.
+ *
+ * A warning is logged when the `platform` tag in the file does not match the
+ * current platform (see @ref getPlatform()), because path separators may
+ * differ between platforms.  Parsing continues regardless so that
+ * cross-platform file lists can still be loaded and resolved by the caller.
+ *
+ * @param configFilePath  Path to the `.toml` file list to load.
+ * @return A vector of UTF-8 file-path strings read from the TOML document.
+ * @throws const char*          On config-type mismatch.
+ * @throws std::runtime_error   On I/O failures.
+ */
+std::vector<std::string> loadFileList(std::string_view configFilePath);
+
+/**
  * @brief Returns a string tag identifying the current operating platform.
  *
  * Determined at call time by inspecting `std::filesystem::path::preferred_separator`.
