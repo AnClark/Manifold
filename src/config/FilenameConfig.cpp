@@ -28,6 +28,7 @@ toml::table FilenameToken::toToml() const
         case Type::OriginalName: t.insert_or_assign("type", "OriginalName"); break;
         case Type::Counter:      t.insert_or_assign("type", "Counter");      break;
         case Type::LiteralText:  t.insert_or_assign("type", "LiteralText");  break;
+        case Type::SampleRate:   t.insert_or_assign("type", "SampleRate");   break;
     }
     if (type == Type::LiteralText)
         t.insert_or_assign("text", literalText);
@@ -46,6 +47,7 @@ FilenameToken FilenameToken::fromToml(const toml::table& t)
     const auto typeStr = t["type"].value<std::string>().value_or("OriginalName");
     if      (typeStr == "Counter")     tok.type = Type::Counter;
     else if (typeStr == "LiteralText") tok.type = Type::LiteralText;
+    else if (typeStr == "SampleRate")  tok.type = Type::SampleRate;
     else                               tok.type = Type::OriginalName;
 
     if (tok.type == Type::LiteralText)
@@ -91,7 +93,8 @@ std::optional<std::string> FilenameTemplate::validate() const
     return std::nullopt;
 }
 
-std::string FilenameTemplate::resolve(const std::string& sourceStem, int counter) const
+std::string FilenameTemplate::resolve(const std::string& sourceStem, int counter,
+                                      int sampleRate) const
 {
     std::string result;
     result.reserve(64);
@@ -106,6 +109,13 @@ std::string FilenameTemplate::resolve(const std::string& sourceStem, int counter
 
             case FilenameToken::Type::LiteralText:
                 result += seg.token.literalText;
+                break;
+
+            case FilenameToken::Type::SampleRate:
+                if (sampleRate > 0)
+                    result += std::to_string(sampleRate);
+                else
+                    result += "0";
                 break;
 
             case FilenameToken::Type::Counter:

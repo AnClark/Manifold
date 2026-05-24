@@ -44,6 +44,7 @@ struct FilenameToken
         OriginalName,   ///< stem of the source file (no extension)
         Counter,        ///< auto-incrementing integer
         LiteralText,    ///< fixed user-supplied string
+        SampleRate,     ///< source file sample rate in Hz (e.g. "44100")
     };
 
     Type        type         = Type::OriginalName;
@@ -88,8 +89,10 @@ struct FilenameTemplate
      * @brief Resolve the template to a concrete filename stem (no extension).
      * @param sourceStem   Stem of the source file.
      * @param counter      1-based file counter for the current batch.
+     * @param sampleRate   Sample rate of the source file in Hz (0 = unknown).
      */
-    std::string resolve(const std::string& sourceStem, int counter) const;
+    std::string resolve(const std::string& sourceStem, int counter,
+                        int sampleRate = 0) const;
 
     // -----------------------------------------------------------------------
 

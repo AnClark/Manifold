@@ -52,7 +52,8 @@ void UIComponents_Actions::command_StartProcessingAllFiles()
 
             // Based on the output filename template, resolve (render) the source file stem and file counter into the final output file stem
             record->resolvedOutputStem =
-                app->outputFilenameTemplate.resolve(sourceStem, fileCounter);
+                app->outputFilenameTemplate.resolve(sourceStem, fileCounter,
+                                                    fi->info.samplerate);
 
             // Wire the run's cancel token so the worker can interrupt processing mid-file.
             record->runCancelToken = &run->cancelRequested;
@@ -151,6 +152,7 @@ void UIComponents_Actions::button_FileName()
                 {
                     case FilenameToken::Type::OriginalName: fnSummary += "Name";    break;
                     case FilenameToken::Type::LiteralText:  fnSummary += "\"" + tok.literalText + "\""; break;
+                    case FilenameToken::Type::SampleRate:   fnSummary += "SampleRate"; break;
                     case FilenameToken::Type::Counter:
                     {
                         char buf[32];
@@ -225,6 +227,9 @@ void UIComponents_Actions::popup_OutputFileNameRule(FilenameTemplate& s_editTemp
             lt.literalText = "text";
             pushToken(lt);
         }
+        ImGui::SameLine();
+        if (ImGui::Button("Sample Rate"))
+            pushToken(FilenameToken{ FilenameToken::Type::SampleRate });
 
         ImGui::Spacing();
         ImGui::Spacing();
@@ -236,6 +241,7 @@ void UIComponents_Actions::popup_OutputFileNameRule(FilenameTemplate& s_editTemp
         const ImVec4 kColorOrigName   = ImVec4(0.20f, 0.50f, 0.85f, 1.0f);
         const ImVec4 kColorCounter    = ImVec4(0.20f, 0.65f, 0.35f, 1.0f);
         const ImVec4 kColorLiteral    = ImVec4(0.65f, 0.40f, 0.10f, 1.0f);
+        const ImVec4 kColorSampleRate = ImVec4(0.55f, 0.20f, 0.70f, 1.0f);
         const ImVec4 kColorSelected   = ImVec4(1.0f,  0.80f, 0.20f, 1.0f);
 
         bool stripModified = false;
@@ -264,13 +270,17 @@ void UIComponents_Actions::popup_OutputFileNameRule(FilenameTemplate& s_editTemp
                     snprintf(chipLabel, sizeof(chipLabel),
                                 "\"%s\"", seg.token.literalText.c_str());
                     break;
+                case FilenameToken::Type::SampleRate:
+                    snprintf(chipLabel, sizeof(chipLabel), "SampleRate");
+                    break;
             }
 
             const bool selected = (s_selectedTokenIdx == ti);
             const ImVec4& chipColor = selected ? kColorSelected :
                 (seg.token.type == FilenameToken::Type::OriginalName ? kColorOrigName :
                     seg.token.type == FilenameToken::Type::Counter      ? kColorCounter  :
-                                                                        kColorLiteral);
+                    seg.token.type == FilenameToken::Type::SampleRate   ? kColorSampleRate :
+                                                                          kColorLiteral);
 
             ImGui::PushStyleColor(ImGuiCol_Button,        chipColor);
             ImGui::PushStyleColor(ImGuiCol_ButtonHovered,
@@ -402,6 +412,10 @@ void UIComponents_Actions::popup_OutputFileNameRule(FilenameTemplate& s_editTemp
                     ImGui::TextDisabled("  (Original Name — no parameters)");
                     break;
 
+                case FilenameToken::Type::SampleRate:
+                    ImGui::TextDisabled("  (Sample Rate — no parameters; resolved from source file)");
+                    break;
+
                 case FilenameToken::Type::LiteralText:
                 {
                     char buf[256];
@@ -494,6 +508,7 @@ void UIComponents_Actions::popup_OutputFileNameRule(FilenameTemplate& s_editTemp
             for (int pi = 0; pi < previewCount; ++pi)
             {
                 std::string sourceStem;
+                int previewSampleRate = 0;
                 {
                     std::scoped_lock lock(app->sndFileListMutex);
                     if (pi < (int)app->sndFileList.size())
@@ -501,15 +516,18 @@ void UIComponents_Actions::popup_OutputFileNameRule(FilenameTemplate& s_editTemp
                         sourceStem =
                             std::filesystem::u8path(app->sndFileList[pi]->filePath)
                                 .stem().u8string();
+                        previewSampleRate = app->sndFileList[pi]->info.samplerate;
                     }
                 }
                 if (sourceStem.empty())
                     sourceStem = kPlaceholders[pi % 3];
+                if (previewSampleRate <= 0)
+                    previewSampleRate = 44100;
 
                 const std::string ext =
                     AudioFormats::extension(app->outputFormat);
                 const std::string resolved =
-                    s_editTemplate.resolve(sourceStem, pi + 1)
+                    s_editTemplate.resolve(sourceStem, pi + 1, previewSampleRate)
                     + "." + ext;
                 ImGui::BulletText("%s", resolved.c_str());
             }
