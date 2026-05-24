@@ -52,10 +52,10 @@ void AnalyzerDispatcher::addFiles(SndFileList& fileListFromApp)
 
 void AnalyzerDispatcher::requestCancelProcessing()
 {
-    for (auto iter = ebuR128WorkerPool_.begin(); iter != ebuR128WorkerPool_.end(); iter++)
-        iter->get()->requestCancelProcessing();
-    for (auto iter = dcOffsetWorkerPool_.begin(); iter != dcOffsetWorkerPool_.end(); iter++)
-        iter->get()->requestCancelProcessing();
+    for (auto& w : ebuR128WorkerPool_)
+        w->requestCancelProcessing();
+    for (auto& w : dcOffsetWorkerPool_)
+        w->requestCancelProcessing();
 }
 
 void AnalyzerDispatcher::resumeProcessing()
