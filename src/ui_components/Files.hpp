@@ -23,6 +23,8 @@ public:
     void popup_ConfirmRemoveSelectedFiles(int selectedCount);
     void subroutine_WarnAboutDuplicateFiles(int addedFiles);
 
+    void button_ExportFileList();
+
     void button_Refresh();
 
     void system_DropHandler(int count, const char** paths);

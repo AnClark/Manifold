@@ -50,15 +50,7 @@ void ManifoldApp::UI_Files()
 
             ImGui::SameLine();
 
-            ImGui::BeginDisabled(sndFileList.empty());
-            if (ImGui::Button("Export file list"))
-            {
-                std::string outputTOML = FileConfig::saveFileList(this->sndFileList);
-
-                // TODO: Log content will be truncated. Remove this logger.
-                LOG_DEBUGF("Files", "File List TOML export:\n```\n%s\n```", outputTOML.c_str());                
-            }
-            ImGui::EndDisabled();
+            uiFiles.button_ExportFileList();
 
             ImGui::SameLine();
 

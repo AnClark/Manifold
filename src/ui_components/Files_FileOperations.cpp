@@ -1,5 +1,6 @@
 #include "Files.hpp"
 #include "Main.hpp"
+#include "config/Config.hpp"
 
 #include <imgui.h>
 #include "utils/NFDIncludes.h"  // IWYU Pragma: keep
@@ -326,6 +327,47 @@ void UIComponents_Files::system_DropHandler(int count, const char** paths)
                             5000, 
                                 "No file added from specified folder.\n(Maybe no media files in folder, or failed to open directory?)"});
     }
+}
+
+void UIComponents_Files::button_ExportFileList()
+{
+    ImGui::BeginDisabled(app->sndFileList.empty());
+    if (ImGui::Button("Export file list"))
+    {
+        std::string outputTOML = FileConfig::saveFileList(app->sndFileList);
+
+        nfdu8filteritem_t tomlFilter[] = { { "TOML Files", "toml" } };
+        nfdwindowhandle_t parentWindow = {};
+        NFD_GetNativeWindowFromGLFWWindow(app->getWindow(), &parentWindow);
+        NFD::UniquePath savePath;
+
+        nfdresult_t result = NFD::SaveDialog(savePath, tomlFilter, 1, nullptr, u8"file_list.toml", parentWindow);
+        if (result == NFD_OKAY)
+        {
+            try {
+                // Use u8path() so that paths containing non-ASCII characters
+                // (e.g. CJK) are handled correctly on Windows (UTF-8 → UTF-16).
+                std::ofstream ofs(std::filesystem::u8path(savePath.get()), std::ios::out | std::ios::trunc);
+                if (ofs)
+                    ofs << outputTOML;
+
+                LOG_INFOF("Files", "Exported file list to: %s", savePath.get());
+                ImGui::InsertNotification({ImGuiToastType::Success, 5000, "Successfully exported file list."});
+            } catch (const std::exception& e) {
+                constexpr const char* errMsgTemplate = "Failed to write file list:\n %s";
+                LOG_ERRORF("Files", errMsgTemplate, e.what());
+                ImGui::InsertNotification({ImGuiToastType::Error, 5000, errMsgTemplate, e.what()});
+            }
+        }
+        else if (result == NFD_ERROR)
+        {
+            const char* nfdErr = NFD::GetError();
+            constexpr const char* errMsgTemplate = "Failed to open file dialog:\n %s";
+            LOG_ERRORF("Files", errMsgTemplate, nfdErr);
+            ImGui::InsertNotification({ImGuiToastType::Error, 5000, errMsgTemplate, nfdErr});
+        }
+    }
+    ImGui::EndDisabled();    
 }
 
 void UIComponents_Files::button_Refresh()
