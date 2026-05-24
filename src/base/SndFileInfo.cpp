@@ -106,6 +106,21 @@ bool SndFileInfo::isSpecialBitDepthFormat() const
     }
 }
 
+void SndFileInfo::resetAnalysisResults()
+{
+    lufsI = 0.0;
+    maxSamplePeak = 0.0;
+    maxSamplePeak_dBFS = 0.0;
+    dcOffsets.clear();
+    maxDcOffset = 0.0;
+
+    isR128ParsedOK = false;
+    errorMsgR128.clear();
+
+    isDcOffsetCalculatedOK = false;
+    errorMsgDcOffset.clear();
+}
+
 void SndFileInfo::_calculateDurationTimeString()
 {
     double duration = getDurationSeconds();

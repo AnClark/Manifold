@@ -328,3 +328,48 @@ void UIComponents_Files::system_DropHandler(int count, const char** paths)
     }
 }
 
+void UIComponents_Files::button_Refresh()
+{
+    ImGui::BeginDisabled(app->sndFileList.empty());
+    if (ImGui::Button("Refresh"))
+    {
+        LOG_INFOF("Files", "Request refreshing file list - triggers re-analyzing all files");
+        ImGui::InsertNotification({ImGuiToastType::Info,
+                            3000, 
+                                "Now refreshing audio file list. All files will be re-analyzed."});
+
+        // Step 1: Cancel any in-flight analysis so workers don't race with our reset.
+#ifdef ENABLE_PARALLEL_ANALYZING
+        app->analyzerDispatcher.requestCancelProcessing();
+#else
+        app->ebur128Worker.requestCancelProcessing();
+        app->dcOffsetWorker.requestCancelProcessing();
+#endif
+
+        // Step 2: Reset analysis results on every file (under mutex so UI reads consistent state).
+        {
+            std::scoped_lock<std::mutex> guard(app->sndFileListMutex);
+            for (auto& f : app->sndFileList)
+                f->resetAnalysisResults();
+        }
+
+        // Step 3: Re-enable workers and re-submit all files for analysis.
+        //         addFiles() must be called WITHOUT holding sndFileListMutex.
+#ifdef ENABLE_PARALLEL_ANALYZING
+        app->analyzerDispatcher.resumeProcessing();
+        app->analyzerDispatcher.addFiles(app->sndFileList);
+#else
+        app->ebur128Worker.requestCancelProcessing(false);
+        app->dcOffsetWorker.requestCancelProcessing(false);
+        for (auto& f : app->sndFileList)
+        {
+            app->ebur128Worker.addFile(f);
+            app->dcOffsetWorker.addFile(f);
+        }
+#endif
+
+        LOG_INFOF("Files", "Refresh: Re-submitted %zu file(s) for analysis.", app->sndFileList.size());
+    }
+    ImGui::EndDisabled();
+}
+

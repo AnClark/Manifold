@@ -115,6 +115,14 @@ public:
      */
     void requestCancelProcessing();
 
+    /**
+     * @brief Clears the cancellation flag on all worker instances.
+     *
+     * Call this after requestCancelProcessing() to allow workers to accept and
+     * process new tasks again (e.g. before a full re-analysis via addFiles()).
+     */
+    void resumeProcessing();
+
 private:
     std::vector<std::unique_ptr<EBUR128Worker>>  ebuR128WorkerPool_;
     std::vector<std::unique_ptr<DcOffsetWorker>> dcOffsetWorkerPool_;
