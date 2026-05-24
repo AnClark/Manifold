@@ -3,7 +3,7 @@
 #include "config/Config.hpp"
 
 #include <imgui.h>
-#include "utils/NFDIncludes.h"  // IWYU Pragma: keep
+#include <utils/NFDIncludes.h>
 #include "ImGuiNotify_MOD.hpp"
 
 #include <algorithm>
@@ -326,6 +326,57 @@ void UIComponents_Files::system_DropHandler(int count, const char** paths)
         ImGui::InsertNotification({ImGuiToastType::Warning,
                             5000, 
                                 "No file added from specified folder.\n(Maybe no media files in folder, or failed to open directory?)"});
+    }
+}
+
+void UIComponents_Files::button_ImportFileList()
+{
+    if (ImGui::Button("Import file list..."))
+    {
+        app->detectedDuplicateCount = 0;
+
+        nfdu8filteritem_t tomlFilter[] = { { "TOML Files", "toml" } };
+        nfdwindowhandle_t parentWindow = {};
+        NFD_GetNativeWindowFromGLFWWindow(app->getWindow(), &parentWindow);
+        NFD::UniquePath openPath;
+
+        nfdresult_t result = NFD::OpenDialog(openPath, tomlFilter, 1, nullptr, parentWindow);
+        if (result == NFD_OKAY)
+        {
+            try {
+                std::vector<std::string> paths = FileConfig::loadFileList(openPath.get());
+                _ingestPaths(paths);
+
+                LOG_INFOF("Files", "Imported file list from: %s (%zu file(s))", openPath.get(), paths.size());
+                if (!paths.empty())
+                {
+                    if (app->detectedDuplicateCount > 0)
+                        subroutine_WarnAboutDuplicateFiles(static_cast<int>(paths.size()));
+                    else
+                        ImGui::InsertNotification({ImGuiToastType::Success, 5000, "Imported %zu file(s) from external file list.", paths.size()});
+                }
+                else
+                    ImGui::InsertNotification({ImGuiToastType::Warning, 5000, "External file list is empty \xe2\x80\x94 no files were added."});
+
+                app->NFDLastError.clear();
+            } catch (const char* err) {
+                constexpr const char* errMsgTemplate = "Failed to import external file list:\n %s";
+                LOG_ERRORF("Files", errMsgTemplate, err);
+                ImGui::InsertNotification({ImGuiToastType::Error, 5000, errMsgTemplate, err});
+            } catch (const std::exception& e) {
+                constexpr const char* errMsgTemplate = "Failed to import external file list:\n %s";
+                LOG_ERRORF("Files", errMsgTemplate, e.what());
+                ImGui::InsertNotification({ImGuiToastType::Error, 5000, errMsgTemplate, e.what()});
+            }
+        }
+        else if (result == NFD_ERROR)
+        {
+            app->NFDLastError = NFD::GetError();
+
+            const char* errMsgTemplate = "Failed when loading file dialog: %s";
+            LOG_ERRORF("Files", errMsgTemplate, app->NFDLastError.c_str());
+            ImGui::InsertNotification({ImGuiToastType::Error, 5000, errMsgTemplate, app->NFDLastError.c_str()});
+        }
     }
 }
 

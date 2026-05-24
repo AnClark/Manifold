@@ -50,6 +50,10 @@ void ManifoldApp::UI_Files()
 
             ImGui::SameLine();
 
+            uiFiles.button_ImportFileList();
+
+            ImGui::SameLine();
+
             uiFiles.button_ExportFileList();
 
             ImGui::SameLine();
