@@ -57,3 +57,11 @@ void AnalyzerDispatcher::requestCancelProcessing()
     for (auto iter = dcOffsetWorkerPool_.begin(); iter != dcOffsetWorkerPool_.end(); iter++)
         iter->get()->requestCancelProcessing();
 }
+
+void AnalyzerDispatcher::resumeProcessing()
+{
+    for (auto& w : ebuR128WorkerPool_)
+        w->requestCancelProcessing(false);
+    for (auto& w : dcOffsetWorkerPool_)
+        w->requestCancelProcessing(false);
+}

@@ -41,6 +41,7 @@ struct SndFileInfo
     double getDurationSeconds() const;
     const char* getBitDepth() const;
     bool isSpecialBitDepthFormat() const;
+    void resetAnalysisResults();  // Clears EBU R128 and DC offset results, sets flags to false
 
 private:
     void _calculateDurationTimeString();

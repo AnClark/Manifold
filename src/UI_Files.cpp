@@ -59,6 +59,10 @@ void ManifoldApp::UI_Files()
                 LOG_DEBUGF("Files", "File List TOML export:\n```\n%s\n```", outputTOML.c_str());                
             }
             ImGui::EndDisabled();
+
+            ImGui::SameLine();
+
+            uiFiles.button_Refresh();
         }
         ImGui::EndGroup();
 
