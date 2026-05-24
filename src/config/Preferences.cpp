@@ -25,7 +25,6 @@ void PreferencesManager::loadPreferences()
     }
 
     // Malformed file — keep all defaults silently.
-    // TODO: surface a warning through LogManager once it is accessible here.
     try
     {
         // Open via ifstream(filesystem::path): on Windows this calls the wide-char
