@@ -24,6 +24,7 @@ void ChainEngine::validateChain() const
                 i++;
             }
             if (i >= nodes_.size() || !dynamic_cast<const StreamSinkNode*>(nodes_[i])) {
+                LOG_ERRORF("ChainEngine", "Stream segment starting with SourceNode has no terminating StreamSinkNode.");
                 throw std::runtime_error(
                     "ChainEngine: stream segment starting with SourceNode has no terminating StreamSinkNode");
             }
@@ -31,6 +32,7 @@ void ChainEngine::validateChain() const
         } else if (dynamic_cast<const AtomicNode*>(n)) {
             i++;
         } else {
+            LOG_ERRORF("ChainEngine", "Node '%s' at chain root must be a SourceNode or AtomicNode.", n->name().c_str());
             throw std::runtime_error(
                 "ChainEngine: node '" + n->name() +
                 "' at chain root must be a SourceNode or AtomicNode");

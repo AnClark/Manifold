@@ -1,4 +1,5 @@
 #include "OutputSinkNode.hpp"
+#include "utils/LogManager.hpp"
 #include "utils/SfOpenUtf8.hpp"
 
 #include <algorithm>
@@ -92,13 +93,15 @@ void OutputSinkNode::consume(std::unique_ptr<AudioStream> stream, NodeContext& c
     outInfo.format     = sfMajor | sfSubtype;
 
     if (!sf_format_check(&outInfo)) {
+        LOG_ERRORF("OutputSinkNode", "Invalid libsndfile format combination (format enum=%d).", static_cast<int>(format_));
         throw std::runtime_error(
-            "OutputSinkNode: invalid libsndfile format combination (format enum=" +
+            "OutputSinkNode: Invalid libsndfile format combination (format enum=" +
             std::to_string(static_cast<int>(format_)) + ")");
     }
 
     SNDFILE* outSf = SfOpenUtf8(outPath.c_str(), SFM_WRITE, &outInfo);
     if (!outSf) {
+        LOG_ERRORF("OutputSinkNode", "Cannot open output '%s': %s", outPath.c_str(), sf_strerror(nullptr));
         throw std::runtime_error(
             "OutputSinkNode: cannot open output '" + outPath +
             "': " + sf_strerror(nullptr));

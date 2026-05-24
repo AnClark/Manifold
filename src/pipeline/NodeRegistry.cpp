@@ -1,4 +1,5 @@
 #include "NodeRegistry.hpp"
+#include "utils/LogManager.hpp"
 
 #include <algorithm>
 #include <stdexcept>
@@ -25,9 +26,11 @@ void NodeRegistry::reg(NodeDescriptor descriptor, Factory factory)
 std::unique_ptr<Node> NodeRegistry::create(std::string_view id) const
 {
     auto it = factories_.find(std::string(id));
-    if (it == factories_.end())
+    if (it == factories_.end()) {
+        LOG_ERRORF("NodeRegistry", "Unknown node id '%s'.", std::string(id).c_str());
         throw std::runtime_error(
             "NodeRegistry: unknown node id '" + std::string(id) + "'");
+    }
     return it->second();
 }
 

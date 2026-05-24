@@ -53,22 +53,28 @@ void validateChannels(ChannelMixNode::MixMode mode, int inCh)
 {
     switch (mode) {
         case ChannelMixNode::MixMode::StereoToMono:
-            if (inCh != 2)
+            if (inCh != 2) {
+                LOG_ERRORF("ChannelMix", "Stereo->Mono requires exactly 2 input channels, got %d.", inCh);
                 throw std::runtime_error(
                     "[ChannelMix] Stereo\xe2\x86\x92Mono requires exactly 2 input channels, got " +
                     std::to_string(inCh));
+            }
             break;
         case ChannelMixNode::MixMode::MonoToStereo:
-            if (inCh != 1)
+            if (inCh != 1) {
+                LOG_ERRORF("ChannelMix", "Mono->Stereo requires exactly 1 input channel, got %d.", inCh);
                 throw std::runtime_error(
                     "[ChannelMix] Mono\xe2\x86\x92Stereo requires exactly 1 input channel, got " +
                     std::to_string(inCh));
+            }
             break;
         case ChannelMixNode::MixMode::SurroundToStereo:
-            if (inCh != 6 && inCh != 8)
+            if (inCh != 6 && inCh != 8) {
+                LOG_ERRORF("ChannelMix", "Surround->Stereo requires 6-ch (5.1) or 8-ch (7.1) input, got %d.", inCh);
                 throw std::runtime_error(
                     "[ChannelMix] Surround\xe2\x86\x92Stereo requires 6-ch (5.1) or 8-ch (7.1) input, got " +
                     std::to_string(inCh));
+            }
             break;
         case ChannelMixNode::MixMode::ToMono:
             // Accepts any channel count — no validation needed.
