@@ -187,7 +187,32 @@ void ManifoldApp::UI_Actions()
                     // Add a spacing between topbar and Node Editor cells
                     ImGui::Dummy(ImVec2(ImGui::GetStyle().ItemSpacing.x, ImGui::GetStyle().ItemSpacing.y * 0.8));
 
-                    uiActions.subUI_NodeChainView();
+                    if (!nodeChain.empty())
+                        uiActions.subUI_NodeChainView();
+                    else    // Show Tips if Node Chain is empty
+                    {
+                        // Get all available area.
+                        const ImVec2 remainingArea = ImGui::GetContentRegionAvail();
+
+                        // Center the tip group vertically and horizontally.
+                        const ImVec2 refTextSize = ImGui::CalcTextSize(ICON_FA_CARET_RIGHT "  Click the actions on the Left panel to build your own node chain, ");
+                        ImGui::SetCursorPosX(ImGui::GetCursorPosX() + remainingArea.x * 0.5f - refTextSize.x * 0.5f);
+                        ImGui::SetCursorPosY(ImGui::GetCursorPosY() + remainingArea.y * 0.5f - refTextSize.y * 4.5f);
+
+                        ImGui::BeginGroup();
+                        ImGui::TextDisabled("Node Chain is empty.");
+                        ImGui::Spacing();
+                        ImGui::TextDisabled(ICON_FA_CARET_RIGHT "  Click the actions on the Left panel to build your own Node Chain, ");
+                        ImGui::TextDisabled("    or "); ImGui::SameLine(0, 0);
+                        if (ImGui::TextLink("import existing Node Chain"))
+                            uiActions.button_ImportNodeChainFromFile(true);
+                        ImGui::SameLine(0, 0); ImGui::TextDisabled(".");
+                        ImGui::Spacing();
+                        ImGui::TextDisabled(ICON_FA_CARET_RIGHT "  Then, configure output Settings below.");
+                        ImGui::Spacing();
+                        ImGui::TextDisabled(ICON_FA_CARET_RIGHT "  If everything is OK, click \"Process All Files\"!");
+                        ImGui::EndGroup();
+                    }
 
                     ImGui::EndChild(); // [Top node-list child] end
 
