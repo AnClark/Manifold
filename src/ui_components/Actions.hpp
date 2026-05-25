@@ -16,7 +16,7 @@ public:
     static constexpr float toolChainBtnWidth  = 25.0f + 4.0f;
     static constexpr float toolChainBtnHeight = 25.0f;
     void button_ExportNodeChainToFile();
-    void button_ImportNodeChainFromFile();
+    void button_ImportNodeChainFromFile(bool runAsCommand = false);
     void button_OpenNodeChainMenu();
     void popup_NodeChainMenu();
     void subroutine_ImportNodeChain(std::string path);

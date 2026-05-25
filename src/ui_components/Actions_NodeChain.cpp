@@ -224,10 +224,10 @@ void UIComponents_Actions::button_ExportNodeChainToFile()
         ImGui::SetTooltip("Export current Node Chain");    
 }
 
-void UIComponents_Actions::button_ImportNodeChainFromFile()
+void UIComponents_Actions::button_ImportNodeChainFromFile(bool runAsCommand)
 {
     ImGui::PushFont(NULL, 12.0f);
-    if (ImGui::Button(ICON_FA_FILE_IMPORT, toolButtonSize))
+    if (runAsCommand || ImGui::Button(ICON_FA_FILE_IMPORT, toolButtonSize))
     {
         // Open a file dialog to select a TOML node chain config file.
         nfdu8filteritem_t tomlFilter[] = { { "TOML Config", "toml" } };
