@@ -87,9 +87,9 @@ int UIComponents_Files::_findAudioFiles(const char* pickedPath, std::vector<std:
     return foundFilesCount;
 }
 
-void UIComponents_Files::button_AddMultipleFiles()
+void UIComponents_Files::button_AddMultipleFiles(bool runAsCommand)
 {
-    if (ImGui::Button("Add Multiple Files..."))
+    if (runAsCommand || ImGui::Button("Add Multiple Files..."))
     {
         app->detectedDuplicateCount = 0;
 
@@ -144,9 +144,9 @@ void UIComponents_Files::button_AddMultipleFiles()
     }
 }
 
-void UIComponents_Files::button_AddFolder()
+void UIComponents_Files::button_AddFolder(bool runAsCommand)
 {
-    if (ImGui::Button("Add Folder..."))
+    if (runAsCommand || ImGui::Button("Add Folder..."))
     {
         app->detectedDuplicateCount = 0;
 
@@ -329,9 +329,9 @@ void UIComponents_Files::system_DropHandler(int count, const char** paths)
     }
 }
 
-void UIComponents_Files::button_ImportFileList()
+void UIComponents_Files::button_ImportFileList(bool runAsCommand)
 {
-    if (ImGui::Button("Import file list..."))
+    if (runAsCommand || ImGui::Button("Import file list..."))
     {
         app->detectedDuplicateCount = 0;
 

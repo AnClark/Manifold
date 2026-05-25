@@ -17,13 +17,13 @@ public:
     void button_StopPlaying();
     void subroutine_ReportOnAudioPlayerError();
 
-    void button_AddMultipleFiles();
-    void button_AddFolder();
+    void button_AddMultipleFiles(bool runAsCommand = false);
+    void button_AddFolder(bool runAsCommand = false);
     void button_RemoveSelectedFiles(int selectedCount);
     void popup_ConfirmRemoveSelectedFiles(int selectedCount);
     void subroutine_WarnAboutDuplicateFiles(int addedFiles);
 
-    void button_ImportFileList();
+    void button_ImportFileList(bool runAsCommand = false);
     void button_ExportFileList();
 
     void button_Refresh();
