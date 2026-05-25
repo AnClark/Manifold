@@ -175,6 +175,38 @@ void UIComponents_Actions::subUI_NodeChainView()
 
 static constexpr ImVec2 toolButtonSize = { UIComponents_Actions::toolChainBtnWidth, UIComponents_Actions::toolChainBtnHeight };
 
+void UIComponents_Actions::button_CollapseAllNodes(int collapsedCount)
+{
+    ImGui::PushFont(NULL, 12.0f);
+    ImGui::BeginDisabled(app->nodeChain.empty() || collapsedCount == app->nodeChain.size());
+    if (ImGui::Button(ICON_FA_SQUARE_CARET_UP, toolButtonSize))
+    {
+        for (const auto& node : app->nodeChain)
+            node->collapseUI(true);
+    }
+    ImGui::EndDisabled();
+    ImGui::PopFont();
+    if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal))
+        ImGui::SetTooltip("Collapse all nodes");
+}
+
+void UIComponents_Actions::button_ExpandAllNodes(int collapsedCount)
+{
+    const int uncollapsedCount = app->nodeChain.size() - collapsedCount;
+
+    ImGui::PushFont(NULL, 12.0f);
+    ImGui::BeginDisabled(app->nodeChain.empty() || uncollapsedCount == app->nodeChain.size());
+    if (ImGui::Button(ICON_FA_SQUARE_CARET_DOWN, toolButtonSize))
+    {
+        for (const auto& node : app->nodeChain)
+            node->collapseUI(false);
+    }
+    ImGui::EndDisabled();
+    ImGui::PopFont();
+    if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal))
+        ImGui::SetTooltip("Expand all nodes");    
+}
+
 void UIComponents_Actions::button_ExportNodeChainToFile()
 {
     ImGui::PushFont(NULL, 12.0f);

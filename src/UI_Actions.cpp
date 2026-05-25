@@ -136,7 +136,20 @@ void ManifoldApp::UI_Actions()
                         ImGui::Text("Current Node Chain");
                         ImGui::SameLine();
 
-                        ImGui::SetCursorPosX(ImGui::GetCursorPosX() +  ImGui::GetContentRegionAvail().x - uiActions.toolChainBtnWidth * 4);
+                        ImGui::SetCursorPosX(ImGui::GetCursorPosX() +  ImGui::GetContentRegionAvail().x - uiActions.toolChainBtnWidth * 6.5);
+
+                        {
+                            int collapsedCount = 0;
+                            for (const auto& node : nodeChain)
+                                if (node->isUiCollapsed())
+                                    collapsedCount++;
+
+                            uiActions.button_CollapseAllNodes(collapsedCount);
+                            ImGui::SameLine();
+                            uiActions.button_ExpandAllNodes(collapsedCount);
+                        }
+
+                        ImGui::SameLine(0, 12.0f);
 
                         uiActions.button_ExportNodeChainToFile();
 

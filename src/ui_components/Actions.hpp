@@ -15,6 +15,8 @@ public:
 
     static constexpr float toolChainBtnWidth  = 25.0f + 4.0f;
     static constexpr float toolChainBtnHeight = 25.0f;
+    void button_CollapseAllNodes(int collapsedCount);
+    void button_ExpandAllNodes(int uncollapsedCount);
     void button_ExportNodeChainToFile();
     void button_ImportNodeChainFromFile(bool runAsCommand = false);
     void button_OpenNodeChainMenu();
