@@ -74,7 +74,49 @@ void ManifoldApp::UI_Files()
                 ImGuiTableFlags_Sortable |           // 允许排序
                 ImGuiTableFlags_RowBg |              // 行背景交替颜色
                 ImGuiTableFlags_SizingStretchProp |  // 列宽充满窗口
-                ImGuiTableFlags_ScrollY;             // 垂直滚动
+                (!sndFileList.empty() ? ImGuiTableFlags_ScrollY : 0);   // Vertical scrolling
+            // ↑ NOTICE: ImGuiTableFlags_ScrollY makes the table occupies all available vertical area,
+            //           and this will block mouse interaction for other widgets at the same area.
+            //           So, temporarily disable ImGuiTableFlags_ScrollY so that users can interactive
+            //           with hyperlinks in Tips.
+
+            // Show Tips if no files in the list
+            if (sndFileList.empty())
+            {
+                // Get all available area.
+                const ImVec2 remainingArea = ImGui::GetContentRegionAvail();
+
+                // Backup the original cursor position for the table.
+                const ImVec2 initCursorPos = ImGui::GetCursorPos();
+
+                // Center the tip group vertically and horizontally.
+                const ImVec2 refTextSize = ImGui::CalcTextSize(ICON_FA_CARET_RIGHT "  Go to Actions to configure action node chain for analyzing and processing your audio files.");
+                ImGui::SetCursorPosX(ImGui::GetCursorPosX() + remainingArea.x * 0.5f - refTextSize.x * 0.5f);
+                ImGui::SetCursorPosY(ImGui::GetCursorPosY() + remainingArea.y * 0.5f - refTextSize.y * 4.5f);
+
+                // Draw our tips.
+                ImGui::BeginGroup();
+                ImGui::TextDisabled("This is Manifold, a lightweight but powerful Batch Audio Processor.");
+                ImGui::Spacing();
+                ImGui::TextDisabled(ICON_FA_CARET_RIGHT "  To load audio files, click "); ImGui::SameLine(0, 0);
+                if (ImGui::TextLink("Add Multiple Files"))
+                    uiFiles.button_AddMultipleFiles(true);
+                ImGui::SameLine(0, 0); ImGui::TextDisabled(" or "); ImGui::SameLine(0, 0);
+                if (ImGui::TextLink("Add Folder"))
+                    uiFiles.button_AddFolder(true);
+                ImGui::TextDisabled(ICON_FA_CARET_RIGHT "  Or, click "); ImGui::SameLine(0, 0);
+                if (ImGui::TextLink("Import file list"))
+                    uiFiles.button_ImportFileList(true);
+                ImGui::SameLine(0, 0); ImGui::TextDisabled(" if you have exported one before.");
+                ImGui::TextDisabled(ICON_FA_CARET_RIGHT "  Go to "); ImGui::SameLine(0, 0);
+                if (ImGui::TextLink("Actions"))
+                    this->uiState = pUIActions;
+                ImGui::SameLine(0, 0); ImGui::TextDisabled(" to configure Node Chain for analyzing and processing your audio files.");
+                ImGui::EndGroup();
+
+                // Remember to restore cursor pos!
+                ImGui::SetCursorPos(initCursorPos);
+            }
 
             if (ImGui::BeginTable("FileDetailsTable", 9, flags))
             {
@@ -325,6 +367,8 @@ void ManifoldApp::UI_Files()
                 
                 ImGui::EndTable();
             }
+
+
 
             ImGui::EndChild();
         }        
