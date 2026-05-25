@@ -140,6 +140,15 @@ void ManifoldApp::onImGuiDisplay()
             ImGui::EndGroup();            
         }
 
+        // Draw a splitter between action bar and main view
+        {
+            const float refPosX = ImGui::GetCursorPosX();
+            const ImVec2 lineBegin = ImVec2(refPosX + 46.0f, 0.0f);
+            const ImVec2 lineEnd = ImVec2(refPosX + 46.0f, ImGui::GetWindowSize().y);
+
+            auto drawList = ImGui::GetWindowDrawList();
+            drawList->AddLine(lineBegin, lineEnd, IM_COL32(127, 127, 127, 50), 0.5f);
+        }
 
         ImGui::SameLine(0, 16);
 
