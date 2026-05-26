@@ -11,6 +11,8 @@ public:
     UIComponents_Actions(ManifoldApp* app_) : app(app_)
     {}
 
+    void subUI_ActionList();
+
     void subUI_NodeChainView();
 
     static constexpr float toolChainBtnWidth  = 25.0f + 4.0f;

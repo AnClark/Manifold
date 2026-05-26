@@ -107,6 +107,7 @@ add_executable (${PROJECT_NAME} WIN32
     src/ui_components/Files_FileOperations.cpp
     src/ui_components/Actions_Output.cpp
     src/ui_components/Actions_NodeChain.cpp
+    src/ui_components/Actions_Lists.cpp
     src/ui_components/Actions_DnD.cpp
     src/ui_components/DnDHandler.cpp
 )
