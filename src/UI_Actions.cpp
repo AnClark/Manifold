@@ -270,6 +270,7 @@ void ManifoldApp::UI_Actions()
                     // ── Footer pane: Output settings ──────────────────────────────────────
                     if (!footerPaneCollapsed)
                     {
+                    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(16.0f, 16.0f));
                     ImGui::BeginChild("Actions_Footer", ImVec2(0, footerPaneHeight), ImGuiChildFlags_Borders);
 
                     constexpr float kLabelW = 120.0f;   // Label width
@@ -347,6 +348,7 @@ void ManifoldApp::UI_Actions()
                     }
 
                     ImGui::EndChild(); // end Actions_Footer
+                    ImGui::PopStyleVar();   // ImGuiStyleVar_WindowPadding
                     } // end if (!footerPaneCollapsed)
                 }
                 ImGui::EndChild();
