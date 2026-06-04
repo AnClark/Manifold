@@ -76,6 +76,7 @@ add_executable (${PROJECT_NAME} WIN32
     src/config/Config.cpp
     src/config/Preferences.cpp
     src/config/FilenameConfig.cpp
+    src/config/WorkflowManager.cpp
     src/UI_Files.cpp
     src/UI_Actions.cpp
     src/UI_Tasks.cpp
