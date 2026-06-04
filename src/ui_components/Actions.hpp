@@ -4,6 +4,7 @@
 
 // Forward decls.
 class ManifoldApp;
+struct WorkflowDescriptor;
 
 class UIComponents_Actions
 {
@@ -12,6 +13,8 @@ public:
     {}
 
     void subUI_ActionList();
+    void subUI_WorkflowList();
+    void subroutine_LoadWorkflow(const WorkflowDescriptor& w);
 
     void subUI_NodeChainView();
 

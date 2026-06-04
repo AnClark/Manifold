@@ -115,7 +115,9 @@ namespace NodeConfig
 std::string saveNodeChain(std::vector<std::shared_ptr<Node>>& nodeChain,
                           std::mutex& nodeChainMutex,
                           toml::table outputConfig = {},
-                          std::string name = "");
+                          std::string name = "",
+                          std::string description = "",
+                          std::string group = "");
 
 /**
  * @brief Deserialises a node-chain preset from a TOML file and rebuilds the

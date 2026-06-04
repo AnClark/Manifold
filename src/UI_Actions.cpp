@@ -77,7 +77,25 @@ void ManifoldApp::UI_Actions()
                 //
                 ImGui::TableSetColumnIndex(0);
 
-                uiActions.subUI_ActionList();
+                if (ImGui::BeginTabBar("ActionView_LeftPanel"))
+                {
+                    constexpr float tabWidth = 80.0f;
+
+                    ImGui::SetNextItemWidth(tabWidth);
+                    if (ImGui::BeginTabItem("Actions"))
+                    {
+                        uiActions.subUI_ActionList();
+                        ImGui::EndTabItem();
+                    }
+
+                    ImGui::SetNextItemWidth(tabWidth);
+                    if (ImGui::BeginTabItem("Workflows"))
+                    {
+                        uiActions.subUI_WorkflowList();
+                        ImGui::EndTabItem();
+                    }
+                    ImGui::EndTabBar();
+                }
 
                 //
                 // RIGHT PANEL: Action configuration
