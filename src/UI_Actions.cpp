@@ -77,7 +77,25 @@ void ManifoldApp::UI_Actions()
                 //
                 ImGui::TableSetColumnIndex(0);
 
-                uiActions.subUI_ActionList();
+                if (ImGui::BeginTabBar("ActionView_LeftPanel"))
+                {
+                    constexpr float tabWidth = 80.0f;
+
+                    ImGui::SetNextItemWidth(tabWidth);
+                    if (ImGui::BeginTabItem("Actions"))
+                    {
+                        uiActions.subUI_ActionList();
+                        ImGui::EndTabItem();
+                    }
+
+                    ImGui::SetNextItemWidth(tabWidth);
+                    if (ImGui::BeginTabItem("Workflows"))
+                    {
+                        uiActions.subUI_WorkflowList();
+                        ImGui::EndTabItem();
+                    }
+                    ImGui::EndTabBar();
+                }
 
                 //
                 // RIGHT PANEL: Action configuration
@@ -341,11 +359,31 @@ void ManifoldApp::UI_Actions()
         case UIComponents_Actions::PendingDialog::SetOutputFolderConfirm:
             ImGui::OpenPopup("##set_output_folder_confirm");
             break;
+        case UIComponents_Actions::PendingDialog::SaveWorkflow:
+            ImGui::OpenPopup("##save_workflow");
+            break;
+        case UIComponents_Actions::PendingDialog::DeleteWorkflowConfirm:
+            ImGui::OpenPopup("##delete_workflow_confirm");
+            break;
+        case UIComponents_Actions::PendingDialog::RenameWorkflow:
+            ImGui::OpenPopup("##rename_workflow");
+            break;
+        case UIComponents_Actions::PendingDialog::ChangeGroupWorkflow:
+            ImGui::OpenPopup("##change_group_workflow");
+            break;
+        case UIComponents_Actions::PendingDialog::OverwriteWorkflowConfirm:
+            ImGui::OpenPopup("##overwrite_workflow_confirm");
+            break;
         default:
             break;
     }
     uiActions.popup_ConfirmLoadNodeChain();
     uiActions.popup_ConfirmSetOutputFolder();
+    uiActions.popup_SaveWorkflow();
+    uiActions.popup_ConfirmDeleteWorkflow();
+    uiActions.popup_RenameWorkflow();
+    uiActions.popup_ChangeGroupWorkflow();
+    uiActions.popup_ConfirmOverwriteWorkflow();
 
     ImGui::EndChild();
 }

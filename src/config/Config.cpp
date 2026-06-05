@@ -6,7 +6,7 @@
 #include <fstream>
 #include <filesystem>
 
-std::string NodeConfig::saveNodeChain(std::vector<std::shared_ptr<Node>> &nodeChain, std::mutex& nodeChainMutex, toml::table outputConfig, std::string name)
+std::string NodeConfig::saveNodeChain(std::vector<std::shared_ptr<Node>> &nodeChain, std::mutex& nodeChainMutex, toml::table outputConfig, std::string name, std::string description)
 {
     // 1. Create root table
     toml::table root;
@@ -15,6 +15,8 @@ std::string NodeConfig::saveNodeChain(std::vector<std::shared_ptr<Node>> &nodeCh
     root.insert("config_type", kConfigTypeNodeChain);
     if (!name.empty())
         root.insert("name", name);
+    if (!description.empty())
+        root.insert("description", description);
     // TODO: Maybe need to add Manifold's version
 
     // 3. Export all configs from the member of nodeChain

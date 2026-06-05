@@ -19,6 +19,7 @@
 #include "pipeline/Node.hpp"
 #include "base/IAudioProcessor.hpp"
 #include "config/Preferences.hpp"
+#include "config/WorkflowManager.hpp"
 
 #include <unordered_set>
 
@@ -161,4 +162,9 @@ private:
     bool            &exportNodeChainWithOutputConfig = preferences.actionUIPref.exportNodeChainWithOutputConfig;
     bool            &importNodeChainWithOutputConfig = preferences.actionUIPref.importNodeChainWithOutputConfig;
     bool            &rememberRecentOutputConfigPref  = preferences.actionUIPref.rememberRecentOutputConfigPref;
+
+    // ==============================================================
+    // Workflow storage (workflow = node chain configs stored in Manifold for future use)
+
+    WorkflowManager WorkflowManager;
 };
