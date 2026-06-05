@@ -1,10 +1,10 @@
 #pragma once
 
 #include "config/FilenameConfig.hpp"
+#include "config/WorkflowManager.hpp"
 
 // Forward decls.
 class ManifoldApp;
-struct WorkflowDescriptor;
 
 class UIComponents_Actions
 {
@@ -15,6 +15,13 @@ public:
     void subUI_ActionList();
     void subUI_WorkflowList();
     void subroutine_LoadWorkflow(const WorkflowDescriptor& w);
+    void subroutine_RevealWorkflow(const WorkflowDescriptor& w);
+
+    void popup_SaveWorkflow();
+    void popup_ConfirmDeleteWorkflow();
+    void popup_RenameWorkflow();
+    void popup_ChangeGroupWorkflow();
+    void popup_ConfirmOverwriteWorkflow();
 
     void subUI_NodeChainView();
 
@@ -50,11 +57,37 @@ public:
     void subUI_ShowLatestRunStatus();
 
     void system_DropHandler(int count, const char** paths);
-    enum class PendingDialog { Null, LoadNodeChainConfirm, SetOutputFolderConfirm };
+    enum class PendingDialog { Null, LoadNodeChainConfirm, SetOutputFolderConfirm,
+                               SaveWorkflow, DeleteWorkflowConfirm,
+                               RenameWorkflow, ChangeGroupWorkflow, OverwriteWorkflowConfirm };
     PendingDialog pendingDialog { PendingDialog::Null };
 
 private:
     ManifoldApp* app;
 
     std::string dndReceivedPath;
+
+    // ── Workflow editor state ─────────────────────────────────────────────
+    struct SaveWorkflowState
+    {
+        char nameBuf[256]  = {};
+        char descBuf[512]  = {};
+        char groupBuf[128] = {};
+        bool includeOutputConfig = false;
+    } saveWfState;
+
+    WorkflowDescriptor pendingDeleteWorkflow;   ///< Workflow staged for deletion confirmation
+    WorkflowDescriptor pendingRenameWorkflow;   ///< Workflow staged for rename
+    WorkflowDescriptor pendingChangeGrpWorkflow;///< Workflow staged for group change
+    WorkflowDescriptor pendingOverwriteWorkflow;///< Workflow staged for overwrite-with-current
+
+    struct RenameWorkflowState
+    {
+        char nameBuf[256] = {};
+    } renameWfState;
+
+    struct ChangeGroupState
+    {
+        char groupBuf[128] = {};
+    } changeGrpState;
 };
