@@ -186,7 +186,7 @@ void UIComponents_Actions::button_CollapseAllNodes(int collapsedCount)
     }
     ImGui::EndDisabled();
     ImGui::PopFont();
-    if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal))
+    if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled | ImGuiHoveredFlags_DelayNormal))
         ImGui::SetTooltip("Collapse all nodes");
 }
 
@@ -203,7 +203,7 @@ void UIComponents_Actions::button_ExpandAllNodes(int collapsedCount)
     }
     ImGui::EndDisabled();
     ImGui::PopFont();
-    if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal))
+    if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled | ImGuiHoveredFlags_DelayNormal))
         ImGui::SetTooltip("Expand all nodes");    
 }
 
