@@ -196,6 +196,7 @@ endif ()
 
 # Glfw3
 pkg_check_modules (GLFW3 REQUIRED glfw3 IMPORTED_TARGET)
+target_include_directories (imgui PRIVATE ${GLFW3_INCLUDE_DIRS})
 target_link_libraries (${PROJECT_NAME} PRIVATE ${GL_LIBRARY} PkgConfig::GLFW3 ${CMAKE_DL_LIBS})
 
 # libsndfile
