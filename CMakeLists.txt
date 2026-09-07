@@ -11,6 +11,10 @@ project (Manifold
 # See: `if (APPLE)` blocks in this CMakeLists.txt.
 #
 
+# Metadata for macOS bundle. Accessed in macOS/Packaging.cmake
+set (AUTHOR "AnClark Liu")
+set (MACOS_GUI_IDENFIER "studio.anclark.manifold")
+
 if (APPLE)
     enable_language (OBJCXX)
     set (IMGUI_APPLICATION_PLATFORM_SOURCE deps/imgui-application/ApplicationMetal.mm)
@@ -322,3 +326,8 @@ target_link_libraries (analyzer_node_test PRIVATE
     PkgConfig::SNDFILE
     imgui
 )
+
+# Apple stuff: Generate App Bundle & DMG file
+if (APPLE)
+    include (${CMAKE_CURRENT_SOURCE_DIR}/macOS/Packaging.cmake)
+endif ()
