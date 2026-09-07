@@ -5,7 +5,11 @@
 
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
+#if defined(__APPLE__)
+#include "ApplicationMetal.hpp"
+#else
 #include "imgui_impl_opengl2.h"
+#endif
 #include <stdio.h>
 
 #include <GLFW/glfw3.h>
@@ -18,6 +22,9 @@ static void glfw_error_callback(int error, const char* description)
 
 ImGuiApplication::ImGuiApplication(const char* initWindowTitle)
     : window(NULL), isGlfwOK(false)
+#if defined(__APPLE__)
+    , metalRenderer(nullptr)
+#endif
 {
     // Initialize Glfw3
     if(!_initGlfw(initWindowTitle))
@@ -47,6 +54,9 @@ bool ImGuiApplication::_initGlfw(const char* initWindowTitle)
     if (!isGlfwOK)
         return false;
 
+#if defined(__APPLE__)
+    glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
+#endif
     // Create window with graphics context
     this->mainScale = ImGui_ImplGlfw_GetContentScaleForMonitor(glfwGetPrimaryMonitor()); // Valid on GLFW 3.3+ only
     this->window = glfwCreateWindow((int)(1280 * this->mainScale), (int)(800 * this->mainScale), initWindowTitle ? initWindowTitle : "Dear ImGui + Glfw3 Application", nullptr, nullptr);
@@ -56,8 +66,10 @@ bool ImGuiApplication::_initGlfw(const char* initWindowTitle)
         return false;
     }
 
+#if !defined(__APPLE__)
     glfwMakeContextCurrent(this->window);
     glfwSwapInterval(1); // Enable vsync
+#endif
 
     return true;
 }
@@ -81,14 +93,26 @@ void ImGuiApplication::_initImGui()
     // Note: FontScaleDpi is not a standard ImGuiStyle property. Font scale should be handled via io.FontGlobalScale or loading scaled fonts.
 
     // Setup Platform/Renderer backends
+#if defined(__APPLE__)
+    ImGui_ImplGlfw_InitForOther(window, true);  // Init Glfw for custom backend (Metal)
+    this->metalRenderer = ImGuiApplicationMetal_Create(window);
+    if (this->metalRenderer == nullptr)
+        this->isGlfwOK = false;
+#else
     ImGui_ImplGlfw_InitForOpenGL(window, true);
     ImGui_ImplOpenGL2_Init();
+#endif
 }
 
 void ImGuiApplication::_cleanupImGui()
 {
     // Cleanup
+#if defined(__APPLE__)
+    ImGuiApplicationMetal_Destroy(this->metalRenderer);
+    this->metalRenderer = nullptr;
+#else
     ImGui_ImplOpenGL2_Shutdown();
+#endif
     ImGui_ImplGlfw_Shutdown();
     ImGui::DestroyContext();
 }
@@ -148,7 +172,12 @@ void ImGuiApplication::mainLoop()
         }
 
         // Start the Dear ImGui frame
+    #if defined(__APPLE__)
+        if (!ImGuiApplicationMetal_BeginFrame(this->metalRenderer, this->window))
+            continue;
+    #else
         ImGui_ImplOpenGL2_NewFrame();
+    #endif
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
 
@@ -158,6 +187,9 @@ void ImGuiApplication::mainLoop()
         // Rendering
         ImGui::Render();
         int display_w, display_h;
+    #if defined(__APPLE__)
+        ImGuiApplicationMetal_RenderFrame(this->metalRenderer, ImGui::GetDrawData());
+    #else
         glfwGetFramebufferSize(this->window, &display_w, &display_h);
         glViewport(0, 0, display_w, display_h);
         glDisable(GL_SCISSOR_TEST); // Ensure glClear covers the full framebuffer (not restricted by ImGui's scissor box)
@@ -174,6 +206,7 @@ void ImGuiApplication::mainLoop()
 
         glfwMakeContextCurrent(this->window);
         glfwSwapBuffers(this->window);
+    #endif
     }
 
     // Call user's termination before the object starts to be destroyed

@@ -5,6 +5,25 @@ project (Manifold
 )
 
 #
+# macOS stuff.
+#
+# On macOS, Manifold renders UI with Metal. Special treats required.
+# See: `if (APPLE)` blocks in this CMakeLists.txt.
+#
+
+if (APPLE)
+    enable_language (OBJCXX)
+    set (IMGUI_APPLICATION_PLATFORM_SOURCE deps/imgui-application/ApplicationMetal.mm)
+    set_source_files_properties (
+        deps/imgui-application/ApplicationMetal.mm
+        deps/imgui/imgui_impl_metal.mm
+        PROPERTIES COMPILE_OPTIONS "-fobjc-arc"
+    )
+else ()
+    set (IMGUI_APPLICATION_PLATFORM_SOURCE)
+endif ()
+
+#
 # Global config
 #
 
@@ -63,6 +82,7 @@ set (MANIFOLD_DCOFFSET_ANALYZER_THREADS_DEFAULT 4 CACHE STRING "Specify the defa
 add_executable (${PROJECT_NAME} WIN32
     ${SRC_IMGUI}
     deps/imgui-application/Application.cpp
+    ${IMGUI_APPLICATION_PLATFORM_SOURCE}   # Platform-specific ImGui implementation file (currently only macOS requires this)
     src/Main.cpp
     src/utils/LogManager.cpp
     src/base/SndFileInfo.cpp
@@ -133,6 +153,10 @@ endif ()
 # Dear ImGui
 aux_source_directory (deps/imgui SRC_IMGUI)
 add_library (imgui STATIC ${SRC_IMGUI})
+if (APPLE)
+    # Add Metal implementaion file
+    target_sources (imgui PRIVATE deps/imgui/imgui_impl_metal.mm)
+endif ()
 target_link_libraries (${PROJECT_NAME} PRIVATE imgui)
 
 # NFD Extended
@@ -188,16 +212,28 @@ target_compile_definitions (${PROJECT_NAME} PRIVATE R8B_PFFFT_DOUBLE=1)
 if (UNIX AND NOT APPLE)
     message (STATUS "Using Linux. Prefer -lGL explicitly for better compatibility.")
     set (GL_LIBRARY -lGL)
-else ()
+elseif (NOT APPLE)
     message (STATUS "Using platform-specific OpenGL2 library detection.")
     find_package (OpenGL REQUIRED)
     set (GL_LIBRARY OpenGL::GL)
+else ()
+    message (STATUS "Using macOS Metal renderer; OpenGL2 is not linked.")
+    set (GL_LIBRARY)
 endif ()
 
 # Glfw3
 pkg_check_modules (GLFW3 REQUIRED glfw3 IMPORTED_TARGET)
 target_include_directories (imgui PRIVATE ${GLFW3_INCLUDE_DIRS})
 target_link_libraries (${PROJECT_NAME} PRIVATE ${GL_LIBRARY} PkgConfig::GLFW3 ${CMAKE_DL_LIBS})
+
+if (APPLE)
+    # Link against macOS native UI stuff.
+    target_link_libraries (${PROJECT_NAME} PRIVATE
+        "-framework Metal"
+        "-framework QuartzCore"
+        "-framework Cocoa"
+    )
+endif ()
 
 # libsndfile
 # Find libsndfile and its dependencies

@@ -3,11 +3,12 @@
 #include <GLFW/glfw3.h>
 
 /**
- * @brief Base class for a Dear ImGui application backed by GLFW3 + OpenGL2.
+ * @brief Base class for a Dear ImGui application backed by GLFW3.
  *
  * @details
  * `ImGuiApplication` wraps the full GLFW3 / Dear ImGui initialization, render
- * loop, and teardown into a single, reusable class.  Derive from it, implement
+ * loop, and teardown into a single, reusable class. On macOS it uses Metal;
+ * other platforms use OpenGL2. Derive from it, implement
  * the three pure-virtual hooks (`onInit`, `onImGuiDisplay`, `onTerminate`), and
  * call `mainLoop()` from `main()` — that is all that is needed to get a working
  * Dear ImGui window.
@@ -183,6 +184,11 @@ private:
 
     /** @brief Opaque GLFW window handle. */
     GLFWwindow *window;
+
+#if defined(__APPLE__)
+    /** @brief Opaque macOS Metal renderer owned by the application module. */
+    void* metalRenderer;
+#endif
 
     /** @brief Content-scale factor queried from the primary monitor (DPI). */
     float mainScale;
