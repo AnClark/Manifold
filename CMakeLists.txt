@@ -201,6 +201,7 @@ target_link_libraries (${PROJECT_NAME} PRIVATE ${GL_LIBRARY} PkgConfig::GLFW3 ${
 # libsndfile
 # Find libsndfile and its dependencies
 pkg_check_modules(SNDFILE REQUIRED IMPORTED_TARGET sndfile)
+target_include_directories (miniaudio_libsndfile PRIVATE ${SNDFILE_INCLUDE_DIRS})
 target_link_libraries (${PROJECT_NAME} PUBLIC PkgConfig::SNDFILE)
 
 # ===========================================================================
