@@ -45,9 +45,9 @@
  * public:
  *     MyApp() : ImGuiApplication("My Window") {}
  * protected:
- *     void onInit()         override { /* load resources * / }
+ *     void onInit()         override { load_resources(); }
  *     void onImGuiDisplay() override { ImGui::ShowDemoWindow(); }
- *     void onTerminate()    override { /* release resources * / }
+ *     void onTerminate()    override { release_resources(); }
  * };
  *
  * int main() {
