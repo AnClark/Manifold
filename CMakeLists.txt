@@ -171,6 +171,10 @@ set (BUILD_SHARED_LIBS OFF)
 add_subdirectory (deps/libebur128)
 target_link_libraries (${PROJECT_NAME} PRIVATE ebur128)
 set (CMAKE_POLICY_VERSION_MINIMUM ${CMAKE_VERSION}) # Rewind CMake version requirement
+if (APPLE AND (CMAKE_SYSTEM_PROCESSOR MATCHES "^(arm64|aarch64)$" OR CMAKE_OSX_ARCHITECTURES MATCHES "(^|;)arm64(;|$)"))
+    # Suppress misleading SSE2 optimization warnings on Apple Silicon
+    target_compile_options (ebur128 PRIVATE "-Wno-#warnings")
+endif ()
 
 # miniaudio
 # Set miniaudio flags
@@ -195,6 +199,11 @@ target_link_libraries (${PROJECT_NAME} PRIVATE miniaudio_libsndfile)
 add_library (r8brain_pffft_backend STATIC deps/r8brain/fft/pffft_double.c)
 target_include_directories (r8brain_pffft_backend PRIVATE deps/r8brain deps/r8brain/fft)
 target_compile_definitions (r8brain_pffft_backend PRIVATE R8B_PFFFT_DOUBLE=1)
+if (APPLE AND (CMAKE_SYSTEM_PROCESSOR MATCHES "^(arm64|aarch64)$" OR CMAKE_OSX_ARCHITECTURES MATCHES "(^|;)arm64(;|$)"))
+    # Explicitly enable ARM Neon optimizations on Apple Silicon
+    target_compile_definitions (r8brain_pffft_backend PRIVATE PFFFT_ENABLE_NEON=1)
+    target_compile_options (r8brain_pffft_backend PRIVATE "-Wno-#pragma-messages")
+endif ()
 
 target_link_libraries (${PROJECT_NAME} PRIVATE r8brain_pffft_backend)
 target_compile_definitions (${PROJECT_NAME} PRIVATE R8B_PFFFT_DOUBLE=1)
