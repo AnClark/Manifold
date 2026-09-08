@@ -68,6 +68,11 @@ void ManifoldApp::onTerminate()
 
 void ManifoldApp::onImGuiDisplay()
 {
+    // Defer the native window close request until the user confirms it in ImGui.
+    const bool closeRequested = glfwWindowShouldClose(getWindow());
+    if (closeRequested)
+        setWindowShouldClose(false);
+
     // Make window fullscreen
     static constexpr int filesWindowFlag =
             ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse |
@@ -171,6 +176,11 @@ void ManifoldApp::onImGuiDisplay()
                 UI_Files();
         }
         ImGui::EndGroup();
+
+        if (closeRequested)
+            ImGui::OpenPopup("##confirm_close");
+
+        popup_ConfirmCloseManifold();
     }
     ImGui::End();
 
@@ -201,4 +211,32 @@ int main()
 {
     ManifoldApp app;
     app.mainLoop();
+}
+
+void ManifoldApp::popup_ConfirmCloseManifold()
+{
+    const ImGuiViewport* viewport = ImGui::GetMainViewport();
+    const ImVec2 viewportCenter = ImVec2(
+        viewport->Pos.x + viewport->Size.x * 0.5f,
+        viewport->Pos.y + viewport->Size.y * 0.5f
+    );
+    ImGui::SetNextWindowPos(viewportCenter, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+    if (ImGui::BeginPopupModal("##confirm_close", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
+    {
+        ImGui::Text("Are you sure you want to quit Manifold?");
+        ImGui::Spacing();
+        ImGui::BeginDisabled();
+        ImGui::BulletText("Any running tasks will be cancelled.");
+        ImGui::BulletText("Workflow, file list and task reports will not keep. Save them before exiting, if necessary.");
+        ImGui::EndDisabled();
+        ImGui::Separator();
+
+        if (ImGui::Button("Quit", ImVec2(120, 0)))
+            setWindowShouldClose(true);
+        ImGui::SameLine();
+        if (ImGui::Button("Cancel", ImVec2(120, 0)) || ImGui::Shortcut(ImGuiKey_Escape))
+            ImGui::CloseCurrentPopup();
+
+        ImGui::EndPopup();
+    }
 }
