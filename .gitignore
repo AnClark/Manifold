@@ -40,3 +40,6 @@ compile_commands.json
 
 # ImGui configs
 imgui.ini
+
+# macOS Finder configs
+*DS_Store*
