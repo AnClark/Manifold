@@ -134,6 +134,14 @@ void ImGuiApplication::setWindowTitle(const char *newTitle)
     glfwSetWindowTitle(this->window, newTitle);
 }
 
+bool ImGuiApplication::getWindowShouldClose()
+{
+    if (!isGlfwOK)
+        return false;
+
+    return glfwWindowShouldClose(this->window);
+}
+
 void ImGuiApplication::setWindowShouldClose(bool shouldClose)
 {
     // NOTICE: Applications should make sure everything is done before invoing this method!
