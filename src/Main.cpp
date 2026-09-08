@@ -69,7 +69,7 @@ void ManifoldApp::onTerminate()
 void ManifoldApp::onImGuiDisplay()
 {
     // Defer the native window close request until the user confirms it in ImGui.
-    const bool closeRequested = glfwWindowShouldClose(getWindow());
+    const bool closeRequested = getWindowShouldClose();
     if (closeRequested)
         setWindowShouldClose(false);
 
