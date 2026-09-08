@@ -5,6 +5,29 @@ project (Manifold
 )
 
 #
+# macOS stuff.
+#
+# On macOS, Manifold renders UI with Metal. Special treats required.
+# See: `if (APPLE)` blocks in this CMakeLists.txt.
+#
+
+# Metadata for macOS bundle. Accessed in macOS/Packaging.cmake
+set (AUTHOR "AnClark Liu")
+set (MACOS_GUI_IDENFIER "studio.anclark.manifold")
+
+if (APPLE)
+    enable_language (OBJCXX)
+    set (IMGUI_APPLICATION_PLATFORM_SOURCE deps/imgui-application/ApplicationMetal.mm)
+    set_source_files_properties (
+        deps/imgui-application/ApplicationMetal.mm
+        deps/imgui/imgui_impl_metal.mm
+        PROPERTIES COMPILE_OPTIONS "-fobjc-arc"
+    )
+else ()
+    set (IMGUI_APPLICATION_PLATFORM_SOURCE)
+endif ()
+
+#
 # Global config
 #
 
@@ -63,6 +86,7 @@ set (MANIFOLD_DCOFFSET_ANALYZER_THREADS_DEFAULT 4 CACHE STRING "Specify the defa
 add_executable (${PROJECT_NAME} WIN32
     ${SRC_IMGUI}
     deps/imgui-application/Application.cpp
+    ${IMGUI_APPLICATION_PLATFORM_SOURCE}   # Platform-specific ImGui implementation file (currently only macOS requires this)
     src/Main.cpp
     src/utils/LogManager.cpp
     src/base/SndFileInfo.cpp
@@ -133,6 +157,10 @@ endif ()
 # Dear ImGui
 aux_source_directory (deps/imgui SRC_IMGUI)
 add_library (imgui STATIC ${SRC_IMGUI})
+if (APPLE)
+    # Add Metal implementaion file
+    target_sources (imgui PRIVATE deps/imgui/imgui_impl_metal.mm)
+endif ()
 target_link_libraries (${PROJECT_NAME} PRIVATE imgui)
 
 # NFD Extended
@@ -147,6 +175,10 @@ set (BUILD_SHARED_LIBS OFF)
 add_subdirectory (deps/libebur128)
 target_link_libraries (${PROJECT_NAME} PRIVATE ebur128)
 set (CMAKE_POLICY_VERSION_MINIMUM ${CMAKE_VERSION}) # Rewind CMake version requirement
+if (APPLE AND (CMAKE_SYSTEM_PROCESSOR MATCHES "^(arm64|aarch64)$" OR CMAKE_OSX_ARCHITECTURES MATCHES "(^|;)arm64(;|$)"))
+    # Suppress misleading SSE2 optimization warnings on Apple Silicon
+    target_compile_options (ebur128 PRIVATE "-Wno-#warnings")
+endif ()
 
 # miniaudio
 # Set miniaudio flags
@@ -171,6 +203,11 @@ target_link_libraries (${PROJECT_NAME} PRIVATE miniaudio_libsndfile)
 add_library (r8brain_pffft_backend STATIC deps/r8brain/fft/pffft_double.c)
 target_include_directories (r8brain_pffft_backend PRIVATE deps/r8brain deps/r8brain/fft)
 target_compile_definitions (r8brain_pffft_backend PRIVATE R8B_PFFFT_DOUBLE=1)
+if (APPLE AND (CMAKE_SYSTEM_PROCESSOR MATCHES "^(arm64|aarch64)$" OR CMAKE_OSX_ARCHITECTURES MATCHES "(^|;)arm64(;|$)"))
+    # Explicitly enable ARM Neon optimizations on Apple Silicon
+    target_compile_definitions (r8brain_pffft_backend PRIVATE PFFFT_ENABLE_NEON=1)
+    target_compile_options (r8brain_pffft_backend PRIVATE "-Wno-#pragma-messages")
+endif ()
 
 target_link_libraries (${PROJECT_NAME} PRIVATE r8brain_pffft_backend)
 target_compile_definitions (${PROJECT_NAME} PRIVATE R8B_PFFFT_DOUBLE=1)
@@ -188,19 +225,33 @@ target_compile_definitions (${PROJECT_NAME} PRIVATE R8B_PFFFT_DOUBLE=1)
 if (UNIX AND NOT APPLE)
     message (STATUS "Using Linux. Prefer -lGL explicitly for better compatibility.")
     set (GL_LIBRARY -lGL)
-else ()
+elseif (NOT APPLE)
     message (STATUS "Using platform-specific OpenGL2 library detection.")
     find_package (OpenGL REQUIRED)
     set (GL_LIBRARY OpenGL::GL)
+else ()
+    message (STATUS "Using macOS Metal renderer; OpenGL2 is not linked.")
+    set (GL_LIBRARY)
 endif ()
 
 # Glfw3
 pkg_check_modules (GLFW3 REQUIRED glfw3 IMPORTED_TARGET)
+target_include_directories (imgui PRIVATE ${GLFW3_INCLUDE_DIRS})
 target_link_libraries (${PROJECT_NAME} PRIVATE ${GL_LIBRARY} PkgConfig::GLFW3 ${CMAKE_DL_LIBS})
+
+if (APPLE)
+    # Link against macOS native UI stuff.
+    target_link_libraries (${PROJECT_NAME} PRIVATE
+        "-framework Metal"
+        "-framework QuartzCore"
+        "-framework Cocoa"
+    )
+endif ()
 
 # libsndfile
 # Find libsndfile and its dependencies
 pkg_check_modules(SNDFILE REQUIRED IMPORTED_TARGET sndfile)
+target_include_directories (miniaudio_libsndfile PRIVATE ${SNDFILE_INCLUDE_DIRS})
 target_link_libraries (${PROJECT_NAME} PUBLIC PkgConfig::SNDFILE)
 
 # ===========================================================================
@@ -275,3 +326,8 @@ target_link_libraries (analyzer_node_test PRIVATE
     PkgConfig::SNDFILE
     imgui
 )
+
+# Apple stuff: Generate App Bundle & DMG file
+if (APPLE)
+    include (${CMAKE_CURRENT_SOURCE_DIR}/macOS/Packaging.cmake)
+endif ()
