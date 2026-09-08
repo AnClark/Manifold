@@ -53,6 +53,11 @@ protected:
     void UI_Tasks();
     void UI_Log();
 
+    // =============================================================
+    // UI Global Sub-actions (not affiliated with any components)
+
+    void popup_ConfirmCloseManifold();
+
 private:
     UIState uiState;
 
