@@ -70,11 +70,12 @@ void UIComponents_Files::subroutine_HandleShortcutKeys(bool& pendingOpenRemoveCo
         for (auto& file : app->sndFileList)
             file->selected = true;
     }
-    else if (ImGui::Shortcut(ImGuiKey_Delete))
+    else if (ImGui::Shortcut(ImGuiKey_Delete) || ImGui::Shortcut(ImGuiKey_Backspace))
     {
-        // Del: Remove selected files
+        // Del / Backspace: Remove selected files
         // NOTE: OpenPopup must be called from the same window context as BeginPopupModal.
         //       We're inside a nested child window here, so defer to the outer scope via flag.
+        //       Backspace key is compatible with Mac (no dedicated "Del" key there).
         pendingOpenRemoveConfirm = true;
     }
 }
