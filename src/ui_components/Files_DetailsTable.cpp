@@ -79,3 +79,19 @@ void UIComponents_Files::subroutine_HandleShortcutKeys(bool& pendingOpenRemoveCo
         pendingOpenRemoveConfirm = true;
     }
 }
+
+void UIComponents_Files::contextMenu_FileOperations(int selectedFileCount)
+{
+    // NOTE: Using ImGui's shortcut function ImGui::BeginPopupContextItem().
+    //       It creates menu, and registers right-click action in one functon call.
+    if (ImGui::BeginPopupContextItem("##f_ctx"))
+    {
+        if (ImGui::MenuItem(selectedFileCount > 1 ? "Play the first selected file" : "Play selected file"))
+            button_PlaySelectedFile(true);
+
+        if (ImGui::MenuItem("Remove..."))
+            button_RemoveSelectedFiles(selectedFileCount);
+
+        ImGui::EndPopup();
+    }
+}

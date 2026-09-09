@@ -28,6 +28,7 @@ public:
 
     void button_Refresh();
 
+    void contextMenu_FileOperations(int selectedFileCount);
     void subroutine_TableSortSpecs();
     void subroutine_HandleShortcutKeys(bool& pendingOpenRemoveConfirm);
 

@@ -250,6 +250,9 @@ void ManifoldApp::UI_Files()
                             uiFiles.button_PlaySelectedFile(true);  // param: runAsCommand = true
                     }
 
+                    // Right click: Open context menu.
+                    uiFiles.contextMenu_FileOperations(selectedCount);
+
                     ImGui::PopID();
                     
                     // 第二列：Bit Depth
