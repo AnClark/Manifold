@@ -3,10 +3,10 @@
 #include "imgui.h"
 #include "ImGuiNotify_MOD.hpp"
 #include "utils/TableMinColumnWidth.hpp"
+#include "utils/Timestamp.hpp"
 
 #include "../fonts/IconFontAwesome5_Unique.h"    // For "✗" mark
 
-#include <chrono>
 #include <cstdio>
 #include <ctime>
 #include <string>
@@ -16,41 +16,6 @@
 // ============================================================
 
 namespace {
-
-// Format a RunTimePoint as "YYYY-MM-DD HH:MM:SS"
-static std::string fmtRunTimestamp(const RunTimePoint& tp)
-{
-    auto t = std::chrono::system_clock::to_time_t(tp);
-    std::tm tm_buf{};
-#ifdef _WIN32
-    localtime_s(&tm_buf, &t);
-#else
-    localtime_r(&t, &tm_buf);
-#endif
-    char buf[24];
-    std::snprintf(buf, sizeof(buf), "%04d-%02d-%02d  %02d:%02d:%02d",
-                  tm_buf.tm_year + 1900, tm_buf.tm_mon + 1, tm_buf.tm_mday,
-                  tm_buf.tm_hour, tm_buf.tm_min, tm_buf.tm_sec);
-    return buf;
-}
-
-// Format elapsed wall-clock duration between two time points
-static std::string fmtElapsed(const RunTimePoint& start, const RunTimePoint& end)
-{
-    using namespace std::chrono;
-    auto secs = duration_cast<seconds>(end - start).count();
-    if (secs < 60)
-    {
-        char buf[16];
-        std::snprintf(buf, sizeof(buf), "%llds", static_cast<long long>(secs));
-        return buf;
-    }
-    char buf[16];
-    std::snprintf(buf, sizeof(buf), "%lldm %llds",
-                  static_cast<long long>(secs / 60),
-                  static_cast<long long>(secs % 60));
-    return buf;
-}
 
 static ImVec4 statusColor(FileRunRecord::Status st)
 {
@@ -209,7 +174,7 @@ void ManifoldApp::UI_Tasks()
                 {
                     char header[80];
                     std::snprintf(header, sizeof(header), "Run #%llu   %s",
-                                run->id, fmtRunTimestamp(run->timestampCreated).c_str());
+                                run->id, TimestampUtils::fmtRunTimestamp(run->timestampCreated).c_str());
                     if (active)
                         ImGui::TextColored(ImVec4(0.60f, 0.85f, 1.0f, 1.0f), "%s", header);
                     else
@@ -362,7 +327,7 @@ void ManifoldApp::UI_Tasks()
             {
                 ImGui::AlignTextToFramePadding();
                 ImGui::TextDisabled("Created: %s",
-                    fmtRunTimestamp(run->timestampCreated).c_str());
+                    TimestampUtils::fmtRunTimestamp(run->timestampCreated).c_str());
 
                 // Cancel button — right-aligned, shown only on active runs
                 if (active)
@@ -405,7 +370,7 @@ void ManifoldApp::UI_Tasks()
                     }
                     ImGui::SameLine(0, 20);
                     ImGui::TextDisabled("Elapsed: %s",
-                        fmtElapsed(run->timestampCreated, latestFinish).c_str());
+                        TimestampUtils::fmtElapsed(run->timestampCreated, latestFinish).c_str());
                 }
 
                 ImGui::TextDisabled("Output: %s", run->outputDir.c_str());
@@ -532,7 +497,7 @@ void ManifoldApp::UI_Tasks()
                             else if (status == FileRunRecord::Status::Done)
                             {
                                 const std::string elapsed =
-                                    fmtElapsed(record->timestampStarted, record->timestampFinished);
+                                    TimestampUtils::fmtElapsed(record->timestampStarted, record->timestampFinished);
                                 ImGui::TextDisabled("%s", elapsed.c_str());
                             }
                             else if (status == FileRunRecord::Status::Cancelled)
