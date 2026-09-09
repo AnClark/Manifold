@@ -28,6 +28,9 @@ public:
 
     void button_Refresh();
 
+    void subroutine_TableSortSpecs();
+    void subroutine_HandleShortcutKeys(bool& pendingOpenRemoveConfirm);
+
     void system_DropHandler(int count, const char** paths);
 
 private:

@@ -128,6 +128,7 @@ add_executable (${PROJECT_NAME} WIN32
     src/pipeline/action_nodes/LoudnessComplianceNode.cpp
     src/pipeline/action_nodes/ClippingDetectionNode.cpp
     src/pipeline/action_nodes/DynamicRangeNode.cpp
+    src/ui_components/Files_DetailsTable.cpp
     src/ui_components/Files_MediaPlayer.cpp
     src/ui_components/Files_FileOperations.cpp
     src/ui_components/Actions_Output.cpp
