@@ -138,6 +138,13 @@ add_executable (${PROJECT_NAME} WIN32
     src/ui_components/DnDHandler.cpp
 )
 
+# Fonts
+target_sources (${PROJECT_NAME} PRIVATE
+    fonts/DroidSans.cpp
+    fonts/DroidSansFallback.cpp
+    fonts/FontAwesome5.cpp
+)
+
 # Apply feature switches
 if (MANIFOLD_ENABLE_PARALLEL_ANALYZING)
     message (STATUS "${PROJECT_NAME}: Parallel analyzing:\t\tON")
