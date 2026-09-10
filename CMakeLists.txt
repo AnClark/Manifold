@@ -167,11 +167,19 @@ endif ()
 #
 
 # Dear ImGui
-aux_source_directory (deps/imgui SRC_IMGUI)
-add_library (imgui STATIC ${SRC_IMGUI})
+add_library (imgui STATIC
+    deps/imgui/imgui.cpp
+    deps/imgui/imgui_draw.cpp
+    deps/imgui/imgui_impl_glfw.cpp
+    deps/imgui/imgui_tables.cpp
+    deps/imgui/imgui_widgets.cpp
+)
 if (APPLE)
     # Add Metal implementaion file
     target_sources (imgui PRIVATE deps/imgui/imgui_impl_metal.mm)
+else ()
+    target_sources (imgui PRIVATE deps/imgui/imgui_impl_opengl2.cpp)
+    target_sources (imgui PRIVATE deps/imgui/imgui_impl_opengl3.cpp)
 endif ()
 target_link_libraries (${PROJECT_NAME} PRIVATE imgui)
 
