@@ -7,3 +7,6 @@
 [submodule "deps/r8brain"]
 	path = deps/r8brain
 	url = https://github.com/avaneev/r8brain-free-src/
+[submodule "deps/libxlsxwriter"]
+	path = deps/libxlsxwriter
+	url = https://github.com/jmcnamara/libxlsxwriter/
