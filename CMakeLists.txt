@@ -92,6 +92,7 @@ add_executable (${PROJECT_NAME} WIN32
     src/utils/LogManager.cpp
     src/base/SndFileInfo.cpp
     src/base/Worker.cpp
+    src/base/StatementExporter.cpp
     src/workers/SndFileWorker.cpp
     src/workers/EBUR128Worker.cpp
     src/workers/DcOffsetWorker.cpp
@@ -138,6 +139,7 @@ add_executable (${PROJECT_NAME} WIN32
     src/ui_components/Actions_DnD.cpp
     src/ui_components/Actions_Workflows.cpp
     src/ui_components/DnDHandler.cpp
+    src/statement/HTMLStatementExporter.cpp
 )
 
 # Fonts
