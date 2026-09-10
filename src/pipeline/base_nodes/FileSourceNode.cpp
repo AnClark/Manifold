@@ -36,8 +36,7 @@ std::unique_ptr<AudioStream> FileSourceNode::create(NodeContext& ctx)
     if (!sf) {
         LOG_ERRORF("FileSourceNode", "Cannot open '%s': %s", ctx.sourcePath.c_str(), sf_strerror(nullptr));
         throw std::runtime_error(
-            "[FileSourceNode] cannot open '" + ctx.sourcePath +
-            "': " + sf_strerror(nullptr));
+            std::string("Cannot open file:\n") + sf_strerror(nullptr));
     }
 
     AudioFormat fmt;
