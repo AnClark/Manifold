@@ -3,6 +3,8 @@
 
 #include <imgui.h>
 
+#include <algorithm>
+
 void UIComponents_Files::subroutine_TableSortSpecs()
 {
     // Process sorting specs
