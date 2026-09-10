@@ -140,6 +140,7 @@ add_executable (${PROJECT_NAME} WIN32
     src/ui_components/Actions_Workflows.cpp
     src/ui_components/DnDHandler.cpp
     src/statement/HTMLStatementExporter.cpp
+    src/statement/XLSXStatementExporter.cpp
 )
 
 # Fonts
@@ -222,6 +223,14 @@ endif ()
 
 target_link_libraries (${PROJECT_NAME} PRIVATE r8brain_pffft_backend)
 target_compile_definitions (${PROJECT_NAME} PRIVATE R8B_PFFFT_DOUBLE=1)
+
+# libxlsxwriter
+set (BUILD_EXAMPLES OFF)
+set (BUILD_FUZZERS OFF)
+set (BUILD_TESTS OFF)
+set (USE_SYSTEM_MINIZIP OFF)
+add_subdirectory (deps/libxlsxwriter)
+target_link_libraries (${PROJECT_NAME} PRIVATE xlsxwriter)
 
 #
 # Link Against Libraries
