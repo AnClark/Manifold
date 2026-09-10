@@ -85,7 +85,6 @@ set (MANIFOLD_DCOFFSET_ANALYZER_THREADS_DEFAULT 4 CACHE STRING "Specify the defa
 #
 
 add_executable (${PROJECT_NAME} WIN32
-    ${SRC_IMGUI}
     deps/imgui-application/Application.cpp
     ${IMGUI_APPLICATION_PLATFORM_SOURCE}   # Platform-specific ImGui implementation file (currently only macOS requires this)
     src/Main.cpp
