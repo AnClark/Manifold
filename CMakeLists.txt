@@ -65,6 +65,7 @@ include_directories (
     deps/ImGuiNotify
     deps/ImGuiNotify/fonts
     deps/toml
+    deps/inja
 )
 
 # Load pkg-config for finding dependencies, and let it prefer finding static libraries
