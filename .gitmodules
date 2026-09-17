@@ -10,3 +10,6 @@
 [submodule "deps/libxlsxwriter"]
 	path = deps/libxlsxwriter
 	url = https://github.com/jmcnamara/libxlsxwriter/
+[submodule "deps/imgui-application"]
+	path = deps/imgui-application
+	url = https://github.com/AnClark/ImGuiApplication.cpp
