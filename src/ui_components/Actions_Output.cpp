@@ -460,24 +460,6 @@ void UIComponents_Actions::popup_OutputFileNameRule(FilenameTemplate& s_editTemp
         ImGui::Spacing();
         ImGui::SeparatorText("Options");
 
-        {
-            constexpr const char* kPolicies[] =
-                { "Auto Rename", "Overwrite", "Skip" };
-            constexpr FilenameTemplate::ConflictPolicy kPolicyValues[] = {
-                FilenameTemplate::ConflictPolicy::AutoRename,
-                FilenameTemplate::ConflictPolicy::Overwrite,
-                FilenameTemplate::ConflictPolicy::Skip,
-            };
-            int policyIdx = 0;
-            for (int pi = 0; pi < 3; ++pi)
-                if (s_editTemplate.conflictPolicy == kPolicyValues[pi])
-                    { policyIdx = pi; break; }
-            ImGui::SetNextItemWidth(140.0f);
-            if (ImGui::Combo("If file exists##conflict",
-                                &policyIdx, kPolicies, 3))
-                s_editTemplate.conflictPolicy = kPolicyValues[policyIdx];
-        }
-        ImGui::SameLine(0, 20);
         ImGui::Checkbox("Replace spaces with '_'",
                         &s_editTemplate.sanitizeSpaces);
 
@@ -643,6 +625,27 @@ void UIComponents_Actions::combo_SelectSampleSubtype()
         ImGui::EndCombo();
     }
     ImGui::EndDisabled();
+}
+
+void UIComponents_Actions::combo_SelectFileConflictPolicy(FilenameTemplate& s_editTemplate)
+{
+    constexpr const char* kPolicies[] =
+        { "Auto Rename", "Overwrite", "Skip" };
+    constexpr FilenameTemplate::ConflictPolicy kPolicyValues[] = {
+        FilenameTemplate::ConflictPolicy::AutoRename,
+        FilenameTemplate::ConflictPolicy::Overwrite,
+        FilenameTemplate::ConflictPolicy::Skip,
+    };
+
+    int policyIdx = 0;
+    for (int pi = 0; pi < 3; ++pi)
+        if (s_editTemplate.conflictPolicy == kPolicyValues[pi])
+            { policyIdx = pi; break; }
+
+    ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x - 5.0f);
+    if (ImGui::Combo("##conflict_policy",
+                        &policyIdx, kPolicies, 3))
+        s_editTemplate.conflictPolicy = kPolicyValues[policyIdx];
 }
 
 bool UIComponents_Actions::query_CanProcess() const

@@ -52,7 +52,7 @@ struct uiPref
     /// Relative width weight of the Right panel in the Actions view splitter.
     float actionRightPanelWeight = 1.0f;
 
-    float actionFooterPaneHeight    = 220.0f;
+    float actionFooterPaneHeight    = 240.0f;
     bool  actionFooterPaneCollapsed = false;
 
     /// Relative width weight of the left panel in the Tasks view splitter.

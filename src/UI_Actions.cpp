@@ -302,6 +302,17 @@ void ManifoldApp::UI_Actions()
                             uiActions.combo_SelectSampleSubtype();
                         }
 
+                        ImGui::Spacing();
+
+                        // ── File conflict policy ────────────────────────────────
+                        {
+                            ImGui::AlignTextToFramePadding();
+                            ImGui::Text("When file exists");
+                            ImGui::SameLine(kLabelW);
+
+                            uiActions.combo_SelectFileConflictPolicy(this->outputFilenameTemplate);
+                        }
+
                         ImGui::EndGroup();
                     }
 

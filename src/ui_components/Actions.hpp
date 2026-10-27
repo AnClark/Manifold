@@ -46,6 +46,7 @@ public:
 
     void combo_SelectContainerFormat();
     void combo_SelectSampleSubtype();
+    void combo_SelectFileConflictPolicy(FilenameTemplate& s_editTemplate);
     void toggle_EnableNullOutput();
     void button_ProcessAllFiles();
 
