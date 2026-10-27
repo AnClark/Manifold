@@ -13,7 +13,11 @@
 #include "workers/EBUR128Worker.hpp"
 #endif
 #include "workers/SndFileWorker.hpp"
+#ifdef ENABLE_PARALLEL_PROCESSING
+#include "dispatchers/ProcessingDispatcher.hpp"
+#else
 #include "workers/SingleFileProcessorWorker.hpp"
+#endif
 #include "utils/AudioPlayer.hpp"
 #include "utils/LogManager.hpp"
 #include "pipeline/Node.hpp"
@@ -74,7 +78,11 @@ private:
     EBUR128Worker ebur128Worker;
     DcOffsetWorker dcOffsetWorker;
 #endif
+#ifdef ENABLE_PARALLEL_PROCESSING
+    ProcessingDispatcher processingDispatcher { PROCESSING_THREADS_DEFAULT };  // TODO: Adjust default thread count by CPU cores
+#else
     SingleFileProcessorWorker singleFileProcessorWorker;
+#endif
 
     AudioPlayer audioPlayer;
     std::shared_ptr<SndFileInfo> currentPlayingFile;  // Currently playing file

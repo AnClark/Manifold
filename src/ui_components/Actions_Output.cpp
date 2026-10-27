@@ -25,12 +25,19 @@ void UIComponents_Actions::command_StartProcessingAllFiles()
     auto run = std::make_shared<ProcessingRun>(
         app->nextRunId++, app->outputPath, std::move(nodeNames));
 
-    // Configure the single-file processor worker with the current output settings.
+    // Configure the file processor (single worker / parallel dispatcher) with the current output settings.
     // These settings will be used when processing each file.
+#ifdef ENABLE_PARALLEL_PROCESSING
+    app->processingDispatcher.setOutputDir(app->outputPath);
+    app->processingDispatcher.setOutputFormat(app->outputFormat, app->outputSubtype);
+    app->processingDispatcher.setSinkMode(app->nullOutput ? SinkMode::Null : SinkMode::WriteFile);
+    app->processingDispatcher.setConflictPolicy(app->outputFilenameTemplate.conflictPolicy);
+#else
     app->singleFileProcessorWorker.setOutputDir(app->outputPath);
     app->singleFileProcessorWorker.setOutputFormat(app->outputFormat, app->outputSubtype);
     app->singleFileProcessorWorker.setSinkMode(app->nullOutput ? SinkMode::Null : SinkMode::WriteFile);
     app->singleFileProcessorWorker.setConflictPolicy(app->outputFilenameTemplate.conflictPolicy);
+#endif
 
     // Now that the run record and worker are configured, we can safely add files to the worker's queue.
     {
@@ -59,9 +66,13 @@ void UIComponents_Actions::command_StartProcessingAllFiles()
             record->runCancelToken = &run->cancelRequested;
 
             // Now that we have the resolved output stem, we can determine the final output path for this file and store it in the record.
-            // Then, we can send the file to the single-file processor worker.
+            // Then, we can send the file to the file processor (single worker / parallel dispatcher).
             run->records.push_back(record);
+#ifdef ENABLE_PARALLEL_PROCESSING
+            app->processingDispatcher.addFile(fi, std::move(record));
+#else
             app->singleFileProcessorWorker.addFile(fi, std::move(record));
+#endif
         }
     }
 

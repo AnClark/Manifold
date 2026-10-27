@@ -80,6 +80,9 @@ option (MANIFOLD_ENABLE_PARALLEL_ANALYZING "Enable analyzing audio file in paral
 set (MANIFOLD_EBUR128_ANALYZER_THREADS_DEFAULT 4 CACHE STRING "Specify the default thread count of EBU R128 parallel analysis.")
 set (MANIFOLD_DCOFFSET_ANALYZER_THREADS_DEFAULT 4 CACHE STRING "Specify the default thread count of Dc Offset parallel analysis.")
 
+option (MANIFOLD_ENABLE_PARALLEL_PROCESSING "Enable processing audio files in parallel" ON)
+set (MANIFOLD_PROCESSING_THREADS_DEFAULT 4 CACHE STRING "Specify the default thread count of parallel audio processing.")
+
 #
 # Build our main application
 #
@@ -97,6 +100,7 @@ add_executable (${PROJECT_NAME} WIN32
     src/workers/DcOffsetWorker.cpp
     src/workers/SingleFileProcessorWorker.cpp
     src/dispatchers/AnalyzerDispatcher.cpp
+    src/dispatchers/ProcessingDispatcher.cpp
     src/utils/AudioPlayer.cpp
     src/config/Config.cpp
     src/config/Preferences.cpp
@@ -159,6 +163,16 @@ if (MANIFOLD_ENABLE_PARALLEL_ANALYZING)
     )
 else ()
     message (STATUS "${PROJECT_NAME}: Parallel analyzing:\t\tOFF")
+endif ()
+
+if (MANIFOLD_ENABLE_PARALLEL_PROCESSING)
+    message (STATUS "${PROJECT_NAME}: Parallel processing:\t\tON")
+    target_compile_definitions (${PROJECT_NAME} PRIVATE
+        ENABLE_PARALLEL_PROCESSING=1
+        PROCESSING_THREADS_DEFAULT=${MANIFOLD_PROCESSING_THREADS_DEFAULT}
+    )
+else ()
+    message (STATUS "${PROJECT_NAME}: Parallel processing:\t\tOFF")
 endif ()
 
 #
