@@ -50,6 +50,7 @@ struct FileRunRecord
     size_t      currentNodeIndex { 0 };
     std::string currentNodeName;
     std::string errorMessage;   ///< Non-empty only when status == Error
+    std::string outputNote;     ///< Parenthesized hint for the Info column (e.g. "overwritten"); guarded by progressMutex
     std::vector<std::shared_ptr<Report>> reports;  ///< Collected during processing; guarded by progressMutex
     mutable std::mutex progressMutex;
 

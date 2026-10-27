@@ -10,6 +10,7 @@
 #include <memory>
 #include <optional>
 #include <string>
+#include <string_view>
 #include <unordered_map>
 #include <functional>
 
@@ -69,6 +70,15 @@ public:
 
     /** @brief Optional callback for publishing reports to the active FileRunRecord. */
     std::function<void(std::shared_ptr<Report>)> onReport;
+
+    /**
+     * @brief Optional callback for publishing an output-file hint to the active FileRunRecord.
+     *
+     * Fired by sink nodes when the conflict policy actually did something with a
+     * pre-existing target file (skipped / overwritten / auto-renamed). The note
+     * is shown in parentheses in the Tasks "Info" column.
+     */
+    std::function<void(std::string_view)> onOutputNote;
 
     // --------------------------------------------------------------------------
     // Cancellation

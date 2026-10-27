@@ -88,6 +88,18 @@ public:
     }
 
     /**
+     * @brief Set the callback for reporting the output-file outcome to the active FileRunRecord.
+     *
+     * Fired by sink nodes when the conflict policy actually did something with a
+     * pre-existing target file (skipped / overwritten / auto-renamed). The worker
+     * stores the note in FileRunRecord::outputNote, which the Tasks "Info" column
+     * shows in parentheses.
+     */
+    void setOutputNoteCallback(std::function<void(std::string_view)> callback) {
+        onOutputNote = std::move(callback);
+    }
+
+    /**
      * @brief Set the cancellation token for mid-file interruption.
      *
      * When the pointed-to flag is set to true, sink nodes will break out of
@@ -117,6 +129,9 @@ private:
 
     /** @brief Callback for forwarding node-produced reports to the active FileRunRecord. */
     std::function<void(std::shared_ptr<Report>)>                   onReport;
+
+    /** @brief Callback for forwarding the output-file outcome (conflict handling) to the active FileRunRecord. */
+    std::function<void(std::string_view)>                          onOutputNote;
 
     /** @brief Optional cancellation token; injected into NodeContext before each executeFor(). */
     const std::atomic<bool>* cancelToken_ = nullptr;

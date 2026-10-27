@@ -17,6 +17,14 @@ std::string BaseStatementExporter::fetchContextInfoColumn(std::shared_ptr<FileRu
 {
     const auto  status  = record->status.load(std::memory_order_relaxed);
 
+    // Parenthesized hint (e.g. conflict policy outcome), appended to the info text below.
+    std::string noteSuffix;
+    {
+        std::scoped_lock<std::mutex> rlock(record->progressMutex);
+        if (!record->outputNote.empty())
+            noteSuffix = " (" + record->outputNote + ")";
+    }
+
     if (status == FileRunRecord::Status::Processing)
     {
         std::scoped_lock<std::mutex> rlock(record->progressMutex);
@@ -31,15 +39,15 @@ std::string BaseStatementExporter::fetchContextInfoColumn(std::shared_ptr<FileRu
     {
         std::scoped_lock<std::mutex> rlock(record->progressMutex);
 
-        return !record->errorMessage.empty() ? record->errorMessage : "Unknown error";
+        return (!record->errorMessage.empty() ? record->errorMessage : "Unknown error") + noteSuffix;
     }
     else if (status == FileRunRecord::Status::Done)
     {
-        return TimestampUtils::fmtElapsed(record->timestampStarted, record->timestampFinished);
+        return TimestampUtils::fmtElapsed(record->timestampStarted, record->timestampFinished) + noteSuffix;
     }
     else if (status == FileRunRecord::Status::Cancelled)
     {
-        return "Cancelled";
+        return "Cancelled" + noteSuffix;
     }
     else
     {

@@ -211,6 +211,12 @@ void SingleFileProcessorWorker::processItem(std::shared_ptr<SndFileInfo> fileInf
             record->addReport(std::move(r));
         }
     });
+    engine.setOutputNoteCallback([&](std::string_view note) {
+        if (record) {
+            std::scoped_lock<std::mutex> rlock(record->progressMutex);
+            record->outputNote = std::string(note);
+        }
+    });
 
     // Now everything is set up, let's go!
     engine.processFile(*fileInfoInstance, outputDir_Copied, resolvedStem, conflictPolicy);
