@@ -20,7 +20,11 @@ void ManifoldApp::onInit()
     LogManager::instance(4096).setMinLevel(LogLevel::Debug);
 
     // Wire up the node chain pointer so the worker can access it
+#ifdef ENABLE_PARALLEL_PROCESSING
+    processingDispatcher.setNodeChain(this->nodeChain, this->nodeChainMutex);
+#else
     singleFileProcessorWorker.setNodeChain(this->nodeChain, this->nodeChainMutex);
+#endif
 
     // Initialize NFD
     NFD_Init();
@@ -60,7 +64,11 @@ void ManifoldApp::onTerminate()
 #endif
 
     // Stop all pending/on-progress audio rendering
+#ifdef ENABLE_PARALLEL_PROCESSING
+    processingDispatcher.requestCancelProcessing();
+#else
     singleFileProcessorWorker.requestCancelProcessing();
+#endif
 
     // Cleanup NFD
     NFD_Quit();

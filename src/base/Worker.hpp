@@ -27,6 +27,11 @@ protected:
     // 子类实现具体的文件处理逻辑
     virtual void processItem(std::shared_ptr<SndFileInfo> fileInfoInstance) = 0;
 
+    // 当任务在 workerMainFunction 中被跳过（文件待移除 / 已请求取消）时调用。
+    // 默认无操作；维护配对队列的子类（如 SingleFileProcessorWorker）应在此
+    // 弹出配对数据并将其收尾，保证队列同步。
+    virtual void onFileSkipped(std::shared_ptr<SndFileInfo> /*fileInfoInstance*/) {}
+
     std::atomic<bool> shouldCancelProcessing{false};
 
 private:
