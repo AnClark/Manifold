@@ -55,5 +55,7 @@ void IWorker::workerMainFunction(IWorker* instance)
             && !instance->shouldCancelProcessing
         )
             instance->processItem(currentFile);
+        else
+            instance->onFileSkipped(currentFile);
     }
 }

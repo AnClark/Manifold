@@ -75,6 +75,7 @@ public:
 
 protected:
     void processItem(std::shared_ptr<SndFileInfo> fileInfoInstance) override;
+    void onFileSkipped(std::shared_ptr<SndFileInfo> fileInfoInstance) override;
 
 private:
     std::vector<std::shared_ptr<Node>>* nodeChain_ = nullptr;

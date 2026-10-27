@@ -17,6 +17,29 @@ void SingleFileProcessorWorker::addFile(std::shared_ptr<SndFileInfo> fileInfo,
     IWorker::addFile(std::move(fileInfo));
 }
 
+void SingleFileProcessorWorker::onFileSkipped(std::shared_ptr<SndFileInfo> /*fileInfoInstance*/)
+{
+    // The base class skipped processItem() for this file (aboutToBeRemoved or
+    // worker-level cancellation), so the paired FileRunRecord must be closed out
+    // here — otherwise recordQueue_ would desync from IWorker::pendingFileList
+    // and every later file would receive the wrong record.
+    std::shared_ptr<FileRunRecord> record;
+    {
+        std::scoped_lock<std::mutex> lock(recordQueueMutex_);
+        if (!recordQueue_.empty())
+        {
+            record = std::move(recordQueue_.front());
+            recordQueue_.pop();
+        }
+    }
+
+    if (record && record->status.load(std::memory_order_relaxed) == FileRunRecord::Status::Pending)
+    {
+        record->timestampFinished = std::chrono::system_clock::now();
+        record->status.store(FileRunRecord::Status::Cancelled);
+    }
+}
+
 void SingleFileProcessorWorker::processItem(std::shared_ptr<SndFileInfo> fileInfoInstance)
 {
     // Pop the paired FileRunRecord before any early return to keep
@@ -32,7 +55,17 @@ void SingleFileProcessorWorker::processItem(std::shared_ptr<SndFileInfo> fileInf
     }
 
     if (!fileInfoInstance || fileInfoInstance->aboutToBeRemoved || shouldCancelProcessing)
+    {
+        // The paired record is already popped — close it out so the owning run
+        // can still reach completion. (The file may have been flagged for
+        // removal between the workerMainFunction check and this one.)
+        if (record && record->status.load(std::memory_order_relaxed) == FileRunRecord::Status::Pending)
+        {
+            record->timestampFinished = std::chrono::system_clock::now();
+            record->status.store(FileRunRecord::Status::Cancelled);
+        }
         return;
+    }
 
     // If the owning run has been cancelled, mark this record and skip processing.
     if (record && record->runCancelToken && record->runCancelToken->load(std::memory_order_relaxed))
