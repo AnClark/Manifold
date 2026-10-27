@@ -1,5 +1,6 @@
 #include "ChainEngine.hpp"
 
+#include "base_nodes/AnalyzerNode.hpp"
 #include "utils/LogManager.hpp"
 #include <stdexcept>
 
@@ -7,6 +8,15 @@ ChainEngine::ChainEngine(std::vector<Node*> nodes)
     : nodes_(std::move(nodes))
 {
     validateChain();
+
+    // Remember whether the chain contains an analyzer node. Analyzers finalise
+    // at EOF (reports / sideband writes), so sinks must drain the stream to EOF
+    // even when the output file write is skipped — otherwise those finalisers
+    // would be silently dropped. Detection is by node type (dynamic_cast — the
+    // same idiom used for role detection in executeFor()), so new analysis nodes
+    // only need to subclass AnalyzerNode; nothing else to configure.
+    for (Node* n : nodes_)
+        if (dynamic_cast<AnalyzerNode*>(n)) { chainNeedsEofFinalization_ = true; break; }
 }
 
 void ChainEngine::validateChain() const
@@ -45,6 +55,7 @@ void ChainEngine::executeFor(NodeContext& ctx)
     ctx.onReport     = onReport;     // inject report callback
     ctx.onOutputNote = onOutputNote; // inject output-note callback
     ctx.cancelToken  = cancelToken_; // inject cancellation token
+    ctx.drainOnSkip  = chainNeedsEofFinalization_; // inject EOF-drain requirement
 
     // FIXME: updateProgess() does not show the real progress, because the real processing happens in StreamSinkNode::consume(),
     //        which is called at the end of the segment.

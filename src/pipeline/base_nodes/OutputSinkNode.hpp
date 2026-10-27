@@ -19,6 +19,12 @@ using namespace AudioFormats;
  * After writing, ctx.currentFilePath is set to the produced file. When a
  * pre-existing file was skipped / overwritten / worked around by auto-renaming,
  * the outcome is reported via ctx.onOutputNote (e.g. "overwritten").
+ *
+ * @note Skip semantics: when the target file exists and the conflict policy is
+ *       Skip, only the file write is skipped. If the chain contains an analyzer
+ *       node (reports / sideband writes are produced at EOF), the stream is
+ *       still drained to EOF (samples discarded) so those finalizers run;
+ *       otherwise processing is skipped entirely as a fast path.
  * If ctx.sideband contains "loudness_lufs" (double) it is written as an
  * INFO chunk comment (WAV) or COMMENT tag (FLAC/OGG) where supported.
  */

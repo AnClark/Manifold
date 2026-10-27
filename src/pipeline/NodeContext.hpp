@@ -48,6 +48,17 @@ public:
     enum class OutputConflictPolicy { Skip, Overwrite, AutoRename };
     OutputConflictPolicy outputConflictPolicy = OutputConflictPolicy::AutoRename;
 
+    /**
+     * @brief Whether the chain requires draining to EOF even when the output
+     *        file write is skipped.
+     *
+     * True when the chain contains an analyzer node (AnalyzerNode — reports /
+     * sideband writes are produced at EOF). Set by ChainEngine before
+     * processing; read by sink nodes to decide whether a skipped output must
+     * still consume the stream (OutputSinkNode's Skip conflict policy).
+     */
+    bool drainOnSkip = false;
+
     // --------------------------------------------------------------------------
     // Audio format metadata
 

@@ -135,4 +135,7 @@ private:
 
     /** @brief Optional cancellation token; injected into NodeContext before each executeFor(). */
     const std::atomic<bool>* cancelToken_ = nullptr;
+
+    /** @brief True when the chain contains an analyzer node; injected into NodeContext::drainOnSkip. */
+    bool chainNeedsEofFinalization_ = false;
 };

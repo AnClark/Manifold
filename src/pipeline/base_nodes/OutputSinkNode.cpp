@@ -74,8 +74,29 @@ void OutputSinkNode::consume(std::unique_ptr<AudioStream> stream, NodeContext& c
             {
                 LOG_WARNF("OutputSinkNode", "Conflict policy is set to skip existed File. Skipped: %s", outPath.c_str());
                 ctx.currentFilePath = outPath;  // record path as-is; nothing written
+
                 if (ctx.onOutputNote)
                     ctx.onOutputNote("skipped: output exists");
+
+                // The file write is skipped. However, if any chain node finalises
+                // at EOF (reports / sideband writes), the stream must still be
+                // drained to EOF — otherwise those finalisers would be silently
+                // dropped (even for analysis-only chains). Chains without such
+                // nodes take the fast path and skip processing entirely.
+                if (ctx.drainOnSkip)
+                {
+                    LOG_WARNF("OutputSinkNode",
+                              "Conflict policy skipped the output file '%s', but analysis nodes are still "
+                              "running — processing continues so their reports are not lost.",
+                              outPath.c_str());
+
+                    constexpr size_t kBlockFrames = 4096;
+                    std::vector<float> buf(kBlockFrames * static_cast<size_t>(fmt.channels));
+                    while (stream->read(buf.data(), kBlockFrames) > 0)
+                    {
+                        if (ctx.isCancelled()) break;
+                    }
+                }
                 return;
             }
             break;

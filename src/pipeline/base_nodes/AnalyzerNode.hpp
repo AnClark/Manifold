@@ -58,7 +58,9 @@ protected:
     /// Default is a no-op — override to accumulate inline statistics.
     virtual void onSamples(const float* /*buf*/, size_t /*frames*/) {}
 
-    /// Called exactly once at EOF.  Must build and emit the Report.
+    /// Called exactly once at EOF.  Must produce the node's result — typically
+    /// build a Report and emit it via ctx_.onReport(); some nodes instead write
+    /// sideband data (e.g. LoudnessAnalyzerNode).
     virtual void onFinalize() = 0;
 
     std::unique_ptr<AudioStream> upstream_;
