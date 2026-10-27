@@ -39,12 +39,15 @@
  *          caller already holds it.
  *
  * @warning Output filename conflict resolution (Skip / AutoRename in
- *          OutputSinkNode) is not atomic across workers. When two files resolve
- *          to the same output stem, parallel workers may both observe "file does
- *          not exist" and race. The UI thread pre-resolves a unique stem per file
- *          from the FilenameTemplate (which includes a file counter), so this
- *          does not matter in practice; only templates without a counter token
- *          can collide.
+ *          OutputSinkNode) is not atomic across workers. The UI thread
+ *          pre-checks the resolved output stems before submission and asks the
+ *          user to confirm when two inputs resolve to the same name (see
+ *          findOutputStemConflicts() in config/FilenameConfig.hpp), so
+ *          batch-internal collisions are surfaced before processing starts.
+ *          A theoretical race remains against files that appear on disk
+ *          outside the batch between the existence check and the write; it is
+ *          inherent to the ConflictPolicy mechanism and exists equally in
+ *          single-threaded use.
  */
 class ProcessingDispatcher
 {

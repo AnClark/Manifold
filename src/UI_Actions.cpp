@@ -370,6 +370,9 @@ void ManifoldApp::UI_Actions()
         case UIComponents_Actions::PendingDialog::SetOutputFolderConfirm:
             ImGui::OpenPopup("##set_output_folder_confirm");
             break;
+        case UIComponents_Actions::PendingDialog::OutputStemConflictsConfirm:
+            ImGui::OpenPopup("##output_stem_conflicts_confirm");
+            break;
         case UIComponents_Actions::PendingDialog::SaveWorkflow:
             ImGui::OpenPopup("##save_workflow");
             break;
@@ -390,6 +393,7 @@ void ManifoldApp::UI_Actions()
     }
     uiActions.popup_ConfirmLoadNodeChain();
     uiActions.popup_ConfirmSetOutputFolder();
+    uiActions.popup_ConfirmOutputStemConflicts();
     uiActions.popup_SaveWorkflow();
     uiActions.popup_ConfirmDeleteWorkflow();
     uiActions.popup_RenameWorkflow();

@@ -1,9 +1,11 @@
 #include "FilenameConfig.hpp"
 
 #include <algorithm>
+#include <cctype>
 #include <iomanip>
 #include <sstream>
 #include <string>
+#include <unordered_map>
 
 // Characters that are illegal in filenames on Windows (covers most UNIX constraints too).
 static const std::string kIllegalChars = "<>:\"/\\|?*";
@@ -138,6 +140,45 @@ std::string FilenameTemplate::resolve(const std::string& sourceStem, int counter
         result.resize(static_cast<size_t>(maxLength));
 
     return result;
+}
+
+// ---------------------------------------------------------------------------
+// Output stem conflict pre-check
+// ---------------------------------------------------------------------------
+
+std::vector<std::vector<size_t>> findOutputStemConflicts(const std::vector<std::string>& resolvedStems)
+{
+    // Two stems collide when equal ignoring ASCII letter case: "Foo" and "foo"
+    // map to the same file on the case-insensitive filesystems of Windows /
+    // macOS. Non-ASCII bytes pass through unchanged (no case folding applies).
+    const auto foldCase = [](const std::string& s) {
+        std::string out = s;
+        std::transform(out.begin(), out.end(), out.begin(),
+                       [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
+        return out;
+    };
+
+    std::unordered_map<std::string, size_t> groupIndexByKey;
+    std::vector<std::vector<size_t>> groups;  // candidates; singletons filtered below
+
+    for (size_t i = 0; i < resolvedStems.size(); ++i)
+    {
+        const std::string key = foldCase(resolvedStems[i]);
+        if (auto it = groupIndexByKey.find(key); it != groupIndexByKey.end())
+            groups[it->second].push_back(i);
+        else
+        {
+            groupIndexByKey.emplace(key, groups.size());
+            groups.push_back({ i });
+        }
+    }
+
+    // Keep only groups where two or more inputs collide, in first-seen order.
+    std::vector<std::vector<size_t>> conflicts;
+    for (auto& g : groups)
+        if (g.size() >= 2)
+            conflicts.push_back(std::move(g));
+    return conflicts;
 }
 
 // ---- TOML serialization ----------------------------------------------------

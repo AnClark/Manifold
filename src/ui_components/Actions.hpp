@@ -1,5 +1,6 @@
 #pragma once
 
+#include "base/ProcessingRun.hpp"
 #include "config/FilenameConfig.hpp"
 #include "config/WorkflowManager.hpp"
 
@@ -37,9 +38,11 @@ public:
     void popup_ConfirmLoadNodeChain();
 
     void command_StartProcessingAllFiles();
+    void subroutine_SubmitPreparedRun(std::shared_ptr<ProcessingRun> run);
 
     void button_SelectOutputFolder();
     void popup_ConfirmSetOutputFolder();    
+    void popup_ConfirmOutputStemConflicts();
 
     void button_FileName();
     void popup_OutputFileNameRule(FilenameTemplate& s_editTemplate, int& s_selectedTokenIdx);
@@ -59,7 +62,7 @@ public:
 
     void system_DropHandler(int count, const char** paths);
     enum class PendingDialog { Null, LoadNodeChainConfirm, SetOutputFolderConfirm,
-                               SaveWorkflow, DeleteWorkflowConfirm,
+                               OutputStemConflictsConfirm, SaveWorkflow, DeleteWorkflowConfirm,
                                RenameWorkflow, ChangeGroupWorkflow, OverwriteWorkflowConfirm };
     PendingDialog pendingDialog { PendingDialog::Null };
 
@@ -67,6 +70,15 @@ private:
     ManifoldApp* app;
 
     std::string dndReceivedPath;
+
+    // ── Output name conflict pre-check state ─────────────────────────────
+    struct OutputStemConflictGroup
+    {
+        std::string              outputStem;   ///< colliding resolved output stem (first occurrence as resolved)
+        std::vector<std::string> sourceNames;  ///< fileNameBase of every input file resolving to it
+    };
+    std::shared_ptr<ProcessingRun>       pendingConflictRun;     ///< run staged by command_StartProcessingAllFiles(), awaiting the user's decision
+    std::vector<OutputStemConflictGroup> pendingConflictGroups;  ///< groups displayed in popup_ConfirmOutputStemConflicts()
 
     // ── Workflow editor state ─────────────────────────────────────────────
     struct SaveWorkflowState

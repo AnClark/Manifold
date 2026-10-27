@@ -21,25 +21,15 @@ void UIComponents_Actions::command_StartProcessingAllFiles()
             nodeNames.push_back(n->name());
     }
 
-    // Create a new processing run record and kick off the processing worker with the current file list and node chain.
+    // Create a new processing run record. All file records are prepared first,
+    // so the resolved output names can be checked for conflicts before anything
+    // is submitted to the processor (see Phase 2 below).
     auto run = std::make_shared<ProcessingRun>(
         app->nextRunId++, app->outputPath, std::move(nodeNames));
 
-    // Configure the file processor (single worker / parallel dispatcher) with the current output settings.
-    // These settings will be used when processing each file.
-#ifdef ENABLE_PARALLEL_PROCESSING
-    app->processingDispatcher.setOutputDir(app->outputPath);
-    app->processingDispatcher.setOutputFormat(app->outputFormat, app->outputSubtype);
-    app->processingDispatcher.setSinkMode(app->nullOutput ? SinkMode::Null : SinkMode::WriteFile);
-    app->processingDispatcher.setConflictPolicy(app->outputFilenameTemplate.conflictPolicy);
-#else
-    app->singleFileProcessorWorker.setOutputDir(app->outputPath);
-    app->singleFileProcessorWorker.setOutputFormat(app->outputFormat, app->outputSubtype);
-    app->singleFileProcessorWorker.setSinkMode(app->nullOutput ? SinkMode::Null : SinkMode::WriteFile);
-    app->singleFileProcessorWorker.setConflictPolicy(app->outputFilenameTemplate.conflictPolicy);
-#endif
-
-    // Now that the run record and worker are configured, we can safely add files to the worker's queue.
+    // Phase 1: build one FileRunRecord per input file, with its output stem
+    // resolved from the filename template. Nothing is submitted yet.
+    std::vector<std::string> resolvedStems;
     {
         std::scoped_lock lock(app->sndFileListMutex);
         int fileCounter = 0;
@@ -65,15 +55,63 @@ void UIComponents_Actions::command_StartProcessingAllFiles()
             // Wire the run's cancel token so the worker can interrupt processing mid-file.
             record->runCancelToken = &run->cancelRequested;
 
-            // Now that we have the resolved output stem, we can determine the final output path for this file and store it in the record.
-            // Then, we can send the file to the file processor (single worker / parallel dispatcher).
+            resolvedStems.push_back(record->resolvedOutputStem);
             run->records.push_back(record);
-#ifdef ENABLE_PARALLEL_PROCESSING
-            app->processingDispatcher.addFile(fi, std::move(record));
-#else
-            app->singleFileProcessorWorker.addFile(fi, std::move(record));
-#endif
         }
+    }
+
+    // Phase 2: pre-check the resolved output stems. Two input files resolving
+    // to the same output name means one will overwrite or skip the other
+    // (depending on the conflict policy) — surface the ambiguity to the user
+    // before anything is processed. Stems are compared case-insensitively
+    // because the Windows / macOS filesystems are case-insensitive.
+    pendingConflictGroups.clear();
+    for (const auto& group : findOutputStemConflicts(resolvedStems))
+    {
+        OutputStemConflictGroup g;
+        g.outputStem = resolvedStems[group.front()];
+        for (const size_t idx : group)
+            g.sourceNames.push_back(run->records[idx]->fileInfo->fileNameBase);
+        pendingConflictGroups.push_back(std::move(g));
+    }
+
+    if (!pendingConflictGroups.empty())
+    {
+        // Stage the prepared run; the user confirms or cancels via the modal dialog.
+        pendingConflictRun = std::move(run);
+        pendingDialog = PendingDialog::OutputStemConflictsConfirm;
+        return;
+    }
+
+    // Phase 3: every output name is unique — safe to start right away.
+    subroutine_SubmitPreparedRun(std::move(run));
+}
+
+void UIComponents_Actions::subroutine_SubmitPreparedRun(std::shared_ptr<ProcessingRun> run)
+{
+    // Configure the file processor (single worker / parallel dispatcher) with the current output settings.
+    // These settings will be used when processing each file.
+#ifdef ENABLE_PARALLEL_PROCESSING
+    app->processingDispatcher.setOutputDir(app->outputPath);
+    app->processingDispatcher.setOutputFormat(app->outputFormat, app->outputSubtype);
+    app->processingDispatcher.setSinkMode(app->nullOutput ? SinkMode::Null : SinkMode::WriteFile);
+    app->processingDispatcher.setConflictPolicy(app->outputFilenameTemplate.conflictPolicy);
+#else
+    app->singleFileProcessorWorker.setOutputDir(app->outputPath);
+    app->singleFileProcessorWorker.setOutputFormat(app->outputFormat, app->outputSubtype);
+    app->singleFileProcessorWorker.setSinkMode(app->nullOutput ? SinkMode::Null : SinkMode::WriteFile);
+    app->singleFileProcessorWorker.setConflictPolicy(app->outputFilenameTemplate.conflictPolicy);
+#endif
+
+    // Send every prepared file to the file processor (single worker / parallel dispatcher).
+    // The record travels paired with its file into the same worker queue.
+    for (auto& record : run->records)
+    {
+#ifdef ENABLE_PARALLEL_PROCESSING
+        app->processingDispatcher.addFile(record->fileInfo, record);
+#else
+        app->singleFileProcessorWorker.addFile(record->fileInfo, record);
+#endif
     }
 
     // Finally, add the run record to the app's history.
@@ -127,6 +165,54 @@ void UIComponents_Actions::popup_ConfirmSetOutputFolder()
         {
             app->outputPath = dndReceivedPath;
             closePopup();
+        }
+        ImGui::SameLine();
+
+        if (ImGui::Shortcut(ImGuiKey_Escape))
+            closePopup();
+
+        if (ImGui::Button("Cancel", ImVec2(120, 0)))
+            closePopup();
+
+        ImGui::EndPopup();
+    }
+}
+
+void UIComponents_Actions::popup_ConfirmOutputStemConflicts()
+{
+    const auto closePopup = [this]() {
+        pendingConflictRun.reset();
+        pendingConflictGroups.clear();
+        pendingDialog = UIComponents_Actions::PendingDialog::Null;
+        ImGui::CloseCurrentPopup();
+    };
+
+    if (ImGui::BeginPopupModal("##output_stem_conflicts_confirm", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
+    {
+        ImGui::Text("Multiple input files resolve to the same output name:");
+        ImGui::Spacing();
+        for (const auto& group : pendingConflictGroups)
+        {
+            std::string sources;
+            for (size_t i = 0; i < group.sourceNames.size(); ++i)
+            {
+                if (i > 0) sources += ", ";
+                sources += group.sourceNames[i];
+            }
+            ImGui::BulletText("\"%s\"  <-  %s", group.outputStem.c_str(), sources.c_str());
+        }
+        ImGui::Spacing();
+        ImGui::TextColored(ImVec4(1.0f, 0.4f, 0.4f, 1.0f),
+            "Output names are compared case-insensitively.\n"
+            "Depending on the conflict policy, later files may overwrite or skip earlier ones.");
+        ImGui::Separator();
+
+        if (ImGui::Button("Continue Anyway", ImVec2(120, 0)))
+        {
+            auto run = std::move(pendingConflictRun);
+            closePopup();
+            if (run)
+                subroutine_SubmitPreparedRun(std::move(run));
         }
         ImGui::SameLine();
 

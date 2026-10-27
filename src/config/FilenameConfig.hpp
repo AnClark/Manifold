@@ -27,6 +27,7 @@
  * @endcode
  */
 
+#include <cstddef>
 #include <optional>
 #include <string>
 #include <vector>
@@ -111,3 +112,25 @@ struct FilenameTemplate
         return t;
     }
 };
+
+// ---------------------------------------------------------------------------
+// Output stem conflict pre-check
+// ---------------------------------------------------------------------------
+
+/**
+ * @brief Groups resolved output stems that collide within one batch.
+ *
+ * Two stems collide when they are equal ignoring ASCII letter case: on the
+ * case-insensitive filesystems of Windows / macOS they map to the same file on
+ * disk. Comparison happens on fully resolved stems, so it covers every cause
+ * of collision — duplicate source names without a Counter token, maxLength
+ * truncation (which can even chop off a trailing counter), sanitizeSpaces
+ * ("a b" vs "a_b"), and case-only differences.
+ *
+ * @param resolvedStems One resolved output stem per input file (see
+ *                      FilenameTemplate::resolve()), in batch order.
+ * @return One entry per colliding stem that 2+ inputs share, listing the
+ *         indices of every input resolving to it in batch order. Groups are
+ *         ordered by first occurrence. Empty when every stem is unique.
+ */
+std::vector<std::vector<size_t>> findOutputStemConflicts(const std::vector<std::string>& resolvedStems);
