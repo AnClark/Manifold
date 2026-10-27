@@ -66,6 +66,7 @@ void OutputSinkNode::consume(std::unique_ptr<AudioStream> stream, NodeContext& c
         case NodeContext::OutputConflictPolicy::Skip:
             if (std::filesystem::exists(std::filesystem::u8path(outPath)))
             {
+                LOG_WARNF("OutputSinkNode", "Conflict policy is set to skip existed File. Skipped: %s", outPath.c_str());
                 ctx.currentFilePath = outPath;  // record path as-is; nothing written
                 return;
             }
