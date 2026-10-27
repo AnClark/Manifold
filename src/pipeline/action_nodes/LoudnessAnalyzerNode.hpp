@@ -1,8 +1,6 @@
 #pragma once
 
-#include "../Node.hpp"
-
-#include <ebur128.h>
+#include "../base_nodes/AnalyzerNode.hpp"
 
 /**
  * @brief Transparent stream processor that measures EBU R128 integrated loudness.
@@ -15,15 +13,16 @@
  *
  * The measurement uses libebur128 and happens on-the-fly during the sink's
  * pull loop — no extra pass over the file is needed.
+ *
+ * Implemented on top of AnalyzerNode / AnalyzerStream (finalisation happens at
+ * EOF), so the engine automatically preserves its finalisation when the output
+ * file write is skipped (OutputSinkNode's Skip conflict policy).
  */
-class LoudnessAnalyzerNode : public Node, public StreamProcessorNode {
+class LoudnessAnalyzerNode : public AnalyzerNode {
 public:
     std::string id() const override { return "loudness_analyzer"; }
     std::string name() const override { return "LoudnessAnalyzer"; }
     void init(const std::unordered_map<std::string, std::string>& /*params*/) override {}
-
-    PortType primaryInput()  const override { return PortType::AudioStream; }
-    PortType primaryOutput() const override { return PortType::AudioStream; }
 
     std::unique_ptr<AudioStream> wrap(
         std::unique_ptr<AudioStream> upstream,

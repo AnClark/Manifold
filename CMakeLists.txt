@@ -241,6 +241,7 @@ set (PIPELINE_SOURCES
     src/pipeline/base_nodes/OutputSinkNode.cpp
     src/pipeline/base_nodes/ResamplerNode.cpp
     src/pipeline/base_nodes/DSPNode.cpp    
+    src/pipeline/base_nodes/AnalyzerNode.cpp
     src/pipeline/action_nodes/LoudnessAnalyzerNode.cpp
     src/pipeline/action_nodes/PrintInfoNode.cpp
     src/pipeline/action_nodes/LoudnessNormalizeNode.cpp

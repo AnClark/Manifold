@@ -3,7 +3,9 @@
 
 #include "utils/LogManager.hpp"
 
+#include <ebur128.h>
 #include <cmath>
+#include <limits>
 #include <vector>
 
 
@@ -13,14 +15,13 @@
 
 namespace {
 
-class LoudnessAnalyzerStream : public AudioStream {
+class LoudnessAnalyzerStream : public AnalyzerStream {
 public:
     LoudnessAnalyzerStream(std::unique_ptr<AudioStream> upstream, NodeContext& ctx)
-        : upstream_(std::move(upstream))
-        , ctx_(ctx)
+        : AnalyzerStream(std::move(upstream), ctx)
         , ebur128State_(nullptr)
     {
-        const AudioFormat& fmt = upstream_->format();
+        const AudioFormat& fmt = format();
 
         ebur128State_ = ebur128_init(
             static_cast<unsigned int>(fmt.channels),
@@ -39,35 +40,18 @@ public:
         }
     }
 
-    size_t read(float* buffer, size_t frames) override
+protected:
+    void onSamples(const float* buf, size_t frames) override
     {
-        size_t got = upstream_->read(buffer, frames);
-
-        if (got > 0) {
-            // Feed interleaved float samples to libebur128
-            if (ebur128State_) {
-                ebur128_add_frames_float(ebur128State_, buffer,
-                                         static_cast<size_t>(got));
-            }
-        } else if (!finalized_) {
-            // EOF reached — compute and store results
-            finalize();
+        // Feed interleaved float samples to libebur128
+        if (ebur128State_) {
+            ebur128_add_frames_float(ebur128State_, buf, frames);
         }
-
-        return got;
     }
 
-    const AudioFormat& format() const override { return upstream_->format(); }
-
-private:
-    std::unique_ptr<AudioStream> upstream_;
-    NodeContext&                 ctx_;
-    ebur128_state*               ebur128State_;
-    bool                         finalized_ = false;
-
-    void finalize()
+    void onFinalize() override
     {
-        finalized_ = true;
+        // EOF reached — compute and store results in the sideband
         if (!ebur128State_) return;
 
         double lufs = -std::numeric_limits<double>::infinity();
@@ -76,7 +60,7 @@ private:
         }
 
         // Collect max sample peak across all channels
-        const AudioFormat& fmt = upstream_->format();
+        const AudioFormat& fmt = format();
         double maxPeak = 0.0;
         for (int ch = 0; ch < fmt.channels; ++ch) {
             double peak = 0.0;
@@ -92,6 +76,9 @@ private:
             ctx_.setSideband("loudness_peak_dbfs", peakDbfs);
         }
     }
+
+private:
+    ebur128_state* ebur128State_;
 };
 
 }  // anonymous namespace
