@@ -84,6 +84,7 @@ void OutputSinkNode::consume(std::unique_ptr<AudioStream> stream, NodeContext& c
                 oss << stem << "_" << std::setw(2) << std::setfill('0') << suffix++;
                 outPath = makeOutPath(oss.str());
             }
+            LOG_DEBUGF("OutputSinkNode", "Conflict policy is set to auto rename. Picked new path: %s", outPath.c_str());
             break;
         }
     }
