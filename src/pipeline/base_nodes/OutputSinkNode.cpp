@@ -61,13 +61,21 @@ void OutputSinkNode::consume(std::unique_ptr<AudioStream> stream, NodeContext& c
 
     std::string outPath = makeOutPath(stem);
 
+    // Track what the conflict policy does with a pre-existing target so the
+    // outcome can be reported via ctx.onOutputNote (shown in the Tasks "Info" column).
+    const bool existed = std::filesystem::exists(std::filesystem::u8path(outPath));
+    bool renamed = false;
+    std::string usedStem = stem;
+
     switch (ctx.outputConflictPolicy)
     {
         case NodeContext::OutputConflictPolicy::Skip:
-            if (std::filesystem::exists(std::filesystem::u8path(outPath)))
+            if (existed)
             {
                 LOG_WARNF("OutputSinkNode", "Conflict policy is set to skip existed File. Skipped: %s", outPath.c_str());
                 ctx.currentFilePath = outPath;  // record path as-is; nothing written
+                if (ctx.onOutputNote)
+                    ctx.onOutputNote("skipped: output exists");
                 return;
             }
             break;
@@ -82,7 +90,9 @@ void OutputSinkNode::consume(std::unique_ptr<AudioStream> stream, NodeContext& c
             {
                 std::ostringstream oss;
                 oss << stem << "_" << std::setw(2) << std::setfill('0') << suffix++;
-                outPath = makeOutPath(oss.str());
+                usedStem = oss.str();
+                outPath = makeOutPath(usedStem);
+                renamed = true;
             }
             LOG_DEBUGF("OutputSinkNode", "Conflict policy is set to auto rename. Picked new path: %s", outPath.c_str());
             break;
@@ -140,4 +150,15 @@ void OutputSinkNode::consume(std::unique_ptr<AudioStream> stream, NodeContext& c
 
     sf_close(outSf);
     ctx.currentFilePath = outPath;
+
+    // Report the conflict-policy outcome — only when a pre-existing file was
+    // actually involved. (A cancelled write removes the partial output and
+    // returns earlier, so no misleading note is produced for it.)
+    if (ctx.onOutputNote)
+    {
+        if (renamed)
+            ctx.onOutputNote("renamed to " + usedStem);
+        else if (existed)
+            ctx.onOutputNote("overwritten");
+    }
 }

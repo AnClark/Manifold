@@ -16,7 +16,9 @@ using namespace AudioFormats;
  *   "subtype" — PCM sub-format override: "pcm16", "pcm24", "pcm32",
  *               "float32"             (default chosen per format)
  *
- * After writing, ctx.currentFilePath is set to the produced file.
+ * After writing, ctx.currentFilePath is set to the produced file. When a
+ * pre-existing file was skipped / overwritten / worked around by auto-renaming,
+ * the outcome is reported via ctx.onOutputNote (e.g. "overwritten").
  * If ctx.sideband contains "loudness_lufs" (double) it is written as an
  * INFO chunk comment (WAV) or COMMENT tag (FLAC/OGG) where supported.
  */
