@@ -223,6 +223,13 @@ pkg_check_modules(SNDFILE REQUIRED IMPORTED_TARGET sndfile)
 target_include_directories (miniaudio_libsndfile PRIVATE ${SNDFILE_INCLUDE_DIRS})
 target_link_libraries (${PROJECT_NAME} PUBLIC PkgConfig::SNDFILE)
 
+#
+# Apple stuff: Generate App Bundle & DMG file
+#
+if (APPLE)
+    include (cmake/PackagingMacOS.cmake)
+endif ()
+
 # ===========================================================================
 # manifold_pipeline_test — Node-based pipeline prototype
 # ===========================================================================
@@ -295,8 +302,3 @@ target_link_libraries (analyzer_node_test PRIVATE
     PkgConfig::SNDFILE
     imgui
 )
-
-# Apple stuff: Generate App Bundle & DMG file
-if (APPLE)
-    include (${CMAKE_CURRENT_SOURCE_DIR}/macOS/Packaging.cmake)
-endif ()

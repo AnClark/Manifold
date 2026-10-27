@@ -1,10 +1,12 @@
-# macOS application bundle and distributable package.
+#
+# Subroutine: macOS application bundle and distributable package.
+#
 
 set_target_properties (${PROJECT_NAME} PROPERTIES
     MACOSX_BUNDLE TRUE
     MACOSX_BUNDLE_BUNDLE_NAME ${PROJECT_NAME}
     MACOSX_BUNDLE_GUI_IDENTIFIER ${MACOS_GUI_IDENFIER}
-    MACOSX_BUNDLE_INFO_PLIST "${CMAKE_CURRENT_SOURCE_DIR}/macOS/Info.plist.in"
+    MACOSX_BUNDLE_INFO_PLIST "${CMAKE_CURRENT_SOURCE_DIR}/cmake/Info.plist.in"
 )
 
 install (TARGETS ${PROJECT_NAME}
