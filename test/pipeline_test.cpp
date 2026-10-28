@@ -7,9 +7,10 @@
  *                  → LoudnessAnalyzerNode → OutputSinkNode(wav) → PrintInfoNode
  *
  * Usage:
- *   manifold_pipeline_test <input_audio_file> [output_directory]
+ *   manifold_pipeline_test [scratch_dir]
  *
- * If output_directory is omitted, files are written to "./pipeline_out/".
+ * The input fixture is generated and the outputs are written under the
+ * scratch directory (see test/TestAudioUtils.hpp).
  */
 
 #include "pipeline/ChainEngine.hpp"
@@ -19,61 +20,25 @@
 #include "pipeline/action_nodes/PrintInfoNode.hpp"
 #include "pipeline/base_nodes/ResamplerNode.hpp"
 #include "pipeline/action_nodes/TruePeakLimiterNode.hpp"
+#include "TestAudioUtils.hpp"
 
 #include <filesystem>
 #include <iostream>
 #include <memory>
 #include <vector>
 
-#ifdef _WIN32
-#include <windows.h>
-#include <shellapi.h>
-// Convert a UTF-16 wide string to a UTF-8 std::string.
-static std::string wideToUtf8(const wchar_t* ws)
-{
-    int len = WideCharToMultiByte(CP_UTF8, 0, ws, -1, nullptr, 0, nullptr, nullptr);
-    if (len <= 1) return {};
-    std::string s(len - 1, '\0');
-    WideCharToMultiByte(CP_UTF8, 0, ws, -1, &s[0], len, nullptr, nullptr);
-    return s;
-}
-#endif
-
 // Forward declaration — contains all pipeline logic.
 static int run(const std::string& inputFile, const std::string& outputDir);
 
 int main(int argc, char* argv[])
 {
-    // ---------------------------------------------------------------------------
-    // On Windows, argv[] is encoded with the current ANSI code page (e.g. GBK on
-    // Chinese Windows), which breaks std::filesystem::u8path() that expects UTF-8.
-    // We use GetCommandLineW() + CommandLineToArgvW() to obtain the real UTF-16
-    // command-line arguments and convert them to UTF-8 ourselves.
-    // This keeps main() as the entry point and works for both console and GUI
-    // subsystems (avoiding the wmain / WinMain linker ambiguity with MinGW).
-    // On Linux/macOS the locale is UTF-8, so argv[] is already correct.
-    // ---------------------------------------------------------------------------
-#ifdef _WIN32
-    int     wargc = 0;
-    wchar_t** wargv = CommandLineToArgvW(GetCommandLineW(), &wargc);
-    if (wargc < 2) {
-        std::cerr << "Usage: " << argv[0]
-                  << " <input_audio_file> [output_directory]\n";
-        LocalFree(wargv);
-        return 1;
-    }
-    const std::string inputFile = wideToUtf8(wargv[1]);
-    const std::string outputDir = wargc >= 3 ? wideToUtf8(wargv[2]) : "pipeline_out";
-    LocalFree(wargv);
-#else
-    if (argc < 2) {
-        std::cerr << "Usage: " << argv[0]
-                  << " <input_audio_file> [output_directory]\n";
-        return 1;
-    }
-    const std::string inputFile = argv[1];
-    const std::string outputDir = argc >= 3 ? argv[2] : "pipeline_out";
-#endif
+    // Self-contained: synthesises its fixture and writes output under the
+    // scratch directory so it runs stand-alone under ctest as well as manually.
+    const auto scratch        = TestAudioUtils::scratchDirFromArgs(argc, argv, "manifold_pipeline_test");
+    const std::string inputFile = (scratch / "input.wav").u8string();
+    const std::string outputDir = (scratch / "pipeline_out").u8string();
+    TestAudioUtils::writeSineWav(inputFile, 1.0);
+    std::cout << "Fixture: " << inputFile << "\n";
     return run(inputFile, outputDir);
 }
 

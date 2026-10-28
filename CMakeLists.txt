@@ -230,76 +230,25 @@ if (APPLE)
     include (cmake/PackagingMacOS.cmake)
 endif ()
 
-# ===========================================================================
-# manifold_pipeline_test — Node-based pipeline prototype
-# ===========================================================================
+#
+# Regression tests (ctest)
+#
+# All test binaries are self-contained: they synthesise their own audio
+# fixtures (see test/TestAudioUtils.hpp), so `ctest` runs them without any
+# external input files. Each test binary takes a single optional argument -
+# the scratch directory for its generated files. The project-level default
+# (PROJECT_BINARY_DIR/tmp) is passed below rather than hardcoded in the tests;
+# each test gets its own subdirectory so parallel runs cannot interfere.
+#
 
-set (PIPELINE_SOURCES
-    src/pipeline/NodeRegistry.cpp
-    src/pipeline/ChainEngine.cpp
-    src/pipeline/base_nodes/FileSourceNode.cpp
-    src/pipeline/base_nodes/OutputSinkNode.cpp
-    src/pipeline/base_nodes/ResamplerNode.cpp
-    src/pipeline/base_nodes/DSPNode.cpp    
-    src/pipeline/base_nodes/AnalyzerNode.cpp
-    src/pipeline/action_nodes/LoudnessAnalyzerNode.cpp
-    src/pipeline/action_nodes/PrintInfoNode.cpp
-    src/pipeline/action_nodes/LoudnessNormalizeNode.cpp
-    src/pipeline/action_nodes/TruePeakLimiterNode.cpp
-    src/processors/LoudnessNormalizeProcessor.cpp
-    src/processors/TruePeakLimiterProcessor.cpp
-    src/utils/LogManager.cpp
-)
+enable_testing ()
 
-add_executable (manifold_pipeline_test
-    test/pipeline_test.cpp
-    ${PIPELINE_SOURCES}
-)
+include (cmake/BuildTestSuite.cmake)
 
-target_compile_definitions (manifold_pipeline_test PRIVATE R8B_PFFFT_DOUBLE=1)
+set (TEST_SCRATCH_ROOT "${PROJECT_BINARY_DIR}/tmp")
 
-target_include_directories (manifold_pipeline_test PRIVATE
-    src
-    deps/r8brain
-    deps/r8brain/fft
-    deps/libebur128/ebur128
-)
+add_test (NAME manifold_pipeline_test COMMAND manifold_pipeline_test "${TEST_SCRATCH_ROOT}/manifold_pipeline_test")
+add_test (NAME analyzer_node_test COMMAND analyzer_node_test "${TEST_SCRATCH_ROOT}/analyzer_node_test")
+add_test (NAME stem_conflict_test COMMAND stem_conflict_test "${TEST_SCRATCH_ROOT}/stem_conflict_test")
 
-target_link_libraries (manifold_pipeline_test PRIVATE
-    r8brain_pffft_backend
-    ebur128
-    PkgConfig::SNDFILE
-    imgui
-)
-
-# ===========================================================================
-# analyzer_node_test — Functional regression test for AnalyzerNode refactoring
-# ===========================================================================
-
-set (ANALYZER_TEST_SOURCES
-    src/pipeline/NodeRegistry.cpp
-    src/pipeline/ChainEngine.cpp
-    src/pipeline/base_nodes/FileSourceNode.cpp
-    src/pipeline/base_nodes/NullSinkNode.cpp
-    src/pipeline/base_nodes/AnalyzerNode.cpp
-    src/pipeline/action_nodes/ClippingDetectionNode.cpp
-    src/pipeline/action_nodes/LoudnessComplianceNode.cpp
-    src/pipeline/action_nodes/DynamicRangeNode.cpp
-    src/utils/LogManager.cpp
-)
-
-add_executable (analyzer_node_test
-    test/analyzer_node_test.cpp
-    ${ANALYZER_TEST_SOURCES}
-)
-
-target_include_directories (analyzer_node_test PRIVATE
-    src
-    deps/libebur128/ebur128
-)
-
-target_link_libraries (analyzer_node_test PRIVATE
-    ebur128
-    PkgConfig::SNDFILE
-    imgui
-)
+add_test (NAME processing_dispatch_test COMMAND processing_dispatch_test "${TEST_SCRATCH_ROOT}/processing_dispatch_test")

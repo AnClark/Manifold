@@ -6,7 +6,7 @@
  * correct reports after the AnalyzerStream base-class extraction.
  *
  * Usage:
- *   analyzer_node_test <input_wav_file>
+ *   analyzer_node_test [scratch_dir]
  *
  * Exit code: 0 = all checks passed, 1 = one or more checks failed or error.
  */
@@ -18,25 +18,13 @@
 #include "pipeline/action_nodes/LoudnessComplianceNode.hpp"
 #include "pipeline/action_nodes/DynamicRangeNode.hpp"
 #include "base/Report.hpp"
+#include "TestAudioUtils.hpp"
 
 #include <iostream>
 #include <memory>
 #include <string>
 #include <vector>
 #include <cassert>
-
-#ifdef _WIN32
-#include <windows.h>
-#include <shellapi.h>
-static std::string wideToUtf8(const wchar_t* ws)
-{
-    int len = WideCharToMultiByte(CP_UTF8, 0, ws, -1, nullptr, 0, nullptr, nullptr);
-    if (len <= 1) return {};
-    std::string s(len - 1, '\0');
-    WideCharToMultiByte(CP_UTF8, 0, ws, -1, &s[0], len, nullptr, nullptr);
-    return s;
-}
-#endif
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -283,26 +271,14 @@ static void testDynamicRange(const std::string& wavFile)
 
 int main(int argc, char* argv[])
 {
-#ifdef _WIN32
-    int wargc = 0;
-    wchar_t** wargv = CommandLineToArgvW(GetCommandLineW(), &wargc);
-    if (wargc < 2) {
-        std::cerr << "Usage: " << argv[0] << " <input_wav_file>\n";
-        LocalFree(wargv);
-        return 1;
-    }
-    const std::string wavFile = wideToUtf8(wargv[1]);
-    LocalFree(wargv);
-#else
-    if (argc < 2) {
-        std::cerr << "Usage: " << argv[0] << " <input_wav_file>\n";
-        return 1;
-    }
-    const std::string wavFile = argv[1];
-#endif
+    // Self-contained: synthesises its fixture under the scratch directory so it
+    // runs stand-alone under ctest as well as manually.
+    const auto scratch       = TestAudioUtils::scratchDirFromArgs(argc, argv, "manifold_analyzer_node_test");
+    const std::string wavFile = (scratch / "input.wav").u8string();
+    TestAudioUtils::writeSineWav(wavFile, 1.0);
 
     std::cout << "=== AnalyzerNode regression test ===\n";
-    std::cout << "Input: " << wavFile << "\n";
+    std::cout << "Fixture: " << wavFile << "\n";
 
     testClippingDetectionInline(wavFile);
     testClippingDetectionOffline(wavFile);
