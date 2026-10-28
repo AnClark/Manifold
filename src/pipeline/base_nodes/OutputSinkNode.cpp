@@ -146,10 +146,36 @@ void OutputSinkNode::consume(std::unique_ptr<AudioStream> stream, NodeContext& c
 
     bool cancelled = false;
     size_t got;
-    while ((got = stream->read(buf.data(), kBlockFrames)) > 0)
+
+    // On a mid-pull stream error: warn, close the handle, discard the partial
+    // output (so no corrupt file is left behind), then let the error reach
+    // ChainEngine's error handler as usual.
+    const auto abortFileWrite = [&](const char* reason) {
+        LOG_WARNF("OutputSinkNode",
+                  "Stream error mid-write for '%s' (%s) — closing the handle and discarding the partial output.",
+                  outPath.c_str(), reason);
+        sf_close(outSf);
+        std::error_code ec;
+        std::filesystem::remove(std::filesystem::u8path(outPath), ec);
+    };
+
+    try
     {
-        if (ctx.isCancelled()) { cancelled = true; break; }
-        sf_writef_float(outSf, buf.data(), static_cast<sf_count_t>(got));
+        while ((got = stream->read(buf.data(), kBlockFrames)) > 0)
+        {
+            if (ctx.isCancelled()) { cancelled = true; break; }
+            sf_writef_float(outSf, buf.data(), static_cast<sf_count_t>(got));
+        }
+    }
+    catch (const std::exception& e)
+    {
+        abortFileWrite(e.what());
+        throw;
+    }
+    catch (...)
+    {
+        abortFileWrite("unknown exception");
+        throw;
     }
 
     if (cancelled)
