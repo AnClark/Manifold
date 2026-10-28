@@ -26,26 +26,39 @@ namespace {
 /**
  * @brief Buffers the entire upstream, measures True Peak, then replays with gain.
  *
- * Two-pass in one wrap() call:
+ * Two-pass, run lazily on the first read() call:
  *   1. Drain upstream → interleaved float buffer
  *   2. De-interleave → call TruePeakLimiterProcessor::measureTruePeakDbtp()
  *   3. Compute attenuation gain (≤ 0 dB, never boost)
  *   4. read() serves from buffer scaled by that gain
+ *
+ * The heavy work is deferred from the constructor to the first read(): a sink
+ * may legitimately never pull the stream at all (OutputSinkNode's Skip conflict
+ * policy with an existing target file), so construction must stay cheap.
  */
 class TruePeakLimiterStream : public AudioStream {
 public:
     TruePeakLimiterStream(std::unique_ptr<AudioStream> upstream, float tpCeiling)
-        : format_(upstream->format())
+        : upstream_(std::move(upstream))
+        , format_(upstream_->format())
+        , tpCeiling_(tpCeiling)
+    {}
+
+    void prepare()
     {
+        if (prepared_) return;
+        prepared_ = true;
+
         const int ch = format_.channels;
 
         // --- Phase 1: drain upstream into interleaved buffer ---
         constexpr size_t kDrainBlock = 4096;
         std::vector<float> tmp(kDrainBlock * static_cast<size_t>(ch));
         size_t got;
-        while ((got = upstream->read(tmp.data(), kDrainBlock)) > 0)
+        while ((got = upstream_->read(tmp.data(), kDrainBlock)) > 0)
             buffer_.insert(buffer_.end(), tmp.data(),
                            tmp.data() + got * static_cast<size_t>(ch));
+        upstream_.reset();  // fully consumed; release before measuring
 
         // --- Phase 2: de-interleave and measure True Peak ---
         const size_t totalFrames = buffer_.size() / static_cast<size_t>(ch);
@@ -61,12 +74,14 @@ public:
             ptrs.data(), ch, totalFrames);
 
         // --- Phase 3: compute attenuation (only attenuate, never boost) ---
-        const float gainDb = std::min(0.0f, tpCeiling - static_cast<float>(measuredTp));
+        const float gainDb = std::min(0.0f, tpCeiling_ - static_cast<float>(measuredTp));
         gainLinear_ = std::pow(10.0f, gainDb / 20.0f);
     }
 
     size_t read(float* out, size_t frames) override
     {
+        prepare();  // heavy two-pass work runs here, on first read only
+
         const size_t ch     = static_cast<size_t>(format_.channels);
         const size_t avail  = (buffer_.size() - readPos_) / ch;
         const size_t toRead = std::min(frames, avail);
@@ -82,10 +97,13 @@ public:
     const AudioFormat& format() const override { return format_; }
 
 private:
+    std::unique_ptr<AudioStream> upstream_;
     std::vector<float> buffer_;
     size_t             readPos_    = 0;
     AudioFormat        format_;
+    float              tpCeiling_  = -1.0f;
     float              gainLinear_ = 1.0f;
+    bool               prepared_   = false;
 };
 
 }  // anonymous namespace

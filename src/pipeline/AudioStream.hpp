@@ -34,12 +34,20 @@ struct AudioFormat {
  * Not every concrete stream has an upstream:
  *   - @c AudioFileStream reads from a file handle — it has no upstream.
  *   - A future mixer node would need *two* upstreams.
- *   - @c TruePeakLimiterStream drains its upstream entirely during
- *     construction and does not hold it afterwards.
+ *   - @c TruePeakLimiterStream drains its upstream entirely on its first
+ *     read() and does not hold it afterwards.
  *
  * Storing upstream here would force a field on subclasses that don't need it
  * and would break multi-input topologies. Each subclass manages its own
  * upstream lifetime as a private implementation detail.
+ *
+ * ## Construction must stay cheap
+ *
+ * The sink may legitimately never call read() at all — e.g. OutputSinkNode's
+ * Skip conflict policy with an existing target file discards the stream
+ * without pulling it. Constructors must therefore only capture their
+ * configuration; heavy work (draining the upstream, pre-scan passes) belongs
+ * in a one-time preparation step triggered by the first read().
  *
  * Similarly, @c format() is intentionally not given a default implementation
  * that delegates to an upstream, because format-converting nodes (e.g.

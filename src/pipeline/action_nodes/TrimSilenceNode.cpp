@@ -29,12 +29,16 @@ namespace {
  * @brief Buffers the entire upstream, detects content boundaries, then
  *        replays only the non-silent region (plus padding).
  *
- * Two-pass in one constructor call:
+ * Two-pass, run lazily on the first read() call:
  *   1. Drain upstream → interleaved float buffer
  *   2. Scan forward  → first non-silent frame (startFrame)
  *   3. Scan backward → last  non-silent frame (endFrame)
  *   4. Expand both ends by paddingFrames and clamp to buffer bounds
  *   5. read() serves frames from [startSample_, endSample_)
+ *
+ * The heavy work is deferred from the constructor to the first read(): a sink
+ * may legitimately never pull the stream at all (OutputSinkNode's Skip conflict
+ * policy with an existing target file), so construction must stay cheap.
  */
 class TrimSilenceStream : public AudioStream {
 public:
@@ -42,8 +46,18 @@ public:
                       float thresholdDbfs,
                       float paddingMs,
                       const std::string& sourcePath)
-        : format_(upstream->format())
+        : upstream_(std::move(upstream))
+        , format_(upstream_->format())
+        , thresholdDbfs_(thresholdDbfs)
+        , paddingMs_(paddingMs)
+        , sourcePath_(sourcePath)
+    {}
+
+    void prepare()
     {
+        if (prepared_) return;
+        prepared_ = true;
+
         const int    ch = format_.channels;
         const double sr = format_.sampleRate;
 
@@ -51,22 +65,23 @@ public:
         constexpr size_t kDrainBlock = 4096;
         std::vector<float> tmp(kDrainBlock * static_cast<size_t>(ch));
         size_t got;
-        while ((got = upstream->read(tmp.data(), kDrainBlock)) > 0)
+        while ((got = upstream_->read(tmp.data(), kDrainBlock)) > 0)
             buffer_.insert(buffer_.end(),
                            tmp.data(),
                            tmp.data() + got * static_cast<size_t>(ch));
+        upstream_.reset();  // fully consumed; release before scanning
 
         const size_t totalFrames = buffer_.size() / static_cast<size_t>(ch);
 
         if (totalFrames == 0) {
             LOG_ERRORF("TrimSilence", "Audio stream contains no frames: %s",
-                       sourcePath.c_str());
+                       sourcePath_.c_str());
             throw std::runtime_error(
-                "[TrimSilence] Audio stream contains no frames: " + sourcePath);
+                "[TrimSilence] Audio stream contains no frames: " + sourcePath_);
         }
 
         // ---- Phase 2: detect content boundaries -----------------------------
-        const float thresholdLinear = std::pow(10.0f, thresholdDbfs / 20.0f);
+        const float thresholdLinear = std::pow(10.0f, thresholdDbfs_ / 20.0f);
 
         auto frameIsSilent = [&](size_t f) -> bool {
             const size_t base = f * static_cast<size_t>(ch);
@@ -85,7 +100,7 @@ public:
             // Entire stream is silent — warn and return the audio unchanged
             LOG_WARNF("TrimSilence",
                       "All frames are below threshold (%.1f dBFS); no trimming applied: %s",
-                      thresholdDbfs, sourcePath.c_str());
+                      thresholdDbfs_, sourcePath_.c_str());
             startSample_ = 0;
             endSample_   = buffer_.size();
             readPos_     = 0;
@@ -99,7 +114,7 @@ public:
 
         // ---- Phase 3: apply padding -----------------------------------------
         const size_t paddingFrames = static_cast<size_t>(
-            static_cast<double>(paddingMs) / 1000.0 * sr + 0.5);
+            static_cast<double>(paddingMs_) / 1000.0 * sr + 0.5);
 
         startFrame = (startFrame >= paddingFrames) ? startFrame - paddingFrames : 0;
         endFrame   = std::min(endFrame + paddingFrames, totalFrames - 1);
@@ -113,13 +128,15 @@ public:
                    static_cast<double>(startFrame) / sr * 1000.0,
                    static_cast<double>(endFrame + 1) / sr * 1000.0,
                    static_cast<double>(totalFrames) / sr * 1000.0,
-                   thresholdDbfs,
-                   paddingMs,
-                   sourcePath.c_str());
+                   thresholdDbfs_,
+                   paddingMs_,
+                   sourcePath_.c_str());
     }
 
     size_t read(float* out, size_t frames) override
     {
+        prepare();  // heavy two-pass work runs here, on first read only
+
         const size_t ch    = static_cast<size_t>(format_.channels);
         const size_t avail = (endSample_ - readPos_) / ch;
         const size_t toRead = std::min(frames, avail);
@@ -134,11 +151,16 @@ public:
     const AudioFormat& format() const override { return format_; }
 
 private:
+    std::unique_ptr<AudioStream> upstream_;
     std::vector<float> buffer_;
     size_t             startSample_ = 0;
     size_t             endSample_   = 0;
     size_t             readPos_     = 0;
     AudioFormat        format_;
+    float              thresholdDbfs_ = 0.0f;
+    float              paddingMs_     = 0.0f;
+    std::string        sourcePath_;
+    bool               prepared_      = false;
 };
 
 }  // anonymous namespace

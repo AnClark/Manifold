@@ -46,13 +46,16 @@ float evalCurve(float t, FadeNode::CurveType curve)
 /**
  * @brief Buffers the entire upstream and replays it with fade envelopes applied.
  *
- * Construction (one pass):
+ * One pass, run lazily on the first read() call:
  *   1. Drain upstream → interleaved float buffer
  *   2. Clamp fade-in / fade-out frame counts to at most half of totalFrames_
  *      (prevents the two fades from overlapping)
  *
  * read() applies envelope gain on-the-fly during replay — no second write
- * pass over the buffer is needed.
+ * pass over the buffer is needed. The heavy work is deferred from the
+ * constructor to the first read(): a sink may legitimately never pull the
+ * stream at all (OutputSinkNode's Skip conflict policy with an existing
+ * target file), so construction must stay cheap.
  */
 class FadeStream : public AudioStream {
 public:
@@ -60,10 +63,20 @@ public:
                float fadeInMs,   FadeNode::CurveType fadeInCurve,
                float fadeOutMs,  FadeNode::CurveType fadeOutCurve,
                const std::string& sourcePath)
-        : format_(upstream->format())
+        : upstream_(std::move(upstream))
+        , format_(upstream_->format())
+        , fadeInMs_(fadeInMs)
+        , fadeOutMs_(fadeOutMs)
         , fadeInCurve_(fadeInCurve)
         , fadeOutCurve_(fadeOutCurve)
+        , sourcePath_(sourcePath)
+    {}
+
+    void prepare()
     {
+        if (prepared_) return;
+        prepared_ = true;
+
         const size_t ch = static_cast<size_t>(format_.channels);
         const double sr = format_.sampleRate;
 
@@ -71,17 +84,18 @@ public:
         constexpr size_t kDrainBlock = 4096;
         std::vector<float> tmp(kDrainBlock * ch);
         size_t got;
-        while ((got = upstream->read(tmp.data(), kDrainBlock)) > 0)
+        while ((got = upstream_->read(tmp.data(), kDrainBlock)) > 0)
             buffer_.insert(buffer_.end(),
                            tmp.data(),
                            tmp.data() + got * ch);
+        upstream_.reset();  // fully consumed; release before replay
 
         totalFrames_ = buffer_.size() / ch;
 
         if (totalFrames_ == 0) {
-            LOG_ERRORF("Fade", "Audio stream contains no frames: %s", sourcePath.c_str());
+            LOG_ERRORF("Fade", "Audio stream contains no frames: %s", sourcePath_.c_str());
             throw std::runtime_error(
-                "[Fade] Audio stream contains no frames: " + sourcePath);
+                "[Fade] Audio stream contains no frames: " + sourcePath_);
         }
 
         // ---- Phase 2: compute fade frame counts ----------------------------
@@ -89,19 +103,21 @@ public:
         const size_t halfFrames = totalFrames_ / 2;
 
         fadeInFrames_  = std::min(
-            static_cast<size_t>(fadeInMs  / 1000.0 * sr + 0.5), halfFrames);
+            static_cast<size_t>(fadeInMs_  / 1000.0 * sr + 0.5), halfFrames);
         fadeOutFrames_ = std::min(
-            static_cast<size_t>(fadeOutMs / 1000.0 * sr + 0.5), halfFrames);
+            static_cast<size_t>(fadeOutMs_ / 1000.0 * sr + 0.5), halfFrames);
 
         LOG_DEBUGF("Fade",
                    "fade-in %.0f ms (%zu frames) [%s] | fade-out %.0f ms (%zu frames) [%s] | %s",
-                   fadeInMs,  fadeInFrames_,  curveToString(fadeInCurve),
-                   fadeOutMs, fadeOutFrames_, curveToString(fadeOutCurve),
-                   sourcePath.c_str());
+                   fadeInMs_,  fadeInFrames_,  curveToString(fadeInCurve_),
+                   fadeOutMs_, fadeOutFrames_, curveToString(fadeOutCurve_),
+                   sourcePath_.c_str());
     }
 
     size_t read(float* out, size_t frames) override
     {
+        prepare();  // heavy drain runs here, on first read only
+
         const size_t ch     = static_cast<size_t>(format_.channels);
         const size_t avail  = (buffer_.size() - readPos_) / ch;
         const size_t toRead = std::min(frames, avail);
@@ -153,14 +169,19 @@ private:
         return "?";
     }
 
+    std::unique_ptr<AudioStream> upstream_;
     std::vector<float>  buffer_;
     size_t              readPos_       = 0;
     size_t              totalFrames_   = 0;
     size_t              fadeInFrames_  = 0;
     size_t              fadeOutFrames_ = 0;
+    float               fadeInMs_      = 0.0f;
+    float               fadeOutMs_     = 0.0f;
     FadeNode::CurveType fadeInCurve_;
     FadeNode::CurveType fadeOutCurve_;
     AudioFormat         format_;
+    std::string         sourcePath_;
+    bool                prepared_      = false;
 };
 
 // --------------------------------------------------------------------------
